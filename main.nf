@@ -12,8 +12,8 @@ log.info """\
 
 snRNAseq workflow
 =================
-data dir     : ${params.data_dir}
-output dir   : ${params.output_dir}
+input dir    : ${params.input.dir}
+output dir   : ${params.output.dir}
 genome       : ${params.genome}
 """
 
@@ -24,17 +24,17 @@ usage:
 
 nextflow run <ARGUMENTS>
 
-  data:
-  --data_dir            directory containing sparse matrix of aligned snRNA-seq data
+  input:
+  --input.dir   directory containing sparse matrix of aligned snRNA-seq data
   
   output:
-  --output_dir          output directory
+  --output.dir  output directory
   
     """.stripIndent()
 }
 
 process save_params {
-  publishDir params.output_dir, mode: 'copy'
+  publishDir params.output.dir, mode: 'copy'
   
   output:
     path 'params.json'
@@ -48,7 +48,7 @@ process save_params {
 process detect_platform {
   
   input:
-    path data_dir
+    path input.dir
   
   output:
     stdout
@@ -56,7 +56,7 @@ process detect_platform {
   script:
     """
     (
-      cd '${data_dir}'
+      cd '${input.dir}'
       if [ -f "matrix.mtx" -a -f "genes.tsv" -a -f "barcodes.tsv" ] ; then
           echo ; echo "10X Genomics platform detected"
           platform="10X Genomics"
@@ -70,7 +70,7 @@ process detect_platform {
 
 // render qc report
 process render_qc_report {
-  publishDir params.output_dir, mode: 'copy', pattern: '*.html'
+  publishDir params.output.dir, mode: 'copy', pattern: '*.html'
   conda "environment.yml"
 
   input:
@@ -92,7 +92,7 @@ workflow {
 
   // show help message if the user specifies the --help flag at runtime
   // or if any required params are not provided
-  if ( params.help || ! params.data_dir ){
+  if ( params.help || ! params.input.dir ){
       // invoke the function above which prints the help message
       help_message()
       // exit out and do not run anything else
@@ -100,8 +100,8 @@ workflow {
   }
   
   // detect platform (Parse or 10X)
-  data_dir_ch = Channel.fromPath(params.data_dir)
-  platform_ch = detect_platform(data_dir_ch) 
+  input.dir_ch = Channel.fromPath(params.input.dir)
+  platform_ch = detect_platform(input.dir_ch) 
   platform_ch.view { it }
   
   // render QC report
