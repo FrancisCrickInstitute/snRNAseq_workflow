@@ -48,7 +48,7 @@ process save_params {
 process detect_platform {
   
   input:
-    path input.dir
+    path oi
   
   output:
     stdout
@@ -56,7 +56,7 @@ process detect_platform {
   script:
     """
     (
-      cd '${input.dir}'
+      cd '${oi}'
       if [ -f "matrix.mtx" -a -f "genes.tsv" -a -f "barcodes.tsv" ] ; then
           echo ; echo "10X Genomics platform detected"
           platform="10X Genomics"
@@ -100,8 +100,8 @@ workflow {
   }
   
   // detect platform (Parse or 10X)
-  input.dir_ch = Channel.fromPath(params.input.dir)
-  platform_ch = detect_platform(input.dir_ch) 
+  input_dir_ch = Channel.fromPath(params.input.dir)
+  platform_ch = detect_platform(input_dir_ch) 
   platform_ch.view { it }
   
   // render QC report
