@@ -51,7 +51,8 @@ umap_void_theme <-
 
 # chunk setup
 knitr::opts_chunk$set(fig.align = "center",
-                      dpi = 300)
+                      dpi = 300, 
+                      cache.path = paste0(curr_params$output$dir, "qc_report_cache/"))
 
 # set sample groupings to check at the clustering stage
 groupings <-
@@ -64,6 +65,9 @@ groupings <-
 ```
 
 ```{r define_functions, include = F, eval = T}
+# dev.off() if there is a device
+dev_off_if <- function() {if (length(dev.list()) != 0) { dev.off() }}
+
 # flatten lists
 flatten_list <- function (x, use.names = TRUE, classes = "ANY") 
 {
@@ -608,6 +612,62 @@ generate_garnett_marker_file <- function(marker_test_res,
   write(all, file=file)
   message("Garnett marker file written to ", file)
 }
+
+# get singler annot labels for plotting
+get_singler_annot_label <- function(cds, annot, lvl) {
+  level = lvl
+  dplyr::as_tibble(SummarizedExperiment::colData(cds)) %>%
+    dplyr::mutate(lvl = get(lvl), annot = get(annot)) %>%
+    dplyr::group_by(lvl, annot) %>%
+    dplyr::count() %>%
+    dplyr::group_by(lvl) %>%
+    dplyr::mutate(total = sum(n),
+                  prop = n / sum(n) * 100,
+                  label = paste0(annot, " (", round(prop, 0), "%)")) %>%
+    dplyr::filter(prop == max(prop) & prop > 50 | max(prop) < 50 & rank(-prop, ties.method = "min") <= 2) %>%
+    dplyr::arrange(-prop) %>%
+    dplyr::summarise(label = paste0(level, " ", unique(lvl), " (n = ", unique(total), ")\n", paste(label, collapse = "\n"))) %>%
+    {dplyr::left_join(dplyr::as_tibble(SummarizedExperiment::colData(cds)) %>% dplyr::transmute(lvl = get(lvl)), multiple = "all", ., by = "lvl")} %>%
+    dplyr::pull(label)
+}
+
+# plot all markers in the marker list (marker_list is a named list of marker modules)
+plot_markers_on_umap <- function(object, ml, final_umap) {
+
+  p <- final_umap
+
+  purrr::walk(ml, function(g) {
+
+    # get ranges for colour gradient
+    if (class(object)[1] == "Seurat") {
+      dat <- object@assays$RNA@counts[g, object@assays$RNA@counts[g,] > 0]
+    } else if (class(object)[1] == "cell_data_set") {
+      dat <- object@assays@data$counts[g, object@assays@data$counts[g,] > 0]
+    }
+    minmax <- range(dat, na.rm = T)
+
+    # plot
+    p[[g]] <<-
+      dittoSeq::dittoDimPlot(object, g, size = 0.3, xlab = NULL, ylab = NULL) +
+      ggplot2::geom_point(data =  dplyr::tibble(x = SingleCellExperiment::reducedDims(object)$UMAP[names(dat), 1],
+                                                y = SingleCellExperiment::reducedDims(object)$UMAP[names(dat), 2]) %>%
+                            dplyr::mutate(count = dat) %>%
+                            dplyr::as_tibble(),
+                          ggplot2::aes(x, y, colour = count), size = 0.4) +
+      ggplot2::scale_colour_gradientn(colours = c("grey", "#2374B0", "#ECE147"),
+                                      values = scales::rescale(c(0, minmax[1], minmax[2]))) +
+      umap_void_theme
+
+    })
+
+  # create grob layout
+  p <-
+    gridExtra::marrangeGrob(grobs = p,
+                            ncol = 4,
+                            nrow = ceiling(length(p) / 4),
+                            top = NULL)
+  return(p)
+}
 ```
 
 # Run info {-}
@@ -715,6 +775,9 @@ seu <- xfun::cache_rds({
   # remove genes with no counts
   counts <- as.matrix(seu@assays$RNA@counts)
   seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
+  
+  # remove NA samples
+  seu <- subset(seu, subset = sample %in% seu$sample[!is.na(seu$sample)])
   
   # return
   seu
@@ -1508,7 +1571,7 @@ p
 ```
 
 ```{r singler_annots_alluvial, class.source = 'fold-hide', fig.width = 10, fig.cap = "Alluvial plot of assignment paths of nuclei from samples to clusters to partitions to SingleR annotations, coloured by cluster"}
-# TODO: # fix this
+# TODO: # fix this!!!
 p <-
   dplyr::as_tibble(SummarizedExperiment::colData(cds)) %>%
   dplyr::group_by(sample, partition, cluster, singler_annot_main) %>%

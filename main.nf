@@ -46,16 +46,14 @@ process save_params {
 
 // render qc report
 process render_qc_report {
-  publishDir params.output.dir, mode: 'copy', pattern: '*.html'
-  publishDir params.output.dir, mode: 'copy', pattern: 'qc_report_cache/'
-  publishDir params.output.dir, mode: 'copy', pattern: 'qc_report_files/'
+  publishDir params.output.dir, mode: 'copy', pattern: '{*.html,*.tsv,qc_report_files/}'
   conda "environment.yml"
 
   input:
     path rmd_file
     path params_file
 
-  output:
+  output: 
     path 'qc_report.html' 
 
   script:
@@ -80,6 +78,6 @@ workflow {
   // render QC report
   rmd_ch = file("${baseDir}/templates/qc_report.rmd")
   params_ch = save_params()
-  render_qc_report(rmd_ch, params_ch)
+  render_qc_report(rmd_ch, params_ch) 
 
 }
