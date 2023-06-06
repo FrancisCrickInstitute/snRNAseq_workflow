@@ -46,8 +46,12 @@ process save_params {
 
 // render qc report
 process render_qc_report {
-  publishDir params.output.dir, mode: 'copy', pattern: '{*.html,*.tsv,qc_report_files/}'
+  publishDir params.output.dir, mode: 'copy', pattern: '*.html'
+  publishDir params.output.dir, mode: 'copy', pattern: 'qc_report_files/figure-html/*.png'
   conda "environment.yml"
+  cpus 2
+  memory 20.GB
+  time 2.hour
 
   input:
     path rmd_file
