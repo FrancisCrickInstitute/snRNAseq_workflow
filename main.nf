@@ -36,11 +36,27 @@ process save_params {
   publishDir params.output.dir, mode: 'copy'
   
   output:
-    path 'params.json'
+    path 'params.json', emit: ch_params
 
   script:
     "echo '${JsonOutput.toJson(params)}'  > params.json"
       
+}
+
+// load input
+process load_input {
+  publishDir "$params.output.dir/", mode: 'copy'
+  cpus 1
+  memory 64.GB
+  time 1.hour
+    
+  output:
+    path 'seu.rds', emit: ch_input
+    
+    script:
+      """
+      Rscript ${baseDir}/templates/load_input.R "${params.input.dir}" "${params.input.sample_metadata_file}"
+      """
 }
 
 // quality control
@@ -55,15 +71,16 @@ process quality_control {
   input:
     path rmd_file
     path params_file
+    path rds_file
 
   output: 
     path 'seu_quality_controlled.rds', emit: ch_filtered
-    path 'quality_control_report.html' 
+    path 'quality_control.html' 
     path 'quality_control_files/figure-html/*.png'
     
   script:
     """
-    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}"), output_file = "quality_control_report.html", output_dir = getwd())'
+    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "quality_control.html", output_dir = getwd())'
     """
 }
 
@@ -83,12 +100,12 @@ process clustering {
 
   output: 
     path 'cds_clustered.rds', emit: ch_clustered
-    path 'clustering_report.html' 
+    path 'clustering.html' 
     path 'clustering_files/figure-html/*.png'
     
   script:
     """
-    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "clustering_report.html", output_dir = getwd())'
+    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "clustering.html", output_dir = getwd())'
     """
 }
 
@@ -107,13 +124,13 @@ process celltype_annotation {
     path rds_file
 
   output: 
-    path 'cds_celltype_annotated.rds', emit: ch_annotated
-    path 'celltype_annotation_report.html' 
+    path 'cds_celltype_annotated.rds', emit: ch_annotated, optional: true
+    path 'celltype_annotation.html' 
     path 'celltype_annotation_files/figure-html/*.png'
     
   script:
     """
-    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "celltype_annotation_report.html", output_dir = getwd())'
+    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "celltype_annotation.html", output_dir = getwd())'
     """
 }
 
@@ -134,13 +151,13 @@ process infercnv {
 
   output: 
     path 'cds_infercnv.rds', emit: ch_infercnv
-    path 'infercnv_report.html' 
+    path 'infercnv.html' 
     path 'infercnv_files/figure-html/*.png'
     path 'infercnv/*'
     
   script:
     """
-    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "infercnv_report.html", output_dir = getwd())'
+    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "infercnv.html", output_dir = getwd())'
     """
 }
 
@@ -157,22 +174,29 @@ workflow {
   }
   
   // save params
-  params_ch = save_params()
+  save_params()
+  
+  // load input
+  load_input()
   
   // quality control and filtering
-  quality_control("${baseDir}/templates/quality_control.rmd", params_ch)
+  quality_control(
+    "${baseDir}/templates/quality_control.rmd", 
+    save_params.out.ch_params,
+    load_input.out.ch_input
+  )
   
   // dimensionality reduction and clustering
   clustering(
     "${baseDir}/templates/clustering.rmd", 
-    params_ch, 
+    save_params.out.ch_params, 
     quality_control.out.ch_filtered
   ) 
   
   // cell type annotation
   celltype_annotation(
     "${baseDir}/templates/celltype_annotation.rmd", 
-    params_ch, 
+    save_params.out.ch_params, 
     clustering.out.ch_clustered
   ) 
   
@@ -180,7 +204,7 @@ workflow {
   if ( params.infercnv.reference_celltypes != false & params.infercnv.gene_order_file != false ) {
     infercnv(
       "${baseDir}/templates/infercnv.rmd",
-      params_ch,
+      save_params.out.ch_params,
       celltype_annotation.out.ch_annotated
     )
   }

@@ -6,6 +6,7 @@ fontfamily: mathpazo
 fontsize: 11pt
 params:
   params_file: false
+  rds_file: false
 output:
   html_document:
     keep_md: true
@@ -20,7 +21,6 @@ output:
 
 ```{r initialise, include = F}
 # magrittr, gridExtra, clustree, monocle3 must be loaded in the environment (due to package-specific bugs)
-library(clustree)
 library(gridExtra)
 library(monocle3)
 library(magrittr)
@@ -106,107 +106,12 @@ curr_params %>%
   knitr::kable()
 ```
 
-# Output info {-}
-
-Output files will be saved to **`r curr_params$output$dir`/quality_control/`**.
-
-Figures will be saved to **`r curr_params$output$dir`/quality_control/quality_control_files/figure-html/**.
-
-Intermediate objects will be cached to **`r curr_params$output$dir`quality_control_cache/html/**.
-
 # `Seurat` pre-processing
 
-## Detect snRNA-seq platform
-
-``` {r detect_platform}
-input_files <- list.files(curr_params$input$dir)
-platform_files <- list(
-  "Parse Biosciences" = c("DGE.mtx", "all_genes.csv", "cell_metadata.csv"),
-  "10X Genomics" = c("matrix.mtx.gz", "features.tsv.gz", "genes.tsv.gz", "barcodes.tsv.gz")
-)
-platform <-
-  platform_files %>%
-  purrr::map(~ (.x %>% intersect(input_files) %>% length) == 3) %>%
-  unlist() %>%
-  {platform_files[.]} %>%
-  names
-```
-
-The input data comes from the *`r platform`* platform and includes `r paste(input_files, sep = ", ")` files.
-
-## Load data and apply gene-level filter
-
-Load input Seurat object with no cut-offs, remove any missing samples, add sample metadata, add summary statistics, and optionally subset samples. 
-
-Then, filter nuclei per gene, based on the `n_nuclei_per_gene$min` argument. Genes that are present in very few nuclei of the dataset (e.g., <3) are uninformative and unlikely to help in differentiating between groups of nuclei. In general, most genes removed by this filtering step will be those not detected in any nuclei, which will help to trim the size of the object. Additionally, genes are removed that have entries in all nuclei but whose entries are all zero. 
-
-The minimum number of nuclei per gene is set to **`r curr_params$filter$n_feature_RNA$min`**.
+## Load data
 
 ``` {r load_data, warning = F}
-seu <- xfun::cache_rds({
-  
-  if (platform == "10X Genomics") {
-    
-    # read in expression matrix
-    dge_mat <- Seurat::Read10X(curr_params$input$dir)
-    
-    # create seurat object
-    seu <- Seurat::CreateSeuratObject(counts = dge_mat)
-    
-  } else if (platform == "Parse Biosciences") {
-    
-    # read in expression matrix
-    dge_mat <- Seurat::ReadParseBio(curr_params$input$dir)
-    
-    # read in cell metadata
-    cell_metadata <-
-      curr_params$input$dir %>%
-      paste0("/cell_metadata.csv") %>%
-      readr::read_csv(show_col_types = F) %>%
-      tibble::column_to_rownames("bc_wells") %>%
-      as.data.frame()
-    
-    # create seurat object
-    seu <-
-      dge_mat %>%
-      Seurat::CreateSeuratObject(
-        names.field = 0,
-        meta.data = cell_metadata,
-        min_genes = curr_params$filter$n_feature_RNA$min,
-        min_cells = curr_params$filter$n_nuclei_per_gene$min
-      )
-    
-  }
-  
-  # conditionally add sample metadata
-  if (curr_params$input$sample_metadata_file != F) {
-
-    # read in sample metadata and add to misc slot
-    seu@misc$sample_metadata <-
-      readr::read_tsv(curr_params$input$sample_metadata_file, show_col_types = F)
-
-    # add to Seurat object meta.data
-    seu@meta.data <-
-      dplyr::left_join(
-        seu@meta.data,
-        seu@misc$sample_metadata %>%
-          dplyr::select(sample, dplyr::any_of(groupings)),
-        by = "sample")
-    rownames(seu@meta.data) <- colnames(seu)
-
-  }
-  
-  # remove genes with no counts
-  counts <- as.matrix(seu@assays$RNA@counts)
-  seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
-  
-  # remove NA samples
-  seu <- subset(seu, subset = sample %in% seu$sample[!is.na(seu$sample)])
-  
-  # return
-  seu
-  
-}, file = "seu.rds")
+seu <- readRDS(params$rds_file)
 ```
 
 ```{r summary_statistics_plot, class.source = 'fold-hide', message = F, warning = F, fig.height = 5, fig.cap = "Plot of summary statistics by sample"}
@@ -226,6 +131,20 @@ p <-
   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
   ggplot2::theme_classic()
 p
+```
+
+## Filter genes
+
+Filter nuclei per gene, based on the `n_nuclei_per_gene$min` argument. Genes that are present in very few nuclei of the dataset are uninformative and unlikely to help in differentiating between groups of nuclei. In general, most genes removed by this filtering step will be those not detected in any nuclei, which will help to trim the size of the object. Additionally, genes are removed that have entries in all nuclei but whose entries are all zero. 
+
+The minimum number of nuclei per gene is set to **`r curr_params$filter$n_feature_RNA$min`**.
+
+```{r filter_n_nuclei_per_gene}
+seu_mtx <- Seurat::GetAssayData(seu, slot="counts")
+seu <- 
+  seu %>%
+  subset(features = rownames(Seurat::GetAssayData(seu, slot="counts"))[
+    rowSums(Seurat::GetAssayData(seu, slot="counts") > 0) >= curr_params$filter$n_nuclei_per_gene$min])
 ```
 
 ## Filter nuclei
@@ -365,7 +284,8 @@ seu@misc$nucleus_filtering <-
     pass = is.na(fail_criteria)) %>%
   dplyr::group_by(nucleus, sample) %>%
   dplyr::mutate(pass = all(pass),
-                fail_criteria = fail_criteria %>% unique %>% na.omit %>% paste(collapse = ",") %>% dplyr::na_if(., "")) %>%
+                fail_criteria = fail_criteria %>% unique %>% na.omit %>% 
+                  paste(collapse = ",") %>% dplyr::na_if(., "")) %>%
   tidyr::pivot_wider(id_cols = c("nucleus", "sample", "pass", "fail_criteria")) %>%
   dplyr::ungroup()
 ```
