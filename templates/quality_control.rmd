@@ -1,0 +1,490 @@
+---
+title: "snRNAseq workflow: quality control"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+params:
+  params_file: false
+output:
+  html_document:
+    keep_md: true
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: true
+    theme: lumen
+---
+
+```{r initialise, include = F}
+# magrittr, gridExtra, clustree, monocle3 must be loaded in the environment (due to package-specific bugs)
+library(clustree)
+library(gridExtra)
+library(monocle3)
+library(magrittr)
+
+# load params file
+# base_dir=ifelse(Sys.info()["nodename"]=="Alexs-MacBook-Air-2.local","/Volumes/TracerX/","/camp/project/tracerX/");setwd(paste0(base_dir,"working/VHL_GERMLINE/tidda/snRNAseq_workflow/"))
+# cluster: # params <- list(params_file = "output/params.json")
+# local:   # params <- list(params_file = "test/local_params.json")
+curr_params <- 
+  rjson::fromJSON(file = params$params_file) %>% 
+  type.convert(as.is = T)
+
+# set seed for repeatability
+set.seed(42)
+random_seed = 42
+
+# set ggplot presets
+ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_update(legend.text = ggplot2::element_text(size = 7))
+ditto_colours <- list(ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "white"),
+                      ggplot2::scale_colour_manual(values = dittoSeq::dittoColors(), na.value = "white"))
+umap_void_theme <-
+  ggplot2::theme(axis.text = ggplot2::element_blank(),
+                 axis.title = ggplot2::element_blank(),
+                 axis.ticks = ggplot2::element_blank(),
+                 legend.position = "none",
+                 plot.margin = ggplot2::unit(c(2,2,2,2), "pt"))
+
+# chunk setup
+knitr::opts_chunk$set(fig.align = "center",
+                      dpi = 300, 
+                      cache.path = paste0(curr_params$output$dir, "quality_control/quality_control_cache/"))
+
+# set sample groupings to check at the clustering stage
+groupings <-
+  c("sample", "percent_mito", "percent_ribo", "percent_globin",
+    "date_prep", "nih_pid", "rin", "lesion_type", "tumour_size", "fuhrman_grade") %>%
+  # if genome is human, do cell cycle scoring (doesn't work with other genomes)
+  { if (grepl("hg38", curr_params$genome)) c(., "Phase") else . } %>%
+  # if checking for doublets, add to the groupings
+  { if (curr_params$filter$doublets == T) c(., "doublet") else . } 
+```
+
+```{r define_functions, include = F, eval = T}
+# flatten lists
+flatten_list <- function (x, use.names = TRUE, classes = "ANY") 
+{
+    len <- sum(rapply(x, function(x) 1L, classes = classes))
+    y <- vector("list", len)
+    i <- 0L
+    items <- rapply(x, function(x) {
+        i <<- i + 1L
+        y[[i]] <<- x
+        TRUE
+    }, classes = classes)
+    if (use.names && !is.null(nm <- names(items))) 
+        names(y) <- nm
+    y
+}
+
+# calculate plot height for grids
+get_fig_dims <- function(n_plots, n_cols = NULL, grid_width = 10, height_to_width_ratio = 1) {
+  # get dims
+  dims <- ggplot2::wrap_dims(n_plots, n_cols)
+  # get scale
+  scale <- grid_width / dims[1]
+  # get height
+  grid_height <- (dims[2] * scale) * height_to_width_ratio
+  # return dims
+  c(grid_width, grid_height)
+}
+```
+
+# Run info {-}
+
+```{r curr_params, echo = F}
+curr_params %>%
+  flatten_list() %>%
+  {tibble::tibble(
+    param = names(.), 
+    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 100))
+  } %>%
+  knitr::kable()
+```
+
+# Output info {-}
+
+Output files will be saved to **`r curr_params$output$dir`/quality_control/`**.
+
+Figures will be saved to **`r curr_params$output$dir`/quality_control/quality_control_files/figure-html/**.
+
+Intermediate objects will be cached to **`r curr_params$output$dir`quality_control_cache/html/**.
+
+# `Seurat` pre-processing
+
+## Detect snRNA-seq platform
+
+``` {r detect_platform}
+input_files <- list.files(curr_params$input$dir)
+platform_files <- list(
+  "Parse Biosciences" = c("DGE.mtx", "all_genes.csv", "cell_metadata.csv"),
+  "10X Genomics" = c("matrix.mtx.gz", "features.tsv.gz", "genes.tsv.gz", "barcodes.tsv.gz")
+)
+platform <-
+  platform_files %>%
+  purrr::map(~ (.x %>% intersect(input_files) %>% length) == 3) %>%
+  unlist() %>%
+  {platform_files[.]} %>%
+  names
+```
+
+The input data comes from the *`r platform`* platform and includes `r paste(input_files, sep = ", ")` files.
+
+## Load data and apply gene-level filter
+
+Load input Seurat object with no cut-offs, remove any missing samples, add sample metadata, add summary statistics, and optionally subset samples. 
+
+Then, filter nuclei per gene, based on the `n_nuclei_per_gene$min` argument. Genes that are present in very few nuclei of the dataset (e.g., <3) are uninformative and unlikely to help in differentiating between groups of nuclei. In general, most genes removed by this filtering step will be those not detected in any nuclei, which will help to trim the size of the object. Additionally, genes are removed that have entries in all nuclei but whose entries are all zero. 
+
+The minimum number of nuclei per gene is set to **`r curr_params$filter$n_feature_RNA$min`**.
+
+``` {r load_data, warning = F}
+seu <- xfun::cache_rds({
+  
+  if (platform == "10X Genomics") {
+    
+    # read in expression matrix
+    dge_mat <- Seurat::Read10X(curr_params$input$dir)
+    
+    # create seurat object
+    seu <- Seurat::CreateSeuratObject(counts = dge_mat)
+    
+  } else if (platform == "Parse Biosciences") {
+    
+    # read in expression matrix
+    dge_mat <- Seurat::ReadParseBio(curr_params$input$dir)
+    
+    # read in cell metadata
+    cell_metadata <-
+      curr_params$input$dir %>%
+      paste0("/cell_metadata.csv") %>%
+      readr::read_csv(show_col_types = F) %>%
+      tibble::column_to_rownames("bc_wells") %>%
+      as.data.frame()
+    
+    # create seurat object
+    seu <-
+      dge_mat %>%
+      Seurat::CreateSeuratObject(
+        names.field = 0,
+        meta.data = cell_metadata,
+        min_genes = curr_params$filter$n_feature_RNA$min,
+        min_cells = curr_params$filter$n_nuclei_per_gene$min
+      )
+    
+  }
+  
+  # conditionally add sample metadata
+  if (curr_params$input$sample_metadata_file != F) {
+
+    # read in sample metadata and add to misc slot
+    seu@misc$sample_metadata <-
+      readr::read_tsv(curr_params$input$sample_metadata_file, show_col_types = F)
+
+    # add to Seurat object meta.data
+    seu@meta.data <-
+      dplyr::left_join(
+        seu@meta.data,
+        seu@misc$sample_metadata %>%
+          dplyr::select(sample, dplyr::any_of(groupings)),
+        by = "sample")
+    rownames(seu@meta.data) <- colnames(seu)
+
+  }
+  
+  # remove genes with no counts
+  counts <- as.matrix(seu@assays$RNA@counts)
+  seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
+  
+  # remove NA samples
+  seu <- subset(seu, subset = sample %in% seu$sample[!is.na(seu$sample)])
+  
+  # return
+  seu
+  
+}, file = "seu.rds")
+```
+
+```{r summary_statistics_plot, class.source = 'fold-hide', message = F, warning = F, fig.height = 5, fig.cap = "Plot of summary statistics by sample"}
+p <-
+  seu@meta.data %>%
+  tibble::as_tibble() %>%
+  dplyr::group_by(sample) %>%
+  dplyr::summarise(
+    n_nuclei = dplyr::n(),
+    median_nCount_RNA = median(nCount_RNA),
+    median_nFeature_RNA = median(nFeature_RNA)
+  ) %>%
+  tidyr::pivot_longer(-sample, names_to = "statistic") %>%
+  ggplot2::ggplot(ggplot2::aes(x = sample, y = value)) +
+  ggplot2::geom_col() +
+  ggplot2::facet_grid(statistic ~ ., scales = "free") +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
+  ggplot2::theme_classic()
+p
+```
+
+## Filter nuclei
+
+Nucleus-level filtering is performed, applying cut-offs to `nCount_RNA`, `nFeature_RNA`, `percent_mito`, and `doublet` values of each nucleus.
+
+* Unusually high transcript / gene counts indicate multiplets.
+* Unusually low transcript / gene counts indicate barcoding of nuclei with damaged membranes, which are likely low-quality and uninformative.
+* A high percentage of mitochondrial genes indicates death, loss of cytoplasmic RNA, or increased apoptosis. Differences in the application of this filter between scRNA-seq and snRNA-seq are not well covered in literature. Intuitively, snRNA-seq data should be treated with a more stringent cut-off, as it should only include nuclear RNA. However, the renal cortex has an exceptionally high level of mitochondrial activity, so this cut-off has been relaxed somewhat for the VHL dataset. 
+* Nuclei with a high nFeature_RNA:nCount_RNA ratio could be from dying cells.
+
+### Annotate doublets
+
+Putative doublets are identified using the `scDblFinder` package. This package creates artificial doublets by grouping together random pairs of nuclei within each sample to create pseudo-doublets, and then identifying nuclei that cluster near to these pseudo-doublets during dimensionality reduction. This co-clustering indicates that they carry a doublet signature. 
+
+The `remove_doublets` argument is set to **`r  curr_params$filter$doublets`**.
+`r if (curr_params$filter$doublets == T) {"Doublets will be identified and removed." }`
+`r if (curr_params$filter$doublets == F) {"A dummy column will be introduced, treating all nuclei as though they are singlets."}`
+
+```{r identify_doublets, eval =  curr_params$filter$doublets == T, include =  curr_params$filter$doublets == T}
+seu <- xfun::cache_rds({
+  seu_dbl <- scDblFinder::scDblFinder(
+    Seurat::as.SingleCellExperiment(seu), samples = "sample"
+  )
+  seu$doublet <- as.numeric(seu_dbl$scDblFinder.class == "doublet")
+  seu
+}, file = "seu_doublets.rds")
+```
+
+```{r ignore_doublets, eval =  curr_params$filter$doublets == F, include =  curr_params$filter$doublets == F}
+seu$doublet <- 0
+```
+
+```{r detected_doublets, eval =  curr_params$filter$doublets == T, class.source = 'fold-hide', fig.cap = "Plot of detected doublets in each sample (using scDblFinder)"}
+p_dat <- 
+  seu@meta.data[,c("sample", "doublet", "nCount_RNA", "nFeature_RNA")] %>% 
+  dplyr::group_by(sample) %>%
+  dplyr::mutate(is_doublet = doublet == 1,
+                n_doublets = sum(doublet),
+                n_singlets = sum(!doublet))
+p1 <- 
+  p_dat %>% 
+  tidyr::pivot_longer(c("n_doublets", "n_singlets"), values_to = "count") %>%
+  ggplot2::ggplot(ggplot2::aes(y = count, x = sample, fill = name)) +
+  ggplot2::geom_col() +
+  ggplot2::scale_fill_manual(
+    name = "",
+    values = c(n_singlets = dittoSeq::dittoColors()[1],
+               n_doublets = dittoSeq::dittoColors()[2])) +
+  ggplot2::theme(axis.text = ggplot2::element_text(size = 6),
+                 axis.text.x = ggplot2::element_text(angle = 90),
+                 legend.position = "none") 
+p2 <-
+  p_dat %>%
+  tidyr::pivot_longer(c("nCount_RNA", "nFeature_RNA"), values_to = "count") %>%
+  ggplot2::ggplot(ggplot2::aes(y = count, x = sample)) +
+  ggplot2::geom_jitter(data = . %>% dplyr::filter(!is_doublet), height = 0,
+                       ggplot2::aes(colour = "singlet"), size = 0.2) +
+  ggplot2::geom_jitter(data = . %>% dplyr::filter(is_doublet), height = 0,
+                       ggplot2::aes(colour = "doublet"), size = 0.2) +
+  ggplot2::facet_wrap(~ name, scales = "free") +
+  ggplot2::scale_colour_manual(
+    name = "",
+    values = c(singlet = dittoSeq::dittoColors()[1],
+               doublet = dittoSeq::dittoColors()[2])) +
+  ggplot2::theme(axis.text = ggplot2::element_text(size = 7),
+                 axis.text.x = ggplot2::element_text(angle = 90),
+                 axis.title.y = ggplot2::element_blank(),
+                 legend.position = "bottom") +
+  patchwork::plot_layout(ncol = 2, widths = c(1, 2))
+p1 + p2
+```
+
+### Annotate transcript types
+
+Proportions of transcript types of interest (mitochondrial, ribosomal, globin) are annotated. Mitochondrial genes are particularly of interest for filtering, but it is good practice to inspect the others as well.
+
+* `percent_mito` - A high percentage of mitochondrial genes indicates death, loss of cytoplasmic RNA, or increased apoptosis.
+* `percent_ribo` - mRNA that code for ribosomal proteins. They do not point to specific issues, but it can be good to have a look at their relative abundance. They can have biological relevance.
+* `percent_globin` - Globin genes are very abundant in erythrocytes. Depending on your application, you can expect ‘contamination’ of erythrocytes and select against it.
+
+```{r annotate_transcript_types}
+transcript_types <-
+  list(mito = "^MT-",
+       ribo = "^RP[SL]",
+       globin = "^HB[^(P)]") 
+
+transcript_types %>%
+  names %>%
+  purrr::map(function(tt) {
+    # use `<<` for global assignment
+    seu <<-
+      seu %>%
+      Seurat::PercentageFeatureSet(
+        pattern = transcript_types[[tt]],
+        col.name = paste0("percent_", tt))
+  })
+```
+
+### Define nucleus-level filters
+
+The `filter.do_filtering` argument is set to **`r curr_params$filter$do_filtering`**.
+`r if (curr_params$filter$do_filtering == T) {"Filters will be applied." }`
+`r if (curr_params$filter$do_filtering == F) {"Dummy filters will be set (min = -Inf, max = Inf) and all nuclei will be retained." }`
+
+```{r get_filters}
+# get filters (user-provided or median + n_mads * MAD)
+if(curr_params$filter$do_filtering == T) {
+  filters <- curr_params$filter[c("nCount_RNA", "nFeature_RNA", "percent_mito")]
+  filters$doublet <- list(min = 0, max = ifelse(curr_params$filter$doublets == T, 0, 1))
+} else {
+  filters <- list(
+    "doublet" = list(min = -Inf, max = Inf),
+    "nCount_RNA" = list(min = -Inf, max = Inf),
+    "nFeature_RNA" = list(min = -Inf, max = Inf),
+    "percent_mito" = list(min = -Inf, max = Inf)
+  )
+}
+
+# add to seu
+seu@misc$filters <- filters
+
+# create misc table of pass/fail nuclei, with fail criteria
+seu@misc$nucleus_filtering <-
+  seu@meta.data[, colnames(seu@meta.data) %in% c("sample", names(filters))] %>%
+  dplyr::as_tibble(rownames = "nucleus") %>%
+  tidyr::pivot_longer(-c(nucleus, sample)) %>%
+  dplyr::rowwise() %>%
+  dplyr::mutate(
+    fail_criteria = ifelse(
+      value < filters[[name]]$min, paste0("min_", name),
+      ifelse(
+        value > filters[[name]]$max, paste0("max_", name),
+        NA
+      )
+    ),
+    pass = is.na(fail_criteria)) %>%
+  dplyr::group_by(nucleus, sample) %>%
+  dplyr::mutate(pass = all(pass),
+                fail_criteria = fail_criteria %>% unique %>% na.omit %>% paste(collapse = ",") %>% dplyr::na_if(., "")) %>%
+  tidyr::pivot_wider(id_cols = c("nucleus", "sample", "pass", "fail_criteria")) %>%
+  dplyr::ungroup()
+```
+
+#### Fail criteria statistics
+
+```{r calc_n_retained, include = F}
+n_retained <- nrow(dplyr::filter(seu@misc$nucleus_filtering, pass))
+n_total <- nrow(seu@misc$nucleus_filtering)
+```
+
+`r paste0("**", round((n_retained / n_total) * 100, 1), "%** (", n_retained, " / ", n_total, ") of nuclei retained.")`
+
+```{r fail_criteria_stats, echo = F, message = F}
+options(knitr.kable.NA = '')
+dplyr::left_join(
+  seu@misc$filters %>% dplyr::bind_rows(.id = "fail_criteria") %>%
+    tidyr::pivot_longer(c("min", "max")) %>%
+    dplyr::transmute(fail_criteria = paste(name, fail_criteria, sep = "_"), value),
+  seu@misc$nucleus_filtering %>%
+  dplyr::filter(!pass) %>%
+  tidyr::separate_longer_delim(fail_criteria, ",") %>%
+  dplyr::count(fail_criteria) %>%
+  dplyr::mutate(`%` = round((n / n_total) * 100, 2)),
+  by = "fail_criteria"
+) %>%
+  dplyr::arrange(-n) %>%
+  dplyr::bind_rows(dplyr::tibble(fail_criteria = "total:", 
+                                 n = n_total - n_retained,
+                                 `%` = round((n / n_total) * 100, 2))) %>%
+  knitr::kable(align = c("c", "c", "c", "c", "c"))
+```
+
+```{r fail_criteria_plot, class.source = 'fold-hide', fig.cap = "Plot of the proportions of filtered nuclei and their fail criteria for each sample"}
+p <- 
+  seu@misc$nucleus_filtering %>%
+  dplyr::group_by(sample) %>%
+  dplyr::count(fail_criteria) %>%
+  ggplot2::ggplot(ggplot2::aes(x = sample, y = n, fill = fail_criteria)) +
+  ggplot2::geom_col() +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
+  ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "grey")
+p
+```
+
+```{r filters_vs_distribution_vln_plot, class.source = 'fold-hide', message = F, warning = F, fig.height = 10, fig.width = 10, fig.cap = "Plot of filters vs feature distribution"}
+p <- 
+    seu@misc$nucleus_filtering %>%
+    tidyr::pivot_longer(names(seu@misc$filters)) %>%
+    dplyr::left_join(seu@misc$filters %>%
+                       purrr::map(~dplyr::as_tibble(.)) %>%
+                       dplyr::bind_rows(.id = "name"),
+                     by = "name") %>%
+    dplyr::group_by(fail_criteria) %>%
+    ggplot2::ggplot(ggplot2::aes(x = sample, y = value)) +
+    ggplot2::geom_jitter(ggplot2::aes(colour = pass),
+                         height = 0, alpha = 0.5, size = 0.6) +
+    ggplot2::geom_violin(ggplot2::aes(fill = sample), alpha = 0.8,
+                         draw_quantiles = 0.5) +
+    ggplot2::geom_hline(ggplot2::aes(yintercept = min), colour = "red") +
+    ggplot2::geom_hline(ggplot2::aes(yintercept = max), colour = "red") +
+    ggplot2::facet_wrap(~ name, scales = "free") +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
+    ditto_colours +
+    ggplot2::scale_colour_manual(values = c("darkgrey", "black"))
+p
+```
+
+```{r log_filters_vs_distribution_vln_plot, class.source = 'fold-hide', message = F, warning = F, fig.height = 10, fig.width = 10, fig.cap = "Plot of filters vs feature distribution (log scale)"}
+p + ggplot2::scale_y_log10()
+```
+
+```{r nucleus_scatter_with_filters_plot, class.source = 'fold-hide', fig.width = 10, fig.cap = "Plot of filters against distribution of nuclei"}
+plot_nucleus_scatter_with_filters <- function(seu, x, y, ditto_colours, log_x = F, log_y = F) {
+  dat <- seu@misc$nucleus_filtering %>%
+    dplyr::mutate(x_var = get(x) %>% { if(log_x) log(.) else . },
+                  y_var = get(y) %>% { if(log_y) log(.) else . },
+                  title = paste0(x, " n fail = ", sum(grepl(x, fail_criteria)), " / ", dplyr::n(), "\n",
+                                 y, " n fail = ", sum(grepl(y, fail_criteria)), " / ", dplyr::n()))
+  dat %>%
+    ggplot2::ggplot(ggplot2::aes(x = x_var, y = y_var, colour = fail_criteria)) +
+    ggplot2::geom_vline(xintercept = unlist(seu@misc$filters[[x]]) %>% { if(log_x) log(.) else . },
+                        colour = "red") +
+    ggplot2::geom_hline(yintercept = unlist(seu@misc$filters[[y]]) %>% { if(log_y) log(.) else . },
+                        colour = "red") +
+    ggplot2::geom_point(size = 0.5, alpha = 0.7) +
+    ggplot2::geom_point(data = . %>% dplyr::filter(pass == F), size = 0.5, alpha = 0.7) +
+    ggplot2::labs(title = unique(dat$title),
+                  x = paste0(ifelse(log_x, "log ", ""), x),
+                  y = paste0(ifelse(log_y, "log ", ""), y)) +
+    ditto_colours +
+    ggplot2::theme(plot.title = ggplot2::element_text(size = 10))
+
+}
+p <- 
+    plot_nucleus_scatter_with_filters(seu, "nCount_RNA", "percent_mito", ditto_colours) +
+    ggplot2::theme(legend.position = "none") +
+    plot_nucleus_scatter_with_filters(seu, "nCount_RNA", "nFeature_RNA", ditto_colours)
+p
+```
+
+```{r log_nucleus_scatter_with_filters_plot, class.source = 'fold-hide', fig.width = 10, fig.cap = "Plot of filters against distribution of nuclei (log scale)"}
+p + ggplot2::scale_x_log10() + ggplot2::scale_y_log10()
+```
+
+### `r if (curr_params$filter$do_filtering) {"Apply nucleus-level filters"}`
+
+```{r filter_nuclei, eval = curr_params$filter$do_filtering == T, include = curr_params$filter$do_filtering == T}
+seu <- xfun::cache_rds({
+  # remove failing nuclei 
+  seu <- subset(seu, cells = unique(dplyr::filter(seu@misc$nucleus_filtering, pass)$nucleus))
+  # remove genes with no counts
+  counts <- as.matrix(seu@assays$RNA@counts)
+  seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
+  seu
+}, file = "seu_filtered.rds")
+```
+
+```{r save}
+saveRDS(seu, "seu_quality_controlled.rds")
+```

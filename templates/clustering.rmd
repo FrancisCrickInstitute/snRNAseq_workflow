@@ -1,0 +1,457 @@
+---
+title: "snRNAseq workflow: dimensionality reduction and clustering"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+params:
+  params_file: false
+  rds_file: false
+output:
+  html_document:
+    keep_md: true
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: true
+    theme: lumen
+---
+
+```{r initialise, include = F}
+# magrittr, gridExtra, clustree, monocle3 must be loaded in the environment (due to package-specific bugs)
+library(clustree)
+library(gridExtra)
+library(monocle3)
+library(magrittr)
+
+# load params file
+# base_dir=ifelse(Sys.info()["nodename"]=="Alexs-MacBook-Air-2.local","/Volumes/TracerX/","/camp/project/tracerX/");setwd(paste0(base_dir,"working/VHL_GERMLINE/tidda/snRNAseq_workflow/"))
+# cluster: # params <- list(params_file = "output/params.json")
+# local:   # params <- list(params_file = "test/local_params.json")
+curr_params <- 
+  rjson::fromJSON(file = params$params_file) %>% 
+  type.convert(as.is = T)
+
+# set seed for repeatability
+set.seed(42)
+random_seed = 42
+
+# set ggplot presets
+ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_update(legend.text = ggplot2::element_text(size = 7))
+ditto_colours <- list(ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "white"),
+                      ggplot2::scale_colour_manual(values = dittoSeq::dittoColors(), na.value = "white"))
+umap_void_theme <-
+  ggplot2::theme(axis.text = ggplot2::element_blank(),
+                 axis.title = ggplot2::element_blank(),
+                 axis.ticks = ggplot2::element_blank(),
+                 legend.position = "none",
+                 plot.margin = ggplot2::unit(c(2,2,2,2), "pt"))
+
+# chunk setup
+knitr::opts_chunk$set(fig.align = "center",
+                      dpi = 300, 
+                      cache.path = paste0(curr_params$output$dir, "clustering/clustering_cache/"))
+
+# set sample groupings to check at the clustering stage
+groupings <-
+  c("sample", "percent_mito", "percent_ribo", "percent_globin",
+    "date_prep", "nih_pid", "rin", "lesion_type", "tumour_size", "fuhrman_grade") %>%
+  # if genome is human, do cell cycle scoring (doesn't work with other genomes)
+  { if (grepl("hg38", curr_params$genome)) c(., "Phase") else . } %>%
+  # if checking for doublets, add to the groupings
+  { if (curr_params$filter$doublets == T) c(., "doublet") else . } 
+```
+
+```{r define_functions, include = F, eval = T}
+# flatten lists
+flatten_list <- function (x, use.names = TRUE, classes = "ANY") 
+{
+    len <- sum(rapply(x, function(x) 1L, classes = classes))
+    y <- vector("list", len)
+    i <- 0L
+    items <- rapply(x, function(x) {
+        i <<- i + 1L
+        y[[i]] <<- x
+        TRUE
+    }, classes = classes)
+    if (use.names && !is.null(nm <- names(items))) 
+        names(y) <- nm
+    y
+}
+
+# calculate plot height for grids
+get_fig_dims <- function(n_plots, n_cols = NULL, grid_width = 10, height_to_width_ratio = 1) {
+  # get dims
+  dims <- ggplot2::wrap_dims(n_plots, n_cols)
+  # get scale
+  scale <- grid_width / dims[1]
+  # get height
+  grid_height <- (dims[2] * scale) * height_to_width_ratio
+  # return dims
+  c(grid_width, grid_height)
+}
+
+# Get cluster centroids from a Seurat or cell_data_set object
+get_centroids <- function(object, reduction, lvl) {
+
+  if (class(object)[1] == "Seurat") {
+    embeddings <- object@reductions[[reduction]]@cell.embeddings
+    metadata <- object@meta.data
+  } else if (class(object)[1] == "cell_data_set") {
+    embeddings <- SingleCellExperiment::reducedDims(object)[[reduction]]
+    metadata <- SummarizedExperiment::colData(object) %>% dplyr::as_tibble()
+  }
+
+  dplyr::tibble(
+    x = embeddings[,1],
+    y = embeddings[,2],
+    metadata
+  ) %>%
+    dplyr::group_by(get(lvl)) %>%
+    dplyr::summarise(x = median(x), y = median(y)) %>%
+    dplyr::rename(!!lvl := `get(lvl)`)
+
+}
+```
+
+# Run info {-}
+
+```{r curr_params, echo = F}
+curr_params %>%
+  flatten_list() %>%
+  {tibble::tibble(
+    param = names(.), 
+    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 100))
+  } %>%
+  knitr::kable()
+```
+
+# Load object
+
+```{r load_seu}
+seu <- readRDS(params$rds_file)
+```
+
+# `Seurat` processing
+
+## Find highest variable genes
+
+Find the most highly variable genes (HVGs) across samples.
+
+```{r hvg, message = F, warning = F}
+seu <- xfun::cache_rds({
+  Seurat::FindVariableFeatures(seu)
+}, file = "seu_hvg.rds")
+```
+
+```{r hvg_scatter_plot, class.source = 'fold-hide', warning = F, message = F, fig.cap = "Plot of HVGs"}
+p <- 
+  Seurat::LabelPoints(
+    plot = Seurat::VariableFeaturePlot(seu, raster = F),
+    points = head(Seurat::VariableFeatures(seu), 10),
+    repel = T
+  ) +
+    ggplot2::theme(legend.position = "top")
+p
+```
+
+```{r hvg_heatmap_plot, class.source = 'fold-hide', fig.cap = "Heatmap of top 20 HVGs"}
+p <- 
+  dittoSeq::dittoHeatmap(
+    seu,
+    genes = head(Seurat::VariableFeatures(seu), 20),
+    annot.by = "sample",
+    scaled.to.max = T
+  )
+p
+```
+
+## Normalisation and scaling
+
+`Seurat::SCTransform()` performs normalisation and scaling of the data. 
+
+Variables to regress out of the `SCTransform` residuals  (set by argument `vars_to_regress`) are **`r paste(curr_params$vars_to_regress, collapse = "** and **")`**. These variables are prevented from contributing much to the PCA during dimensionality reduction, and thus confounding the analysis, as they are considered to be a source of irrelevant variation.
+
+```{r sctransform, results = F, warning = F}
+seu <- xfun::cache_rds({
+  Seurat::SCTransform(seu, vars.to.regress = curr_params$vars_to_regress)
+}, file = "seu_transformed.rds")
+```
+
+## Annotate cell cycle phases
+
+Nuclei are assigned a score representing the likelihood that they are in each phase of the cell cycle. This is based on the expression levels of genes associated with each phase. The highest probability phase of each nucleus is stored in a new "Phase" column of the metadata.
+
+```{r annotate_cell_cycle_phases}
+seu <- Seurat::CellCycleScoring(
+  seu,
+  s.features = Seurat::cc.genes$s.genes,
+  g2m.features = Seurat::cc.genes$g2m.genes
+)
+```
+
+## Defining dimensionality
+
+Dimensionality reduction is performed to isolate the strongest signals and to remove background noise. First, we must perform linear dimensionality reduction and then decide the dimensionality of the data.
+
+### Linear dimensionality reduction (PCA)
+
+```{r run_pca}
+seu <- xfun::cache_rds({
+  Seurat::RunPCA(seu)
+}, file = "seu_pca.rds")
+```
+
+```{r pc1_vs_pc2_plot, class.source = 'fold-hide', fig.cap = "Plot of PC1 vs PC2, coloured by sample"}
+p <- 
+  dittoSeq::dittoDimPlot(seu, "sample", reduction.use = "pca", raster = F) 
+p
+```
+
+```{r pca_dim, class.source = 'fold-hide', fig.cap = "Plot of cells and genes sorted by their PC scores for PC1 and PC2"}
+p <- 
+  Seurat::DimHeatmap(
+    seu,
+    dims = 1:2,
+    cells = 500,
+    balanced = TRUE,
+    raster = F,
+    fast = F
+  )
+p
+```
+
+```{r top_genes_pc1_pc2, class.source = 'fold-hide', fig.cap = "Plot of top genes associated with PC1 and PC2"}
+p <- 
+  Seurat::VizDimLoadings(seu, dims = 1:2, reduction = "pca")
+p
+```
+
+### Dimensionality of the data
+
+The dimensionality of the dataset to use for downstream analysis must be decided. This is the number of principal components believed to capture the majority of true biological signal in the dataset. Using too many PCs usually does not affect the result too much, while including too few PCs can be detrimental, as meaningful biological variation may be lost. Therefore, it is better to be overgenerous when defining the dimensionality of the data than to underestimate it.
+
+The dimensionality can be decided by consulting the elbow plot (see below) and manually picking a value (set by argument `n_dims`) or it can be calculated using the `intrinsicDimension` package. 
+
+```{r usr_n_dims_msg, echo = F, eval = curr_params$n_dims != F, results = 'asis'}
+cat("### Manually\n")
+cat(paste0("Dimensionality of the data is **", curr_params$n_dims, "** (set by argument n_dims).\n"))
+```
+
+```{r usr_n_dims, include = curr_params$n_dims != F, eval = curr_params$n_dims != F}
+final_n_dims <- curr_params$n_dims
+```
+
+#### intrinsicDimension
+
+```{r iD_msg, echo = F, eval = curr_params$n_dims == F, results = 'asis'}
+cat("No value was provided for `n_dims`, so dimensionality will be calculated using the intrinsicDimensions package.\n")
+```
+
+The dimensionality of the dataset can be estimated using the `intrinsicDimension` package. This bypasses the manual approach of reading the elbow plot, but can sometimes be a bit too conservative. Therefore, if `n_dims` is not defined by the user, the dimensionality is set as double the `intrinsicDimension` estimate. 
+
+```{r iD_n_dims}
+n_dims_iD <- xfun::cache_rds({
+  intrinsicDimension::maxLikGlobalDimEst(
+    seu@reductions$pca@cell.embeddings,
+    k = 10
+  )$dim.est %>% round(0)
+}, file = "n_dims_iD.rds")
+generous_n_dims <- round(2 * n_dims_iD, 0)
+```
+
+```{r iD_n_dims_set, include = curr_params$n_dims == FALSE, eval = curr_params$n_dims == FALSE}
+final_n_dims <- generous_n_dims
+```
+
+Dimensionality set to **`r final_n_dims`**.
+
+```{r elbow_plot, class.source = 'fold-hide', fig.cap = "Elbow plot"}
+p <-
+  Seurat::ElbowPlot(seu, ndims = max(50, final_n_dims)) &
+  ggplot2::geom_vline(
+    ggplot2::aes(xintercept = final_n_dims,
+                 colour = ifelse(curr_params$n_dims == F, "chosen n_dims", "user-provided n_dims")),
+                 linewidth = 1) &
+  ggplot2::geom_vline(ggplot2::aes(xintercept = n_dims_iD, colour = "intrisicDimensions"),
+                      linewidth = 1, linetype = "dashed") &
+  ggplot2::geom_vline(ggplot2::aes(xintercept = generous_n_dims, colour = "generous (iD x 2)"),
+                      linewidth = 1, linetype = "dashed") &
+  ggplot2::scale_colour_manual(
+    name = "n_dims cut-off",
+    values = c(`chosen n_dims` = dittoSeq::dittoColors()[[1]],
+               `user-provided n_dims` = dittoSeq::dittoColors()[[1]],
+               intrisicDimensions = dittoSeq::dittoColors()[[2]],
+               `generous (iD x 2)` = dittoSeq::dittoColors()[[3]])) &
+  ggplot2::theme(legend.position = c(0.7, 0.9),
+                 legend.background = ggplot2::element_rect(fill = "white"))
+p
+```
+
+# `monocle3` processing
+
+The `monocle3` package provides alternative processing approaches for single cell data.   
+
+First, we must convert the data to monocle3's proprietary `cell_data_set` object and fill in gene names and cell cycle scores.
+
+```{r seu_to_cds, results = F, warning = F}
+cds <- xfun::cache_rds({
+  cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
+  SummarizedExperiment::rowData(cds)$gene_short_name <- 
+    row.names(SummarizedExperiment::rowData(cds))
+  SummarizedExperiment::colData(cds)$Phase <-
+    seu$Phase
+  cds
+}, file = "cds.rds")
+```
+
+## Re-pre-processing and linear dimensionality reduction
+
+First, we perform normalisation and principal component analysis again. We use the previously decided dimensionality of the data (**`r final_n_dims`**) from the `Seurat` section.
+
+```{r preprocessing}
+cds <- xfun::cache_rds({
+  monocle3::preprocess_cds(cds, num_dim = final_n_dims)
+}, file = "cds_lin_dim_red.rds")
+```
+
+## Non-linear dimensionality reduction 
+
+Next, we perform non-linear dimensionality reduction of the data (UMAP). 
+
+```{r nonlin_dim_redu, results = F, warning = F, message = F}
+cds <- xfun::cache_rds({
+  monocle3::reduce_dimension(cds, preprocess_method = "PCA")
+}, file = "cds_nonlin_dim_red.rds")
+```
+
+Plotting all different groupings of the data onto the reductions can help reveal batch effects. If certain experimental variables seem to strongly influence the grouping of cells, these effects can be removed. If so, use the `align_cds` step from [this tutorial](https://cole-trapnell-lab.github.io/monocle3/docs/clustering/#reduce-dimension).
+
+```{r avail_groupings, include = F}
+# amend groupings
+avail_groupings <- groupings[groupings %in% colnames(SummarizedExperiment::colData(cds))]
+# reductions
+redus <- c("PCA", "UMAP")
+```
+
+```{r groupings_vs_reductions, class.source = 'fold-hide', fig.dim = get_fig_dims(n_plots = (length(redus) + 1) * length(avail_groupings), n_cols = 3), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings"}
+# plot all groupings vs all reductions
+groupings_vs_reductions <- list()
+purrr::walk(avail_groupings, function(grouping) {
+  purrr::walk(redus, function(redu) {
+    title <- paste0(redu, "_vs_", grouping)
+    p <- 
+      monocle3::plot_cells(
+        cds, 
+        reduction_method = redu, 
+        color_cells_by = grouping,
+        show_trajectory_graph = F, 
+        label_cell_groups = F) 
+    if (!is.numeric(SummarizedExperiment::colData(cds)[, grouping])) {
+      p <- p + ditto_colours
+    }
+    groupings_vs_reductions[[paste0(grouping, "_legend")]] <<-
+      lemon::g_legend(p)
+    groupings_vs_reductions[[title]] <<- 
+      p + 
+      ggplot2::theme(legend.position = "none")
+  })
+})
+# create grob layout
+p <-
+  gridExtra::marrangeGrob(
+    grobs = groupings_vs_reductions,
+    nrow = length(avail_groupings),
+    ncol = length(redus) + 1,
+    layout_matrix = matrix(
+      1:length(groupings_vs_reductions),
+      length(avail_groupings),
+      length(redus) + 1,
+      TRUE
+    ),
+    top = NULL
+  )
+p
+```
+
+## Clustering
+
+From [**Clarke et al., 2021**](https://www.nature.com/articles/s41596-021-00534-0)
+
+>  ***Annotating cell states and gradients***
+>
+>  *When analyzing and characterizing novel cell types, it is important to determine whether they represent a stable cell type or contain multiple cell states. The definitions of cell type and state are not yet standardized, but a stable cell type may be expected to have homogeneous gene expression across a cluster and be compact in a 2D projection plot, whereas cell gradients appear as a spread-out string of cells and cell states (e.g., cell cycle state). Expression gradients indicate continuous differences that are present in the cell population, which could represent states like the cell cycle, immune activation63, spatial patterning64 or transient developmental stages. Care must be taken to distinguish biologically meaningful cell states and experimental batch effects, which can manifest in a similar way.*
+
+We perform unsupervised transcriptome similarity-based clustering to identify groups of nuclei with relatively homogeneous transcript profiles (united by a shared celltype / state). Clustering is performed at different resolutions to explore how groupings change across the parameter space. The aim is to find a resolution at which the clusters appear to best reflect true biological subpopulations of the dataset. 
+
+This process is based on the assumption that true discrete clusters of nuclei do exist within the dataset. The preceding nucleus filtering, feature selection, and dimensionality reduction steps were taken to distill only the highest quality features that reflect the underlying structure of the population and to remove noise that distracts from this structure.  
+
+As with the final dimensionality parameter, there is no deterministic way to set the final clustering resolution and no definitive best value. Instead, one must qualitatively assess clustering outputs for the given dataset and pick a 'good' resolution. Typically, a 'good' final resolution is taken as one that groups nuclei into celltypes. However, looking at multiple clustering resolutions of the same dataset can provide multiple true and valuable conclusions about the dataset at multiple levels of functional subspecialisation of cells. 
+
+Setting a **low clustering resolution** will produce fewer clusters, reflect the broadest subdivisions between groups of nuclei (e.g. different tissues / differentiation lineages), and is more robust to noise, but can miss important local structure within the dataset. 
+
+**Higher clustering resolutions** will result in more, increasingly granular clusters and can reveal celltype-level groups. In can also reveal new / rare celltypes that are hidden at lower resolutions. Setting the clustering resolution too high, however, can produce meaningless groups and lead to overfitting. 
+
+`monocle3` offers an unsupervised clustering function. This function also separates cells into superclusters, called partitions. These represent higher order communities within the dataset, allowing the different resolutions to coexist for downstream analysis.
+
+From **`monocle3::cluster_cells` vignette**
+
+> *Unsupervised clustering of cells is a common step in many single-cell expression workflows. In an experiment containing a mixture of cell types, each cluster might correspond to a different cell type. This function takes a cell_data_set as input, clusters the cells using Louvain/Leiden community detection, and returns a cell_data_set with internally stored cluster assignments. In addition to clusters this function calculates partitions, which represent superclusters of the Louvain/Leiden communities that are found using a kNN pruning method.*
+
+From [**monocle3 documentation**](https://cole-trapnell-lab.github.io/monocle3/docs/trajectories/)
+
+> *Although cells may continuously transition from one state to the next with no discrete boundary between them, Monocle does not assume that all cells in the dataset descend from a common transcriptional "ancestor". In many experiments, there might in fact be multiple distinct trajectories. For example, in a tissue responding to an infection, tissue resident immune cells and stromal cells will have very different initial transcriptomes, and will respond to infection quite differently, so they should be a part of the same trajectory.*
+>
+> *Monocle is able to learn when cells should be placed in the same trajectory as opposed to separate trajectories through its clustering procedure. Recall that we run cluster_cells(), each cell is assigned not only to a cluster but also to a partition. When you are learning trajectories, each partition will eventually become a separate trajectory. *
+
+We can now cluster the cells. Monocle3 does not require a user-defined clustering resolution, as it can detect an optimum resolution automatically. Additionally, it groups the data into both high-resolution clusters and low-resolution superclusters (a.k.a. partitions) simultaneously.
+
+```{r cluster_cells}
+lvls <- c("cluster", "partition")
+cds <- xfun::cache_rds({
+  cds <- monocle3::cluster_cells(cds, random_seed = random_seed)
+  # add it to the colData and reorder clusters and partitions numerically
+  SummarizedExperiment::colData(cds)$cluster <- 
+    factor(monocle3::clusters(cds), levels = sort(as.integer(levels(monocle3::clusters(cds)))))
+  SummarizedExperiment::colData(cds)$partition <- 
+    factor(monocle3::partitions(cds), levels = sort(as.integer(levels(monocle3::partitions(cds)))))
+  cds
+}, file = "cds_clustered.rds") 
+```
+
+```{r clustering_tree, class.source = 'fold-hide', fig.dim = c(10, 5), fig.cap = "Clustering tree from partitions (grouping 1) to clusters (grouping 2) of cells"}
+library(clustree)
+p <-
+  data.frame("grouping1" = monocle3::partitions(cds),
+             "grouping2" = monocle3::clusters(cds)) %>%
+    clustree::clustree(prefix = "grouping")
+p
+```
+
+```{r clusters_and_partitions, class.source = 'fold-hide', fig.dim = c(10, 5), fig.cap = "Plot of monocle3 UMAP, coloured by cluster and by partition"}
+final_umap <- 
+  lvls %>%
+  purrr::map(function(lvl) {
+    dittoSeq::dittoDimPlot(cds, lvl, size = 0.5, xlab = NULL, ylab = NULL) +
+    ggplot2::geom_label(
+      data = SummarizedExperiment::colData(cds) %>%
+        dplyr::as_tibble() %>%
+        dplyr::right_join(get_centroids(cds, "UMAP", lvl), by = lvl) %>%
+        dplyr::distinct(get(lvl), x, y),
+      ggplot2::aes(x, y, label = `get(lvl)`),
+      size = 3, fill = "white", alpha = 0.7, label.size = NA) +
+    umap_void_theme
+  })  
+names(final_umap) <- lvls
+p <- 
+  final_umap[["cluster"]] + final_umap[["partition"]]
+p
+```
+
+```{r save}
+saveRDS(cds, "cds_clustered.rds")
+saveRDS(final_umap, "final_umap.rds")
+```

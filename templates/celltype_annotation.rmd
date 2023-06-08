@@ -1,11 +1,12 @@
 ---
-title: "snRNAseq QC report"
+title: "snRNAseq workflow: celltype annotation"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 geometry: margin=1in
 fontfamily: mathpazo
 fontsize: 11pt
 params:
   params_file: false
+  rds_file: false
 output:
   html_document:
     keep_md: true
@@ -20,7 +21,6 @@ output:
 
 ```{r initialise, include = F}
 # magrittr, gridExtra, clustree, monocle3 must be loaded in the environment (due to package-specific bugs)
-library(clustree)
 library(gridExtra)
 library(monocle3)
 library(magrittr)
@@ -52,16 +52,7 @@ umap_void_theme <-
 # chunk setup
 knitr::opts_chunk$set(fig.align = "center",
                       dpi = 300, 
-                      cache.path = paste0(curr_params$output$dir, "qc_report_cache/"))
-
-# set sample groupings to check at the clustering stage
-groupings <-
-  c("sample", "percent_mito", "percent_ribo", "percent_globin",
-    "date_prep", "nih_pid", "rin", "lesion_type", "tumour_size", "fuhrman_grade") %>%
-  # if genome is human, do cell cycle scoring (doesn't work with other genomes)
-  { if (grepl("hg38", curr_params$genome)) c(., "Phase") else . } %>%
-  # if checking for doublets, add to the groupings
-  { if (curr_params$filter$doublets == T) c(., "doublet") else . } 
+                      cache.path = paste0(curr_params$output$dir, "celltype_annotation/celltype_annotation_cache/"))
 ```
 
 ```{r define_functions, include = F, eval = T}
@@ -82,40 +73,6 @@ flatten_list <- function (x, use.names = TRUE, classes = "ANY")
     if (use.names && !is.null(nm <- names(items))) 
         names(y) <- nm
     y
-}
-
-# calculate plot height for grids
-get_fig_dims <- function(n_plots, n_cols = NULL, grid_width = 10, height_to_width_ratio = 1) {
-  # get dims
-  dims <- ggplot2::wrap_dims(n_plots, n_cols)
-  # get scale
-  scale <- grid_width / dims[1]
-  # get height
-  grid_height <- (dims[2] * scale) * height_to_width_ratio
-  # return dims
-  c(grid_width, grid_height)
-}
-
-# Get cluster centroids from a Seurat or cell_data_set object
-get_centroids <- function(object, reduction, lvl) {
-
-  if (class(object)[1] == "Seurat") {
-    embeddings <- object@reductions[[reduction]]@cell.embeddings
-    metadata <- object@meta.data
-  } else if (class(object)[1] == "cell_data_set") {
-    embeddings <- SingleCellExperiment::reducedDims(object)[[reduction]]
-    metadata <- SummarizedExperiment::colData(object) %>% dplyr::as_tibble()
-  }
-
-  dplyr::tibble(
-    x = embeddings[,1],
-    y = embeddings[,2],
-    metadata
-  ) %>%
-    dplyr::group_by(get(lvl)) %>%
-    dplyr::summarise(x = median(x), y = median(y)) %>%
-    dplyr::rename(!!lvl := `get(lvl)`)
-
 }
 
 #' Identify the genes most specifically expressed in groups of cells
@@ -613,6 +570,7 @@ generate_garnett_marker_file <- function(marker_test_res,
   message("Garnett marker file written to ", file)
 }
 
+
 # get singler annot labels for plotting
 get_singler_annot_label <- function(cds, annot, lvl) {
   level = lvl
@@ -668,6 +626,40 @@ plot_markers_on_umap <- function(object, ml, final_umap) {
                             top = NULL)
   return(p)
 }
+
+# get cluster centroids from a Seurat or cell_data_set object
+get_centroids <- function(object, reduction, lvl) {
+
+  if (class(object)[1] == "Seurat") {
+    embeddings <- object@reductions[[reduction]]@cell.embeddings
+    metadata <- object@meta.data
+  } else if (class(object)[1] == "cell_data_set") {
+    embeddings <- SingleCellExperiment::reducedDims(object)[[reduction]]
+    metadata <- SummarizedExperiment::colData(object) %>% dplyr::as_tibble()
+  }
+
+  dplyr::tibble(
+    x = embeddings[,1],
+    y = embeddings[,2],
+    metadata
+  ) %>%
+    dplyr::group_by(get(lvl)) %>%
+    dplyr::summarise(x = median(x), y = median(y)) %>%
+    dplyr::rename(!!lvl := `get(lvl)`)
+
+}
+
+# calculate plot height for grids
+get_fig_dims <- function(n_plots, n_cols = NULL, grid_width = 10, height_to_width_ratio = 1) {
+  # get dims
+  dims <- ggplot2::wrap_dims(n_plots, n_cols)
+  # get scale
+  scale <- grid_width / dims[1]
+  # get height
+  grid_height <- (dims[2] * scale) * height_to_width_ratio
+  # return dims
+  c(grid_width, grid_height)
+}
 ```
 
 # Run info {-}
@@ -682,713 +674,13 @@ curr_params %>%
   knitr::kable()
 ```
 
-# Output info {-}
+# Load object
 
-Output files will be saved to **`r curr_params$output$dir`**.
-
-Figures will be saved to **`r curr_params$output$dir`qc_report_files/figure-html/**.
-
-Intermediate objects will be cached to **`r curr_params$output$dir`qc_report_cache/html/**.
-
-# `Seurat` pre-processing
-
-## Detect snRNA-seq platform
-
-``` {r detect_platform}
-input_files <- list.files(curr_params$input$dir)
-platform_files <- list(
-  "Parse Biosciences" = c("DGE.mtx", "all_genes.csv", "cell_metadata.csv"),
-  "10X Genomics" = c("matrix.mtx.gz", "features.tsv.gz", "genes.tsv.gz", "barcodes.tsv.gz")
-)
-platform <-
-  platform_files %>%
-  purrr::map(~ (.x %>% intersect(input_files) %>% length) == 3) %>%
-  unlist() %>%
-  {platform_files[.]} %>%
-  names
+```{r load_seu}
+cds <- readRDS(params$rds_file)
 ```
 
-The input data comes from the *`r platform`* platform and includes `r paste(input_files, sep = ", ")` files.
-
-## Load data and apply gene-level filter
-
-Load input Seurat object with no cut-offs, remove any missing samples, add sample metadata, add summary statistics, and optionally subset samples. 
-
-Then, filter nuclei per gene, based on the `n_nuclei_per_gene$min` argument. Genes that are present in very few nuclei of the dataset (e.g., <3) are uninformative and unlikely to help in differentiating between groups of nuclei. In general, most genes removed by this filtering step will be those not detected in any nuclei, which will help to trim the size of the object. Additionally, genes are removed that have entries in all nuclei but whose entries are all zero. 
-
-The minimum number of nuclei per gene is set to **`r curr_params$filter$n_feature_RNA$min`**.
-
-``` {r load_data, warning = F}
-seu <- xfun::cache_rds({
-  
-  if (platform == "10X Genomics") {
-    
-    # read in expression matrix
-    dge_mat <- Seurat::Read10X(curr_params$input$dir)
-    
-    # create seurat object
-    seu <- Seurat::CreateSeuratObject(counts = dge_mat)
-    
-  } else if (platform == "Parse Biosciences") {
-    
-    # read in expression matrix
-    dge_mat <- Seurat::ReadParseBio(curr_params$input$dir)
-    
-    # read in cell metadata
-    cell_metadata <-
-      curr_params$input$dir %>%
-      paste0("/cell_metadata.csv") %>%
-      readr::read_csv(show_col_types = F) %>%
-      tibble::column_to_rownames("bc_wells") %>%
-      as.data.frame()
-    
-    # create seurat object
-    seu <-
-      dge_mat %>%
-      Seurat::CreateSeuratObject(
-        names.field = 0,
-        meta.data = cell_metadata,
-        min_genes = curr_params$filter$n_feature_RNA$min,
-        min_cells = curr_params$filter$n_nuclei_per_gene$min
-      )
-    
-  }
-  
-  # conditionally add sample metadata
-  if (curr_params$input$sample_metadata_file != F) {
-
-    # read in sample metadata and add to misc slot
-    seu@misc$sample_metadata <-
-      readr::read_tsv(curr_params$input$sample_metadata_file, show_col_types = F)
-
-    # add to Seurat object meta.data
-    seu@meta.data <-
-      dplyr::left_join(
-        seu@meta.data,
-        seu@misc$sample_metadata %>%
-          dplyr::select(sample, dplyr::any_of(groupings)),
-        by = "sample")
-    rownames(seu@meta.data) <- colnames(seu)
-
-  }
-  
-  # remove genes with no counts
-  counts <- as.matrix(seu@assays$RNA@counts)
-  seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
-  
-  # remove NA samples
-  seu <- subset(seu, subset = sample %in% seu$sample[!is.na(seu$sample)])
-  
-  # return
-  seu
-  
-}, file = "seu.rds")
-```
-
-```{r summary_statistics_plot, class.source = 'fold-hide', message = F, warning = F, fig.height = 15, fig.cap = "Plot of summary statistics by sample"}
-p <-
-  seu@meta.data %>%
-  tibble::as_tibble() %>%
-  dplyr::group_by(sample) %>%
-  dplyr::summarise(
-    n_nuclei = dplyr::n(),
-    median_nCount_RNA = median(nCount_RNA),
-    median_nFeature_RNA = median(nFeature_RNA)
-  ) %>%
-  tidyr::pivot_longer(-sample, names_to = "statistic") %>%
-  ggplot2::ggplot(ggplot2::aes(x = sample, y = value)) +
-  ggplot2::geom_col() +
-  ggplot2::facet_grid(statistic ~ ., scales = "free") +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
-  ggplot2::theme_classic()
-p
-```
-
-## Filter nuclei
-
-Nucleus-level filtering is performed, applying cut-offs to `nCount_RNA`, `nFeature_RNA`, `percent_mito`, and `doublet` values of each nucleus.
-
-* Unusually high transcript / gene counts indicate multiplets.
-* Unusually low transcript / gene counts indicate barcoding of nuclei with damaged membranes, which are likely low-quality and uninformative.
-* A high percentage of mitochondrial genes indicates death, loss of cytoplasmic RNA, or increased apoptosis. Differences in the application of this filter between scRNA-seq and snRNA-seq are not well covered in literature. Intuitively, snRNA-seq data should be treated with a more stringent cut-off, as it should only include nuclear RNA. However, the renal cortex has an exceptionally high level of mitochondrial activity, so this cut-off has been relaxed somewhat for the VHL dataset. 
-* Nuclei with a high nFeature_RNA:nCount_RNA ratio could be from dying cells.
-
-### Annotate doublets
-
-Putative doublets are identified using the `scDblFinder` package. This package creates artificial doublets by grouping together random pairs of nuclei within each sample to create pseudo-doublets, and then identifying nuclei that cluster near to these pseudo-doublets during dimensionality reduction. This co-clustering indicates that they carry a doublet signature. 
-
-The `remove_doublets` argument is set to **`r  curr_params$filter$doublets`**.
-`r if (curr_params$filter$doublets == T) {"Doublets will be identified and removed." }`
-`r if (curr_params$filter$doublets == F) {"A dummy column will be introduced, treating all nuclei as though they are singlets."}`
-
-```{r identify_doublets, eval =  curr_params$filter$doublets == T, include =  curr_params$filter$doublets == T}
-seu <- xfun::cache_rds({
-  seu_dbl <- scDblFinder::scDblFinder(
-    Seurat::as.SingleCellExperiment(seu), samples = "sample"
-  )
-  seu$doublet <- as.numeric(seu_dbl$scDblFinder.class == "doublet")
-  seu
-}, file = "seu_doublets.rds")
-```
-
-```{r ignore_doublets, eval =  curr_params$filter$doublets == F, include =  curr_params$filter$doublets == F}
-seu$doublet <- 0
-```
-
-```{r detected_doublets, eval =  curr_params$filter$doublets == T, class.source = 'fold-hide', fig.cap = "Plot of detected doublets in each sample (using scDblFinder)"}
-p_dat <- 
-  seu@meta.data[,c("sample", "doublet", "nCount_RNA", "nFeature_RNA")] %>% 
-  dplyr::group_by(sample) %>%
-  dplyr::mutate(is_doublet = doublet == 1,
-                n_doublets = sum(doublet),
-                n_singlets = sum(!doublet))
-p1 <- 
-  p_dat %>% 
-  tidyr::pivot_longer(c("n_doublets", "n_singlets"), values_to = "count") %>%
-  ggplot2::ggplot(ggplot2::aes(y = count, x = sample, fill = name)) +
-  ggplot2::geom_col() +
-  ggplot2::scale_fill_manual(
-    name = "",
-    values = c(n_singlets = dittoSeq::dittoColors()[1],
-               n_doublets = dittoSeq::dittoColors()[2])) +
-  ggplot2::theme(axis.text = ggplot2::element_text(size = 6),
-                 axis.text.x = ggplot2::element_text(angle = 90),
-                 legend.position = "none") 
-p2 <-
-  p_dat %>%
-  tidyr::pivot_longer(c("nCount_RNA", "nFeature_RNA"), values_to = "count") %>%
-  ggplot2::ggplot(ggplot2::aes(y = count, x = sample)) +
-  ggplot2::geom_jitter(data = . %>% dplyr::filter(!is_doublet), height = 0,
-                       ggplot2::aes(colour = "singlet"), size = 0.2) +
-  ggplot2::geom_jitter(data = . %>% dplyr::filter(is_doublet), height = 0,
-                       ggplot2::aes(colour = "doublet"), size = 0.2) +
-  ggplot2::facet_wrap(~ name, scales = "free") +
-  ggplot2::scale_colour_manual(
-    name = "",
-    values = c(singlet = dittoSeq::dittoColors()[1],
-               doublet = dittoSeq::dittoColors()[2])) +
-  ggplot2::theme(axis.text = ggplot2::element_text(size = 7),
-                 axis.text.x = ggplot2::element_text(angle = 90),
-                 axis.title.y = ggplot2::element_blank(),
-                 legend.position = "bottom") +
-  patchwork::plot_layout(ncol = 2, widths = c(1, 2))
-p1 + p2
-```
-
-### Annotate transcript types
-
-Proportions of transcript types of interest (mitochondrial, ribosomal, globin) are annotated. Mitochondrial genes are particularly of interest for filtering, but it is good practice to inspect the others as well.
-
-* `percent_mito` - A high percentage of mitochondrial genes indicates death, loss of cytoplasmic RNA, or increased apoptosis.
-* `percent_ribo` - mRNA that code for ribosomal proteins. They do not point to specific issues, but it can be good to have a look at their relative abundance. They can have biological relevance.
-* `percent_globin` - Globin genes are very abundant in erythrocytes. Depending on your application, you can expect ‘contamination’ of erythrocytes and select against it.
-
-```{r annotate_transcript_types}
-transcript_types <-
-  list(mito = "^MT-",
-       ribo = "^RP[SL]",
-       globin = "^HB[^(P)]") 
-
-transcript_types %>%
-  names %>%
-  purrr::map(function(tt) {
-    # use `<<` for global assignment
-    seu <<-
-      seu %>%
-      Seurat::PercentageFeatureSet(
-        pattern = transcript_types[[tt]],
-        col.name = paste0("percent_", tt))
-  })
-```
-
-### Define nucleus-level filters
-
-The `filter.do_filtering` argument is set to **`r curr_params$filter$do_filtering`**.
-`r if (curr_params$filter$do_filtering == T) {"Filters will be applied." }`
-`r if (curr_params$filter$do_filtering == F) {"Dummy filters will be set (min = -Inf, max = Inf) and all nuclei will be retained." }`
-
-```{r get_filters}
-# seu <- get_filters(
-#   seu,
-#   curr_params$filter$do_filtering,
-#   curr_params$filter$doublet,
-#   curr_params$filter$nCount_RNA$min,
-#   curr_params$filter$nCount_RNA$max,
-#   curr_params$filter$nFeature_RNA$min,
-#   curr_params$filter$nFeature_RNA$max,
-#   curr_params$filter$percent_mito$max
-# )
-
-# get filters (user-provided or median + n_mads * MAD)
-if(curr_params$filter$do_filtering == T) {
-  filters <- curr_params$filter[c("nCount_RNA", "nFeature_RNA", "percent_mito")]
-  filters$doublet <- list(min = 0, max = ifelse(curr_params$filter$doublets == T, 0, 1))
-} else {
-  filters <- list(
-    "doublet" = list(min = -Inf, max = Inf),
-    "nCount_RNA" = list(min = -Inf, max = Inf),
-    "nFeature_RNA" = list(min = -Inf, max = Inf),
-    "percent_mito" = list(min = -Inf, max = Inf)
-  )
-}
-
-# add to seu
-seu@misc$filters <- filters
-
-# create misc table of pass/fail nuclei, with fail criteria
-seu@misc$nucleus_filtering <-
-  seu@meta.data[, colnames(seu@meta.data) %in% c("sample", names(filters))] %>%
-  dplyr::as_tibble(rownames = "nucleus") %>%
-  tidyr::pivot_longer(-c(nucleus, sample)) %>%
-  dplyr::rowwise() %>%
-  dplyr::mutate(
-    fail_criteria = ifelse(
-      value < filters[[name]]$min, paste0("min_", name),
-      ifelse(
-        value > filters[[name]]$max, paste0("max_", name),
-        NA
-      )
-    ),
-    pass = is.na(fail_criteria)) %>%
-  dplyr::group_by(nucleus, sample) %>%
-  dplyr::mutate(pass = all(pass),
-                fail_criteria = fail_criteria %>% unique %>% na.omit %>% paste(collapse = ",") %>% dplyr::na_if(., "")) %>%
-  tidyr::pivot_wider(id_cols = c("nucleus", "sample", "pass", "fail_criteria")) %>%
-  dplyr::ungroup()
-```
-
-#### Fail criteria statistics
-
-```{r calc_n_retained, include = F}
-n_retained <- nrow(dplyr::filter(seu@misc$nucleus_filtering, pass))
-n_total <- nrow(seu@misc$nucleus_filtering)
-```
-
-`r paste0("**", round((n_retained / n_total) * 100, 1), "%** (", n_retained, " / ", n_total, ") of nuclei retained.")`
-
-```{r fail_criteria_stats, echo = F, message = F}
-options(knitr.kable.NA = '')
-dplyr::left_join(
-  seu@misc$filters %>% dplyr::bind_rows(.id = "fail_criteria") %>%
-    tidyr::pivot_longer(c("min", "max")) %>%
-    dplyr::transmute(fail_criteria = paste(name, fail_criteria, sep = "_"), value),
-  seu@misc$nucleus_filtering %>%
-  dplyr::filter(!pass) %>%
-  tidyr::separate_longer_delim(fail_criteria, ",") %>%
-  dplyr::count(fail_criteria) %>%
-  dplyr::mutate(`%` = round((n / n_total) * 100, 2)),
-  by = "fail_criteria"
-) %>%
-  dplyr::arrange(-n) %>%
-  dplyr::bind_rows(dplyr::tibble(fail_criteria = "total:", 
-                                 n = n_total - n_retained,
-                                 `%` = round((n / n_total) * 100, 2))) %>%
-  knitr::kable(align = c("c", "c", "c", "c", "c"))
-```
-
-```{r fail_criteria_plot, class.source = 'fold-hide', fig.cap = "Plot of the proportions of filtered nuclei and their fail criteria for each sample"}
-p <- 
-  seu@misc$nucleus_filtering %>%
-  dplyr::group_by(sample) %>%
-  dplyr::count(fail_criteria) %>%
-  ggplot2::ggplot(ggplot2::aes(x = sample, y = n, fill = fail_criteria)) +
-  ggplot2::geom_col() +
-  ggplot2::theme_minimal() +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
-  ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "grey")
-p
-```
-
-```{r filters_vs_distribution_vln_plot, class.source = 'fold-hide', message = F, warning = F, fig.height = 10, fig.width = 10, fig.cap = "Plot of filters vs feature distribution"}
-p <- 
-    seu@misc$nucleus_filtering %>%
-    tidyr::pivot_longer(names(seu@misc$filters)) %>%
-    dplyr::left_join(seu@misc$filters %>%
-                       purrr::map(~dplyr::as_tibble(.)) %>%
-                       dplyr::bind_rows(.id = "name"),
-                     by = "name") %>%
-    dplyr::group_by(fail_criteria) %>%
-    ggplot2::ggplot(ggplot2::aes(x = sample, y = value)) +
-    ggplot2::geom_jitter(ggplot2::aes(colour = pass),
-                         height = 0, alpha = 0.5, size = 0.6) +
-    ggplot2::geom_violin(ggplot2::aes(fill = sample), alpha = 0.8,
-                         draw_quantiles = 0.5) +
-    ggplot2::geom_hline(ggplot2::aes(yintercept = min), colour = "red") +
-    ggplot2::geom_hline(ggplot2::aes(yintercept = max), colour = "red") +
-    ggplot2::facet_wrap(~ name, scales = "free") +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
-    ditto_colours +
-    ggplot2::scale_colour_manual(values = c("darkgrey", "black"))
-p
-```
-
-```{r log_filters_vs_distribution_vln_plot, class.source = 'fold-hide', message = F, warning = F, fig.height = 10, fig.width = 10, fig.cap = "Plot of filters vs feature distribution (log scale)"}
-p + ggplot2::scale_y_log10()
-```
-
-```{r nucleus_scatter_with_filters_plot, class.source = 'fold-hide', fig.width = 10, fig.cap = "Plot of filters against distribution of nuclei"}
-plot_nucleus_scatter_with_filters <- function(seu, x, y, ditto_colours, log_x = F, log_y = F) {
-  dat <- seu@misc$nucleus_filtering %>%
-    dplyr::mutate(x_var = get(x) %>% { if(log_x) log(.) else . },
-                  y_var = get(y) %>% { if(log_y) log(.) else . },
-                  title = paste0(x, " n fail = ", sum(grepl(x, fail_criteria)), " / ", dplyr::n(), "\n",
-                                 y, " n fail = ", sum(grepl(y, fail_criteria)), " / ", dplyr::n()))
-  dat %>%
-    ggplot2::ggplot(ggplot2::aes(x = x_var, y = y_var, colour = fail_criteria)) +
-    ggplot2::geom_vline(xintercept = unlist(seu@misc$filters[[x]]) %>% { if(log_x) log(.) else . },
-                        colour = "red") +
-    ggplot2::geom_hline(yintercept = unlist(seu@misc$filters[[y]]) %>% { if(log_y) log(.) else . },
-                        colour = "red") +
-    ggplot2::geom_point(size = 0.5, alpha = 0.7) +
-    ggplot2::geom_point(data = . %>% dplyr::filter(pass == F), size = 0.5, alpha = 0.7) +
-    ggplot2::labs(title = unique(dat$title),
-                  x = paste0(ifelse(log_x, "log ", ""), x),
-                  y = paste0(ifelse(log_y, "log ", ""), y)) +
-    ditto_colours +
-    ggplot2::theme(plot.title = ggplot2::element_text(size = 10))
-
-}
-p <- 
-    plot_nucleus_scatter_with_filters(seu, "nCount_RNA", "percent_mito", ditto_colours) +
-    ggplot2::theme(legend.position = "none") +
-    plot_nucleus_scatter_with_filters(seu, "nCount_RNA", "nFeature_RNA", ditto_colours)
-p
-```
-
-```{r log_nucleus_scatter_with_filters_plot, class.source = 'fold-hide', fig.width = 10, fig.cap = "Plot of filters against distribution of nuclei (log scale)"}
-p + ggplot2::scale_x_log10() + ggplot2::scale_y_log10()
-```
-
-### `r if (curr_params$filter$do_filtering) {"Apply nucleus-level filters"}`
-
-```{r filter_nuclei, eval = curr_params$filter$do_filtering == T, include = curr_params$filter$do_filtering == T}
-seu <- xfun::cache_rds({
-  # remove failing nuclei 
-  seu <- subset(seu, cells = unique(dplyr::filter(seu@misc$nucleus_filtering, pass)$nucleus))
-  # remove genes with no counts
-  counts <- as.matrix(seu@assays$RNA@counts)
-  seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
-  seu
-}, file = "seu_filtered.rds")
-```
-
-# `Seurat` processing
-
-## Find highest variable genes
-
-Find the most highly variable genes (HVGs) across samples.
-
-```{r hvg, message = F, warning = F}
-seu <- xfun::cache_rds({
-  Seurat::FindVariableFeatures(seu)
-}, file = "seu_hvg.rds")
-```
-
-```{r hvg_scatter_plot, class.source = 'fold-hide', warning = F, message = F, fig.cap = "Plot of HVGs"}
-p <- 
-  Seurat::LabelPoints(
-    plot = Seurat::VariableFeaturePlot(seu, raster = F),
-    points = head(Seurat::VariableFeatures(seu), 10),
-    repel = T
-  ) +
-    ggplot2::theme(legend.position = "top")
-p
-```
-
-```{r hvg_heatmap_plot, class.source = 'fold-hide', fig.cap = "Heatmap of top 20 HVGs"}
-p <- 
-  dittoSeq::dittoHeatmap(
-    seu,
-    genes = head(Seurat::VariableFeatures(seu), 20),
-    annot.by = "sample",
-    scaled.to.max = T
-  )
-p
-```
-
-## Normalisation and scaling
-
-`Seurat::SCTransform()` performs normalisation and scaling of the data. 
-
-Variables to regress out of the `SCTransform` residuals  (set by argument `vars_to_regress`) are **`r paste(curr_params$vars_to_regress, collapse = "** and **")`**. These variables are prevented from contributing much to the PCA during dimensionality reduction, and thus confounding the analysis, as they are considered to be a source of irrelevant variation.
-
-```{r sctransform, results = F, warning = F}
-seu <- xfun::cache_rds({
-  Seurat::SCTransform(seu, vars.to.regress = curr_params$vars_to_regress)
-}, file = "seu_transformed.rds")
-```
-
-## Annotate cell cycle phases
-
-Nuclei are assigned a score representing the likelihood that they are in each phase of the cell cycle. This is based on the expression levels of genes associated with each phase. The highest probability phase of each nucleus is stored in a new "Phase" column of the metadata.
-
-```{r annotate_cell_cycle_phases}
-seu <- Seurat::CellCycleScoring(
-  seu,
-  s.features = Seurat::cc.genes$s.genes,
-  g2m.features = Seurat::cc.genes$g2m.genes
-)
-```
-
-## Defining dimensionality
-
-Dimensionality reduction is performed to isolate the strongest signals and to remove background noise. First, we must perform linear dimensionality reduction and then decide the dimensionality of the data.
-
-### Linear dimensionality reduction (PCA)
-
-```{r run_pca}
-seu <- xfun::cache_rds({
-  Seurat::RunPCA(seu)
-}, file = "seu_pca.rds")
-```
-
-```{r pc1_vs_pc2_plot, class.source = 'fold-hide', fig.cap = "Plot of PC1 vs PC2, coloured by sample"}
-p <- 
-  dittoSeq::dittoDimPlot(seu, "sample", reduction.use = "pca", raster = F) 
-p
-```
-
-```{r pca_dim, class.source = 'fold-hide', fig.cap = "Plot of cells and genes sorted by their PC scores for PC1 and PC2"}
-p <- 
-  Seurat::DimHeatmap(
-    seu,
-    dims = 1:2,
-    cells = 500,
-    balanced = TRUE,
-    raster = F,
-    fast = F
-  )
-p
-```
-
-```{r top_genes_pc1_pc2, class.source = 'fold-hide', fig.cap = "Plot of top genes associated with PC1 and PC2"}
-p <- 
-  Seurat::VizDimLoadings(seu, dims = 1:2, reduction = "pca")
-p
-```
-
-### Dimensionality of the data
-
-The dimensionality of the dataset to use for downstream analysis must be decided. This is the number of principal components believed to capture the majority of true biological signal in the dataset. Using too many PCs usually does not affect the result too much, while including too few PCs can be detrimental, as meaningful biological variation may be lost. Therefore, it is better to be overgenerous when defining the dimensionality of the data than to underestimate it.
-
-The dimensionality can be decided by consulting the elbow plot (see below) and manually picking a value (set by argument `n_dims`) or it can be calculated using the `intrinsicDimension` package. 
-
-```{r usr_n_dims_msg, echo = F, eval = curr_params$n_dims != F, results = 'asis'}
-cat("### Manually\n")
-cat(paste0("Dimensionality of the data is **", curr_params$n_dims, "** (set by argument n_dims).\n"))
-```
-
-```{r usr_n_dims, include = curr_params$n_dims != F, eval = curr_params$n_dims != F}
-final_n_dims <- curr_params$n_dims
-```
-
-#### intrinsicDimension
-
-```{r iD_msg, echo = F, eval = curr_params$n_dims == F, results = 'asis'}
-cat("No value was provided for `n_dims`, so dimensionality will be calculated using the intrinsicDimensions package.\n")
-```
-
-The dimensionality of the dataset can be estimated using the `intrinsicDimension` package. This bypasses the manual approach of reading the elbow plot, but can sometimes be a bit too conservative. Therefore, if `n_dims` is not defined by the user, the dimensionality is set as double the `intrinsicDimension` estimate. 
-
-```{r iD_n_dims}
-n_dims_iD <- xfun::cache_rds({
-  intrinsicDimension::maxLikGlobalDimEst(
-    seu@reductions$pca@cell.embeddings,
-    k = 10
-  )$dim.est %>% round(0)
-}, file = "n_dims_iD.rds")
-generous_n_dims <- round(2 * n_dims_iD, 0)
-```
-
-```{r iD_n_dims_set, include = curr_params$n_dims == FALSE, eval = curr_params$n_dims == FALSE}
-final_n_dims <- generous_n_dims
-```
-
-Dimensionality set to **`r final_n_dims`**.
-
-```{r elbow_plot, class.source = 'fold-hide', fig.cap = "Elbow plot"}
-p <-
-  Seurat::ElbowPlot(seu, ndims = max(50, final_n_dims)) &
-  ggplot2::geom_vline(
-    ggplot2::aes(xintercept = final_n_dims,
-                 colour = ifelse(curr_params$n_dims == F, "chosen n_dims", "user-provided n_dims")),
-                 linewidth = 1) &
-  ggplot2::geom_vline(ggplot2::aes(xintercept = n_dims_iD, colour = "intrisicDimensions"),
-                      linewidth = 1, linetype = "dashed") &
-  ggplot2::geom_vline(ggplot2::aes(xintercept = generous_n_dims, colour = "generous (iD x 2)"),
-                      linewidth = 1, linetype = "dashed") &
-  ggplot2::scale_colour_manual(
-    name = "n_dims cut-off",
-    values = c(`chosen n_dims` = dittoSeq::dittoColors()[[1]],
-               `user-provided n_dims` = dittoSeq::dittoColors()[[1]],
-               intrisicDimensions = dittoSeq::dittoColors()[[2]],
-               `generous (iD x 2)` = dittoSeq::dittoColors()[[3]])) &
-  ggplot2::theme(legend.position = c(0.7, 0.9),
-                 legend.background = ggplot2::element_rect(fill = "white"))
-p
-```
-
-# `monocle3` processing
-
-The `monocle3` package provides alternative processing approaches for single cell data.   
-
-First, we must convert the data to monocle3's proprietary `cell_data_set` object and fill in gene names and cell cycle scores.
-
-```{r seu_to_cds, results = F, warning = F}
-cds <- xfun::cache_rds({
-  cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
-  SummarizedExperiment::rowData(cds)$gene_short_name <- 
-    row.names(SummarizedExperiment::rowData(cds))
-  SummarizedExperiment::colData(cds)$Phase <-
-    seu$Phase
-  cds
-}, file = "cds.rds")
-```
-
-## Re-pre-processing and linear dimensionality reduction
-
-First, we perform normalisation and principal component analysis again. We use the previously decided dimensionality of the data (**`r final_n_dims`**) from the `Seurat` section.
-
-```{r preprocessing}
-cds <- xfun::cache_rds({
-  monocle3::preprocess_cds(cds, num_dim = final_n_dims)
-}, file = "cds_lin_dim_red.rds")
-```
-
-## Non-linear dimensionality reduction 
-
-Next, we perform non-linear dimensionality reduction of the data (UMAP). 
-
-```{r nonlin_dim_redu, results = F, warning = F, message = F}
-cds <- xfun::cache_rds({
-  monocle3::reduce_dimension(cds, preprocess_method = "PCA")
-}, file = "cds_nonlin_dim_red.rds")
-```
-
-Plotting all different groupings of the data onto the reductions can help reveal batch effects. If certain experimental variables seem to strongly influence the grouping of cells, these effects can be removed. If so, use the `align_cds` step from [this tutorial](https://cole-trapnell-lab.github.io/monocle3/docs/clustering/#reduce-dimension).
-
-```{r avail_groupings, include = F}
-# amend groupings
-avail_groupings <- groupings[groupings %in% colnames(SummarizedExperiment::colData(cds))]
-# reductions
-redus <- c("PCA", "UMAP")
-```
-
-```{r groupings_vs_reductions, class.source = 'fold-hide', fig.dim = get_fig_dims(n_plots = (length(redus) + 1) * length(avail_groupings), n_cols = 3), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings"}
-# plot all groupings vs all reductions
-groupings_vs_reductions <- list()
-purrr::walk(avail_groupings, function(grouping) {
-  purrr::walk(redus, function(redu) {
-    title <- paste0(redu, "_vs_", grouping)
-    p <- 
-      monocle3::plot_cells(
-        cds, 
-        reduction_method = redu, 
-        color_cells_by = grouping,
-        show_trajectory_graph = F, 
-        label_cell_groups = F) 
-    if (!is.numeric(SummarizedExperiment::colData(cds)[, grouping])) {
-      p <- p + ditto_colours
-    }
-    groupings_vs_reductions[[paste0(grouping, "_legend")]] <<-
-      lemon::g_legend(p)
-    groupings_vs_reductions[[title]] <<- 
-      p + 
-      ggplot2::theme(legend.position = "none")
-  })
-})
-# create grob layout
-p <-
-  gridExtra::marrangeGrob(
-    grobs = groupings_vs_reductions,
-    nrow = length(avail_groupings),
-    ncol = length(redus) + 1,
-    layout_matrix = matrix(
-      1:length(groupings_vs_reductions),
-      length(avail_groupings),
-      length(redus) + 1,
-      TRUE
-    ),
-    top = NULL
-  )
-p
-```
-
-## Clustering
-
-From [**Clarke et al., 2021**](https://www.nature.com/articles/s41596-021-00534-0)
-
->  ***Annotating cell states and gradients***
->
->  *When analyzing and characterizing novel cell types, it is important to determine whether they represent a stable cell type or contain multiple cell states. The definitions of cell type and state are not yet standardized, but a stable cell type may be expected to have homogeneous gene expression across a cluster and be compact in a 2D projection plot, whereas cell gradients appear as a spread-out string of cells and cell states (e.g., cell cycle state). Expression gradients indicate continuous differences that are present in the cell population, which could represent states like the cell cycle, immune activation63, spatial patterning64 or transient developmental stages. Care must be taken to distinguish biologically meaningful cell states and experimental batch effects, which can manifest in a similar way.*
-
-We perform unsupervised transcriptome similarity-based clustering to identify groups of nuclei with relatively homogeneous transcript profiles (united by a shared celltype / state). Clustering is performed at different resolutions to explore how groupings change across the parameter space. The aim is to find a resolution at which the clusters appear to best reflect true biological subpopulations of the dataset. 
-
-This process is based on the assumption that true discrete clusters of nuclei do exist within the dataset. The preceding nucleus filtering, feature selection, and dimensionality reduction steps were taken to distill only the highest quality features that reflect the underlying structure of the population and to remove noise that distracts from this structure.  
-
-As with the final dimensionality parameter, there is no deterministic way to set the final clustering resolution and no definitive best value. Instead, one must qualitatively assess clustering outputs for the given dataset and pick a 'good' resolution. Typically, a 'good' final resolution is taken as one that groups nuclei into celltypes. However, looking at multiple clustering resolutions of the same dataset can provide multiple true and valuable conclusions about the dataset at multiple levels of functional subspecialisation of cells. 
-
-Setting a **low clustering resolution** will produce fewer clusters, reflect the broadest subdivisions between groups of nuclei (e.g. different tissues / differentiation lineages), and is more robust to noise, but can miss important local structure within the dataset. 
-
-**Higher clustering resolutions** will result in more, increasingly granular clusters and can reveal celltype-level groups. In can also reveal new / rare celltypes that are hidden at lower resolutions. Setting the clustering resolution too high, however, can produce meaningless groups and lead to overfitting. 
-
-`monocle3` offers an unsupervised clustering function. This function also separates cells into superclusters, called partitions. These represent higher order communities within the dataset, allowing the different resolutions to coexist for downstream analysis.
-
-From **`monocle3::cluster_cells` vignette**
-
-> *Unsupervised clustering of cells is a common step in many single-cell expression workflows. In an experiment containing a mixture of cell types, each cluster might correspond to a different cell type. This function takes a cell_data_set as input, clusters the cells using Louvain/Leiden community detection, and returns a cell_data_set with internally stored cluster assignments. In addition to clusters this function calculates partitions, which represent superclusters of the Louvain/Leiden communities that are found using a kNN pruning method.*
-
-From [**monocle3 documentation**](https://cole-trapnell-lab.github.io/monocle3/docs/trajectories/)
-
-> *Although cells may continuously transition from one state to the next with no discrete boundary between them, Monocle does not assume that all cells in the dataset descend from a common transcriptional "ancestor". In many experiments, there might in fact be multiple distinct trajectories. For example, in a tissue responding to an infection, tissue resident immune cells and stromal cells will have very different initial transcriptomes, and will respond to infection quite differently, so they should be a part of the same trajectory.*
->
-> *Monocle is able to learn when cells should be placed in the same trajectory as opposed to separate trajectories through its clustering procedure. Recall that we run cluster_cells(), each cell is assigned not only to a cluster but also to a partition. When you are learning trajectories, each partition will eventually become a separate trajectory. *
-
-We can now cluster the cells. Monocle3 does not require a user-defined clustering resolution, as it can detect an optimum resolution automatically. Additionally, it groups the data into both high-resolution clusters and low-resolution superclusters (a.k.a. partitions) simultaneously.
-
-```{r cluster_cells}
-lvls <- c("cluster", "partition")
-cds <- xfun::cache_rds({
-  cds <- monocle3::cluster_cells(cds, random_seed = random_seed)
-  # add it to the colData and reorder clusters and partitions numerically
-  SummarizedExperiment::colData(cds)$cluster <- 
-    factor(monocle3::clusters(cds), levels = sort(as.integer(levels(monocle3::clusters(cds)))))
-  SummarizedExperiment::colData(cds)$partition <- 
-    factor(monocle3::partitions(cds), levels = sort(as.integer(levels(monocle3::partitions(cds)))))
-  cds
-}, file = "cds_clustered.rds") 
-```
-
-```{r clustering_tree, class.source = 'fold-hide', fig.dim = c(10, 5), fig.cap = "Clustering tree from partitions (grouping 1) to clusters (grouping 2) of cells"}
-library(clustree)
-p <-
-  data.frame("grouping1" = monocle3::partitions(cds),
-             "grouping2" = monocle3::clusters(cds)) %>%
-    clustree::clustree(prefix = "grouping")
-p
-```
-
-```{r clusters_and_partitions, class.source = 'fold-hide', fig.dim = c(10, 5), fig.cap = "Plot of monocle3 UMAP, coloured by cluster and by partition"}
-final_umap <- 
-  lvls %>%
-  purrr::map(function(lvl) {
-    dittoSeq::dittoDimPlot(cds, lvl, size = 0.5, xlab = NULL, ylab = NULL) +
-    ggplot2::geom_label(
-      data = SummarizedExperiment::colData(cds) %>%
-        dplyr::as_tibble() %>%
-        dplyr::right_join(get_centroids(cds, "UMAP", lvl), by = lvl) %>%
-        dplyr::distinct(get(lvl), x, y),
-      ggplot2::aes(x, y, label = `get(lvl)`),
-      size = 3, fill = "white", alpha = 0.7, label.size = NA) +
-    umap_void_theme
-  })  
-names(final_umap) <- lvls
-p <- 
-  final_umap[["cluster"]] + final_umap[["partition"]]
-p
-```
-
-## Differential expression analysis
+## Top markers
 
 Once cells have been clustered, we can isolate genes that are highly differentially expressed between the clusters. These cluster marker genes can indicate active programmes 
 
@@ -1461,8 +753,9 @@ The package `SingleR` returns "the best annotation for each cell in a test datas
 Some annotations will contain very few nuclei. These are usually not of interest and clutter up plotting, so we remove annotations assigned to < 10 nuclei.
 
 ```{r singler_annots, message = F, warning = F}
+singler_refs <- celldex::BlueprintEncodeData()
+
 cds_singler <- xfun::cache_rds({
-  singler_refs <- celldex::BlueprintEncodeData()
   cds_singler <- SingleR::SingleR(
     test = cds@assays@data$counts,
     ref = singler_refs,
@@ -1476,14 +769,14 @@ cds <- xfun::cache_rds({
     SummarizedExperiment::colData(cds) %>%
     cbind(
       cds_singler %>%
-    dplyr::as_tibble() %>%
-    dplyr::select(singler_annot_fine = labels) %>%
-    dplyr::group_by(singler_annot_fine) %>%
-    dplyr::left_join(
-      SummarizedExperiment::colData(singler_refs) %>%
-        tibble::as_tibble(rownames = "singler_annot_fine") %>%
-        dplyr::select(singler_annot_fine, singler_annot_main = label.main))
-    )
+        dplyr::as_tibble() %>%
+        dplyr::select(singler_annot_fine = labels) %>%
+        dplyr::group_by(singler_annot_fine) %>%
+        dplyr::left_join(
+          SummarizedExperiment::colData(singler_refs) %>%
+            tibble::as_tibble(rownames = "singler_annot_fine") %>%
+            dplyr::select(singler_annot_fine, singler_annot_main = label.main))
+        )
   # add main/fine labels for partitions/clusters
   for (lvl in c("cluster", "partition")) {
     for (annot in c("singler_annot_fine", "singler_annot_main")) {
@@ -1494,6 +787,10 @@ cds <- xfun::cache_rds({
   # return
   cds
 }, file = "cds_singler_annotated.rds")
+```
+
+```{r save}
+saveRDS(cds, "cds_celltype_annotated.rds")
 ```
 
 ```{r singler_annot_fine_heatmap, class.source = 'fold-hide', fig.width = 10, fig.cap = "Heatmap of fine celltype annotation scores from SingleR"}
@@ -1611,15 +908,15 @@ p
 
 ### Manual celltype annotation using curated literature markers
 
-`r if (curr_params$input$markers_file == F) {"No markers_file given." }`
+`r if (curr_params$celltype_annotation$markers_file == F) {"No markers_file given." }`
 
-```{r exit_if_no_markers, eval = curr_params$input$markers_file == F}
+```{r exit_if_no_markers, eval = curr_params$celltype_annotation$markers_file == F}
 knitr::knit_exit()
 ```
 
 ```{r cds_avail_markers, echo = F}
 markers <-
-  curr_params$input$markers_file %>%
+  curr_params$celltype_annotation$markers_file %>%
   readr::read_tsv()
 markers <- 
   split(markers$gene, markers$population)
@@ -1709,13 +1006,25 @@ p
 ```
 
 ```{r knit_module_plots, echo = FALSE, warning = F, message = F, results = 'asis'}
-# get available markers
-
 to_knit <- c()
 agg_mat <- list()
 genes <- list()
 cell_group_df <- list()
+lvls <- c("cluster", "partition")
 
+final_umap <- 
+  lvls %>%
+  purrr::map(function(lvl) {
+    dittoSeq::dittoDimPlot(cds, lvl, size = 0.5, xlab = NULL, ylab = NULL) +
+    ggplot2::geom_label(
+      data = SummarizedExperiment::colData(cds) %>%
+        dplyr::as_tibble() %>%
+        dplyr::right_join(get_centroids(cds, "UMAP", lvl), by = lvl) %>%
+        dplyr::distinct(get(lvl), x, y),
+      ggplot2::aes(x, y, label = `get(lvl)`),
+      size = 3, fill = "white", alpha = 0.7, label.size = NA) +
+    umap_void_theme
+  })  
 
 for(ct in names(avail_markers)) {
   
@@ -1845,4 +1154,40 @@ cell_groupings_summary <- xfun::cache_rds({
 }, file = "cell_groupings_summary.rds")
 
 knitr::kable(cell_groupings_summary, digits = 3)
+```
+
+### Final celltype annotations
+
+`r if (curr_params$celltype_annotation$celltype_annotations_file == F) {"No celltype_annotations_file given." }`
+
+```{r exit_if_no_annots, eval = curr_params$celltype_annotation$celltype_annotations_file == F, include = F}
+knitr::knit_exit()
+```
+
+```{r load_annots}
+annots <- 
+  curr_params$celltype_annotation$celltype_annotations_file %>%
+  readr::read_tsv() %>%
+  dplyr::mutate(dplyr::across(everything(), as.factor))
+```
+
+Provided celltype annotations include `r length(unique(annots$annotation))` celltypes. They annotate the cells based on the *`r intersect(colnames(annots), colnames(SummarizedExperiment::colData(cds)))`* column of the colData.
+
+```{r show_annots, include = F}
+knitr::kable(annots)
+```
+
+```{r annotate_celltypes}
+SummarizedExperiment::colData(cds) <-
+  cbind(
+    SummarizedExperiment::colData(cds),
+    SummarizedExperiment::colData(cds) %>%
+      tibble::as_tibble(rownames = "cell") %>%
+      dplyr::left_join(annots) %>%
+      dplyr::select(annotation)
+  )
+```
+
+```{r save}
+saveRDS(cds, "cds_celltype_annotated.rds")
 ```

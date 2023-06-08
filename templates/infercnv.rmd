@@ -1,0 +1,160 @@
+---
+title: "snRNAseq workflow: inferCNV"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+params:
+  params_file: false
+  rds_file: false
+output:
+  html_document:
+    keep_md: true
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: true
+    theme: lumen
+---
+
+```{r initialise, include = F}
+# magrittr, gridExtra, clustree, monocle3 must be loaded in the environment (due to package-specific bugs)
+library(gridExtra)
+library(monocle3)
+library(magrittr)
+
+# load params file
+# base_dir=ifelse(Sys.info()["nodename"]=="Alexs-MacBook-Air-2.local","/Volumes/TracerX/","/camp/project/tracerX/");setwd(paste0(base_dir,"working/VHL_GERMLINE/tidda/snRNAseq_workflow/"))
+# cluster: # params <- list(params_file = "output/params.json")
+# local:   # params <- list(params_file = "test/local_params.json")
+curr_params <- 
+  rjson::fromJSON(file = params$params_file) %>% 
+  type.convert(as.is = T)
+
+# set seed for repeatability
+set.seed(42)
+random_seed = 42
+
+# set ggplot presets
+ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_update(legend.text = ggplot2::element_text(size = 7))
+ditto_colours <- list(ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "white"),
+                      ggplot2::scale_colour_manual(values = dittoSeq::dittoColors(), na.value = "white"))
+umap_void_theme <-
+  ggplot2::theme(axis.text = ggplot2::element_blank(),
+                 axis.title = ggplot2::element_blank(),
+                 axis.ticks = ggplot2::element_blank(),
+                 legend.position = "none",
+                 plot.margin = ggplot2::unit(c(2,2,2,2), "pt"))
+
+# chunk setup
+knitr::opts_chunk$set(fig.align = "center",
+                      dpi = 300, 
+                      cache.path = paste0(curr_params$output$dir, "celltype_annotation/celltype_annotation_cache/"))
+```
+
+```{r define_functions, include = F}
+# flatten lists
+flatten_list <- function (x, use.names = TRUE, classes = "ANY") 
+{
+    len <- sum(rapply(x, function(x) 1L, classes = classes))
+    y <- vector("list", len)
+    i <- 0L
+    items <- rapply(x, function(x) {
+        i <<- i + 1L
+        y[[i]] <<- x
+        TRUE
+    }, classes = classes)
+    if (use.names && !is.null(nm <- names(items))) 
+        names(y) <- nm
+    y
+}
+```
+
+# Run info {-}
+
+```{r curr_params, echo = F}
+curr_params %>%
+  flatten_list() %>%
+  {tibble::tibble(
+    param = names(.), 
+    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 100))
+  } %>%
+  knitr::kable()
+```
+
+# Load object
+
+```{r load_seu}
+cds <- readRDS(params$rds_file)
+```
+
+# Copy number analysis
+
+## Run `inferCNV`
+
+`r if ("malignant" %ni% SummarizedExperiment::colData(cds)$final_annotation) { "inferCNV requires a malignant cluster as a query for CNV analysis, but the final celltype annotations do not include any 'malignant' cells. Please run the package again with a 'malignant' group specified in order to run inferCNV." }`
+
+```{r exit_if_no_malignant, eval = !("malignant" %in% SummarizedExperiment::colData(cds)$final_annotation)}
+# truncate document if no malignant annotations have been provided
+knitr::knit_exit()
+```
+
+From [**github.com/broadinstitute/inferCNV/wiki**](https://github.com/broadinstitute/inferCNV/wiki)
+
+>  ***InferCNV: Inferring copy number alterations from tumor single cell RNA-Seq data***
+>
+> *InferCNV is used to explore tumor single cell RNA-Seq data to identify evidence for somatic large-scale chromosomal copy number alterations, such as gains or deletions of entire chromosomes or large segments of chromosomes. This is done by exploring expression intensity of genes across positions of tumor genome in comparison to a set of reference 'normal' cells. A heatmap is generated illustrating the relative expression intensities across each chromosome, and it often becomes readily apparent as to which regions of the tumor genome are over-abundant or less-abundant as compared to that of normal cells.*
+
+```{r get_ref_cts}
+ref_annots <- stringr::str_split(curr_params$infercnv$reference_celltypes, ",")[[1]]
+```
+
+We annotate all `r paste(ref, sep = " and ")` cells as matched normal and use this to infer copy number variants in the malignant population. Unlike CNVs called from bulk genotyping data, `inferCNV` can also reveal subclonal events in the tumour that only occur in some cell lineages, but not others. 
+
+```{r run_infercnv}
+infercnv_annots <-
+  cds %>%
+  SummarizedExperiment::colData() %>%
+  tibble::as_tibble(rownames = "cell") %>%
+  # only malignant and reference annotations
+  dplyr::filter(annotation %in% c("malignant", ref_annots)) %>%
+  dplyr::transmute(
+     cell,
+     infercnv_population = dplyr::case_when(
+       annotation == "malignant" ~ paste0("malignant_", sample),
+       TRUE ~ annotation)) %>%
+    dplyr::group_by(infercnv_population) %>%
+    # remove lineages containing only 1 cell
+    dplyr::filter(dplyr::n() > 1)
+
+# save
+infercnv_annots %>%
+  readr::write_tsv("infercnv_annots.tsv", col_names = F)
+
+# create infercnv object
+infercnv_obj <-
+ infercnv::CreateInfercnvObject(
+   raw_counts_matrix = as.matrix(cds@assays@data$counts),
+   annotations_file = "infercnv_annots.tsv",
+   gene_order_file = "gencode.v43.basic.annotation_clean.bed",
+   ref_group_names = ref_annots
+ )
+
+# perform infercnv operations to reveal cnv signal
+dir.create("infercnv/")
+options(scipen = 100)
+infercnv_obj <-
+ infercnv::run(
+   infercnv_obj,
+   cutoff = 0.1,
+   out_dir = "infercnv/",
+   cluster_by_groups = T,
+   denoise = T,
+   HMM = T, 
+   resume_mode = T,
+   analysis_mode = "subclusters"
+ )
+```
