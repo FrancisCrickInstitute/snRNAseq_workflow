@@ -128,8 +128,8 @@ p <-
   ggplot2::ggplot(ggplot2::aes(x = sample, y = value)) +
   ggplot2::geom_col() +
   ggplot2::facet_grid(statistic ~ ., scales = "free") +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
-  ggplot2::theme_classic()
+  ggplot2::theme_classic() +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) 
 p
 ```
 
@@ -137,7 +137,7 @@ p
 
 Filter nuclei per gene, based on the `n_nuclei_per_gene$min` argument. Genes that are present in very few nuclei of the dataset are uninformative and unlikely to help in differentiating between groups of nuclei. In general, most genes removed by this filtering step will be those not detected in any nuclei, which will help to trim the size of the object. Additionally, genes are removed that have entries in all nuclei but whose entries are all zero. 
 
-The minimum number of nuclei per gene is set to **`r curr_params$filter$n_feature_RNA$min`**.
+The minimum number of nuclei per gene is set to **`r curr_params$filter$n_nuclei_per_gene$min`**.
 
 ```{r filter_n_nuclei_per_gene}
 seu_mtx <- Seurat::GetAssayData(seu, slot="counts")
@@ -165,13 +165,10 @@ The `remove_doublets` argument is set to **`r  curr_params$filter$doublets`**.
 `r if (curr_params$filter$doublets == F) {"A dummy column will be introduced, treating all nuclei as though they are singlets."}`
 
 ```{r identify_doublets, eval =  curr_params$filter$doublets == T, include =  curr_params$filter$doublets == T}
-seu <- xfun::cache_rds({
-  seu_dbl <- scDblFinder::scDblFinder(
-    Seurat::as.SingleCellExperiment(seu), samples = "sample"
-  )
-  seu$doublet <- as.numeric(seu_dbl$scDblFinder.class == "doublet")
-  seu
-}, file = "seu_doublets.rds")
+seu_dbl <- 
+  scDblFinder::scDblFinder(
+    Seurat::as.SingleCellExperiment(seu), samples = "sample")
+seu$doublet <- as.numeric(seu_dbl$scDblFinder.class == "doublet")
 ```
 
 ```{r ignore_doublets, eval =  curr_params$filter$doublets == F, include =  curr_params$filter$doublets == F}
@@ -395,14 +392,11 @@ p + ggplot2::scale_x_log10() + ggplot2::scale_y_log10()
 ### `r if (curr_params$filter$do_filtering) {"Apply nucleus-level filters"}`
 
 ```{r filter_nuclei, eval = curr_params$filter$do_filtering == T, include = curr_params$filter$do_filtering == T}
-seu <- xfun::cache_rds({
-  # remove failing nuclei 
-  seu <- subset(seu, cells = unique(dplyr::filter(seu@misc$nucleus_filtering, pass)$nucleus))
-  # remove genes with no counts
-  counts <- as.matrix(seu@assays$RNA@counts)
-  seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
-  seu
-}, file = "seu_filtered.rds")
+# remove failing nuclei 
+seu <- subset(seu, cells = unique(dplyr::filter(seu@misc$nucleus_filtering, pass)$nucleus))
+# remove genes with no counts
+counts <- as.matrix(seu@assays$RNA@counts)
+seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
 ```
 
 ```{r save}

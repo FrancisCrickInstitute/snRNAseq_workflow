@@ -55,7 +55,11 @@ process load_input {
     
     script:
       """
-      Rscript ${baseDir}/templates/load_input.R "${params.input.dir}" "${params.input.sample_metadata_file}"
+      Rscript ${baseDir}/templates/load_input.R \
+        "${params.input.dir}" \
+        "${params.input.sample_metadata_file}" \
+        "${params.input.sample_subset}" \
+        "${params.input.cell_subset}"
       """
 }
 
@@ -141,8 +145,8 @@ process infercnv {
   publishDir "$params.output.dir/infercnv/", mode: 'copy', pattern: "infercnv/*"
   conda "environment.yml"
   cpus 2
-  memory 20.GB
-  time 2.hour
+  memory 60.GB
+  time 10.hour
 
   input:
     path rmd_file
