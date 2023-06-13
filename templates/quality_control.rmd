@@ -289,6 +289,9 @@ seu@misc$nucleus_filtering <-
                   paste(collapse = ",") %>% dplyr::na_if(., "")) %>%
   tidyr::pivot_wider(id_cols = c("nucleus", "sample", "pass", "fail_criteria")) %>%
   dplyr::ungroup()
+
+# save
+saveRDS(seu, "seu_unfiltered.rds")
 ```
 
 ### Fail criteria statistics
@@ -400,9 +403,9 @@ seu <-
   xfun::cache_rds({
     # remove failing nuclei 
     subset(seu, cells = unique(dplyr::filter(seu@misc$nucleus_filtering, pass)$nucleus))
-  }, file = "seu_quality_controlled.rds")
+  }, file = "seu_filtered.rds")
 ```
 
 ```{r save}
-saveRDS(seu, "seu_quality_controlled.rds")
+saveRDS(seu, "seu_filtered.rds")
 ```

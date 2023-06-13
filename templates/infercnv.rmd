@@ -157,3 +157,7 @@ infercnv_obj <- xfun::cache_rds({
  )
 }, file = "infercnv_obj.rds")
 ```
+
+```{r save}
+saveRDS(infercnv_obj, "infercnv.rds")
+```

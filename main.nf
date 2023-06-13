@@ -13,8 +13,9 @@ log.info """\
 
 snRNAseq workflow
 =================
-input dir    : ${params.input.dir}
-output dir   : ${params.output.dir}
+manifest file:        ${params.input.manifest}
+sample metadata file: ${params.input.sample_metadata_file}
+output dir:           ${params.output.dir}
 """
 
 // function which prints help message text
@@ -65,7 +66,7 @@ nextflow run <ARGUMENTS>
 }
 
 process save_params {
-  publishDir params.output.dir, mode: 'copy'
+  publishDir "${params.output.dir}", mode: 'copy'
   
   output:
     path 'params.json', emit: ch_params
@@ -77,13 +78,15 @@ process save_params {
 
 // load input
 process load_input {
-  publishDir "$params.output.dir/", mode: 'copy'
+  tag "${sample}"
+  publishDir "${params.output.dir}/${sample}/", 
+    mode: 'copy'
   cpus 1
   memory 64.GB
   time 1.hour
     
   input:
-    val sample_subset
+    tuple val(sample), path(dir)
     
   output:
     path 'seu.rds', emit: ch_input
@@ -91,46 +94,18 @@ process load_input {
   script:
     """
     Rscript ${baseDir}/templates/load_input.R \
-      "${params.input.dir}" \
-      "${params.input.sample_metadata_file}" \
-      "${sample_subset}" \
-      "${params.input.cell_subset}"
-    """
-}
-
-// get ids
-process get_ids {
-  publishDir "$params.output.dir/", mode: 'copy'
-  cpus 1
-  memory 4.GB
-  time 1.hour
-  
-  input:
-    val column
-    
-  output:
-    path '*s.txt', emit: ch_ids
-    
-  script:
-    """
-    #!/usr/bin/env Rscript 
-    library(magrittr)
-    ids <-
-      "${params.input.sample_metadata_file}" %>%
-      strsplit(",") %>%
-      {.[[1]]} %>%
-      lapply(function(file) { read.table(file, header = T)[, "${column}"] }) %>%
-      unlist() %>%
-      unique()
-    ids <- ids[!is.na(ids)]
-    write.table(ids, "${column}s.txt", col.names = F, row.names = F, quote = F)
+      "${sample}" \
+      "${dir}" \
+      "${params.input.sample_metadata_file}"
     """
 }
 
 // quality control
 process quality_control {
-  publishDir "$params.output.dir/quality_control/", mode: 'copy', pattern: "{*.html,*.rds}"
-  publishDir "$params.output.dir/quality_control/", mode: 'copy', pattern: "*_files/figure-html/*.png"
+  tag "${sample}"
+  publishDir "${params.output.dir}/${sample}/quality_control/", 
+    mode: 'copy', 
+    pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
   cpus 2
   memory 40.GB
@@ -142,7 +117,7 @@ process quality_control {
     path rds_file
 
   output: 
-    path 'seu_quality_controlled.rds', emit: ch_filtered
+    path 'seu_filtered.rds', emit: ch_filtered
     path 'quality_control.html' 
     path 'quality_control_files/figure-html/*.png'
     
@@ -154,8 +129,9 @@ process quality_control {
 
 // clustering
 process clustering {
-  publishDir "$params.output.dir/clustering/", mode: 'copy', pattern: "{*.html,*.rds}"
-  publishDir "$params.output.dir/clustering/", mode: 'copy', pattern: "clustering_files/figure-html/*.png"
+  publishDir "${params.output.dir}/${sample}/clustering/", 
+    mode: 'copy', 
+    pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
   cpus 2
   time 2.hour
@@ -181,8 +157,9 @@ process clustering {
 
 // celltype_annotation
 process celltype_annotation {
-  publishDir "$params.output.dir/celltype_annotation/", mode: 'copy', pattern: "{*.html,*.rds,*.tsv}"
-  publishDir "$params.output.dir/celltype_annotation/", mode: 'copy', pattern: "*_files/figure-html/*.png"
+  publishDir "${params.output.dir}/${sample}/celltype_annotation/", 
+    mode: 'copy', 
+    pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
   cpus 2
   memory 20.GB
@@ -206,9 +183,9 @@ process celltype_annotation {
 
 // infercnv
 process infercnv {
-  publishDir "$params.output.dir/infercnv/", mode: 'copy', pattern: "{*.html,*.rds}"
-  publishDir "$params.output.dir/infercnv/", mode: 'copy', pattern: "*_files/figure-html/*.png"
-  publishDir "$params.output.dir/infercnv/", mode: 'copy', pattern: "infercnv/*"
+  publishDir "${params.output.dir}/${sample}/infercnv/", 
+    mode: 'copy', 
+    pattern: "{*.html,*.rds,*_files/figure-html/*.png,infercnv/*}"
   conda "environment.yml"
   cpus 2
   memory 60.GB
@@ -220,7 +197,7 @@ process infercnv {
     path rds_file
 
   output: 
-    path 'cds_infercnv.rds', emit: ch_infercnv
+    path 'infercnv.rds', emit: ch_infercnv
     path 'infercnv.html' 
     path 'infercnv_files/figure-html/*.png'
     path 'infercnv/*'
@@ -231,66 +208,61 @@ process infercnv {
     """
 }
 
-// workflow structure
-workflow snRNAseq_workflow {
-  take: 
-    id_subset
-
-  main:
-    // show help message if the user specifies the --help flag at runtime
-    // or if any required params are not provided
-    if ( params.help || ! params.input.dir ){
-        // invoke the function above which prints the help message
-        help_message()
-        // exit out and do not run anything else
-        exit 1
-    }
-    
-    // save params
-    save_params()
-    
-    // load input
-    load_input()
-    
-    // quality control and filtering
-    quality_control(
-      "${baseDir}/templates/quality_control.rmd", 
-      save_params.out.ch_params,
-      load_input.out.ch_input
-    )
-    
-    // dimensionality reduction and clustering
-    clustering(
-      "${baseDir}/templates/clustering.rmd", 
-      save_params.out.ch_params, 
-      quality_control.out.ch_filtered
-    ) 
-    
-    // cell type annotation
-    celltype_annotation(
-      "${baseDir}/templates/celltype_annotation.rmd", 
-      save_params.out.ch_params, 
-      clustering.out.ch_clustered
-    ) 
-    
-    // infercnv - run if reference celltypes provided
-    if ( params.infercnv.reference_celltypes != false & params.infercnv.gene_order_file != false ) {
-      infercnv(
-        "${baseDir}/templates/infercnv.rmd",
-        save_params.out.ch_params,
-        celltype_annotation.out.ch_annotated
-      )
-    }
-}
-
-// main workflow
+// workflow
 workflow {
   
-  if ( params.input.split_by != false ) {
-    get_ids(params.input.split_by)
-    ids = get_ids.out.ch_ids | splitCsv | map {row -> "${row[0]}"}
-    ids.view()
+  // show help message if the user specifies the --help flag at runtime
+  // or if any required params are not provided
+  if ( params.help || ! params.input.manifest || !params.input.sample_metadata_file ){
+      // invoke the function above which prints the help message
+      help_message()
+      // exit out and do not run anything else
+      exit 1
   }
   
+  // generate one channel per sample
+  Channel
+    .fromPath(params.input.manifest)
+    .splitCsv(header:true, sep:'\t')
+    .map { row -> tuple( val(row.sample), path(row.dir) ) }
+    .set { ch_input }
+
+  // save params
+  save_params()
+  
+  // load input
+  load_input(
+    ch_input
+  )
+  
+  // quality control and filtering
+  quality_control(
+    "${baseDir}/templates/quality_control.rmd", 
+    save_params.out.ch_params,
+    load_input.out.ch_input
+  )
+  
+  // dimensionality reduction and clustering
+  clustering(
+    "${baseDir}/templates/clustering.rmd", 
+    save_params.out.ch_params, 
+    quality_control.out.ch_filtered
+  ) 
+  
+  // cell type annotation
+  celltype_annotation(
+    "${baseDir}/templates/celltype_annotation.rmd", 
+    save_params.out.ch_params, 
+    clustering.out.ch_clustered
+  ) 
+  
+  // infercnv - run if reference celltypes provided
+  if ( params.infercnv.reference_celltypes != false & params.infercnv.gene_order_file != false ) {
+    infercnv(
+      "${baseDir}/templates/infercnv.rmd",
+      save_params.out.ch_params,
+      celltype_annotation.out.ch_annotated
+    )
+  }
   
 }
