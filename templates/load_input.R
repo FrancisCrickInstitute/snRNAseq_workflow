@@ -79,7 +79,8 @@ seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
 
 # subset to sample
 seu <- subset(x = seu, subset = sample == args$sample)
-seu@misc$sample_metadata %>%
+seu@misc$sample_metadata <-
+  seu@misc$sample_metadata %>%
   dplyr::filter(sample == args$sample)
 
 # save
