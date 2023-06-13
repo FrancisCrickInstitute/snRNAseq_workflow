@@ -52,8 +52,7 @@ umap_void_theme <-
 
 # chunk setup
 knitr::opts_chunk$set(fig.align = "center",
-                      dpi = 300, 
-                      cache.path = paste0(curr_params$output$dir, "clustering/clustering_cache/"))
+                      dpi = 300)
 
 # reductions
 redus <- c("PCA", "UMAP")
@@ -293,11 +292,12 @@ First, we must convert the data to monocle3's proprietary `cell_data_set` object
 
 ```{r seu_to_cds, results = F, warning = F}
 cds <- xfun::cache_rds({
-  SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
+  cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
   SummarizedExperiment::rowData(cds)$gene_short_name <- 
     row.names(SummarizedExperiment::rowData(cds))
   SummarizedExperiment::colData(cds)$Phase <-
     seu$Phase
+  cds
 }, file = "cds.rds")
 ```
 
@@ -325,7 +325,7 @@ Plotting all different groupings of the data onto the reductions can help reveal
 
 ```{r get_groupings, include = F}
 groupings <- 
-  colnames(seu@meta.data)[!(colnames(seu@meta.data) %in% 
+  colnames(seu@misc$sample_metadata)[!(colnames(seu@meta.data) %in% 
                               c("orig.ident", "species", 
                                 paste0("bc", 1:3, rep(c("_well", "_wind"), 3))))]
 ```
@@ -333,7 +333,7 @@ groupings <-
 ```{r groupings_vs_reductions, class.source = 'fold-hide', fig.dim = get_fig_dims(n_plots = 3 * length(groupings), n_cols = 3), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings"}
 # plot all groupings vs all reductions
 groupings_vs_reductions <- list()
-purrr::walk(groupingd, function(grouping) {
+purrr::walk(groupings, function(grouping) {
   purrr::walk(redus, function(redu) {
     title <- paste0(redu, "_vs_", grouping)
     p <- 

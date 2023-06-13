@@ -13,7 +13,7 @@ log.info """\
 
 snRNAseq workflow
 =================
-manifest file:        ${params.input.manifest}
+manifest file:        ${params.input.manifest_file}
 sample metadata file: ${params.input.sample_metadata_file}
 output dir:           ${params.output.dir}
 """
@@ -27,16 +27,15 @@ nextflow run <ARGUMENTS>
   
   (required)
   
-  --input.dir                     directory containing sparse matrix of aligned snRNA-seq data
+  --input.manifest_file            directory containing sparse matrix of aligned snRNA-seq data
+  --input.sample_metadata_file    file containing sample metadata, must contain a 'sample' column
   
   (optional)
   
   input:
-  --input.sample_metadata_file    file containing sample metadata, must contain a 'sample' column
   --input.sample_subset           comma-delimited list of samples to use
   --input.cell_subset             comma-delimited list of cells to use
-  --input.split_by                sample metadata column used to split pipeline runs
-  
+
   output:
   --output.dir                    optional. output directory, default is './output/'
   
@@ -112,6 +111,7 @@ process quality_control {
   time 2.hour
 
   input:
+    tuple val(sample), path(dir)
     path rmd_file
     path params_file
     path rds_file
@@ -129,17 +129,19 @@ process quality_control {
 
 // clustering
 process clustering {
+  tag "${sample}"
   publishDir "${params.output.dir}/${sample}/clustering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
   cpus 2
   time 2.hour
-  memory { 32.GB * task.attempt }
+  memory { 50.GB * task.attempt }
   maxRetries 4
   errorStrategy  { task.attempt <= maxRetries  ? 'retry' : 'finish' }  
 
   input:
+    tuple val(sample), path(dir)
     path rmd_file
     path params_file
     path rds_file
@@ -155,8 +157,9 @@ process clustering {
     """
 }
 
-// celltype_annotation
+// celltype annotation
 process celltype_annotation {
+  tag "${sample}"
   publishDir "${params.output.dir}/${sample}/celltype_annotation/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
@@ -166,6 +169,7 @@ process celltype_annotation {
   time 2.hour
 
   input:
+    tuple val(sample), path(dir)
     path rmd_file
     path params_file
     path rds_file
@@ -183,6 +187,7 @@ process celltype_annotation {
 
 // infercnv
 process infercnv {
+  tag "${sample}"
   publishDir "${params.output.dir}/${sample}/infercnv/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,infercnv/*}"
@@ -192,6 +197,7 @@ process infercnv {
   time 10.hour
 
   input:
+    tuple val(sample), path(dir)
     path rmd_file
     path params_file
     path rds_file
@@ -208,12 +214,31 @@ process infercnv {
     """
 }
 
+// merge samples
+process merge_samples {
+  publishDir "${params.output.dir}/merge/",
+    mode: 'copy',
+    pattern: "*.rds"
+  
+  input:
+    path rmd_files, stageAs: "?/*"
+    
+  output:
+    path 'seu.rds', emit: ch_merge
+    
+  script:
+    """
+    Rscript ${baseDir}/templates/merge_samples.R \
+      ${rmd_files.join(',')}
+    """
+}
+
 // workflow
 workflow {
   
   // show help message if the user specifies the --help flag at runtime
   // or if any required params are not provided
-  if ( params.help || ! params.input.manifest || !params.input.sample_metadata_file ){
+  if ( params.help || ! params.input.manifest_file || !params.input.sample_metadata_file ){
       // invoke the function above which prints the help message
       help_message()
       // exit out and do not run anything else
@@ -222,9 +247,9 @@ workflow {
   
   // generate one channel per sample
   Channel
-    .fromPath(params.input.manifest)
+    .fromPath(params.input.manifest_file)
     .splitCsv(header:true, sep:'\t')
-    .map { row -> tuple( val(row.sample), path(row.dir) ) }
+    .map { row -> tuple( row.sample, row.dir ) }
     .set { ch_input }
 
   // save params
@@ -237,6 +262,7 @@ workflow {
   
   // quality control and filtering
   quality_control(
+    ch_input,
     "${baseDir}/templates/quality_control.rmd", 
     save_params.out.ch_params,
     load_input.out.ch_input
@@ -244,6 +270,7 @@ workflow {
   
   // dimensionality reduction and clustering
   clustering(
+    ch_input,
     "${baseDir}/templates/clustering.rmd", 
     save_params.out.ch_params, 
     quality_control.out.ch_filtered
@@ -251,6 +278,7 @@ workflow {
   
   // cell type annotation
   celltype_annotation(
+    ch_input,
     "${baseDir}/templates/celltype_annotation.rmd", 
     save_params.out.ch_params, 
     clustering.out.ch_clustered
@@ -259,10 +287,16 @@ workflow {
   // infercnv - run if reference celltypes provided
   if ( params.infercnv.reference_celltypes != false & params.infercnv.gene_order_file != false ) {
     infercnv(
+      ch_input,
       "${baseDir}/templates/infercnv.rmd",
       save_params.out.ch_params,
       celltype_annotation.out.ch_annotated
     )
   }
+  
+  // merge samples
+  merge_samples (
+    quality_control.out.ch_filtered.collect()
+  )
   
 }

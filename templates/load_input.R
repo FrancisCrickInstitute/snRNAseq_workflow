@@ -16,7 +16,7 @@ platform_files <- list(
   "10X Genomics" = c("matrix.mtx.gz", "features.tsv.gz", "genes.tsv.gz", "barcodes.tsv.gz")
 )
 
-# detect flatform
+# detect platform
 platform <-
   platform_files %>%
   purrr::map(~ (.x %>% intersect(input_files) %>% length) == 3) %>%

@@ -51,8 +51,7 @@ umap_void_theme <-
 
 # chunk setup
 knitr::opts_chunk$set(fig.align = "center",
-                      dpi = 300, 
-                      cache.path = paste0(curr_params$output$dir, "celltype_annotation/celltype_annotation_cache/"))
+                      dpi = 300)
 ```
 
 ```{r define_functions, include = F, eval = T}
@@ -711,12 +710,15 @@ top_cluster_markers <- xfun::cache_rds({
         dplyr::group_by(cell_group) %>%
         dplyr::arrange(desc(as.numeric(cell_group))) %>%
         dplyr::top_n(3, pseudo_R2)
-    readr::write_tsv(top_cluster_markers %>% dplyr::bind_rows(.id = "cell_grouping"), 
-                 "top_3_markers.tsv")
   })
+  
   top_cluster_markers
   
 }, file = "top_cluster_markers.rds")
+
+# write out top 3 per cluster
+readr::write_tsv(top_cluster_markers %>% dplyr::bind_rows(.id = "cell_grouping"), 
+                 "top_3_markers.tsv")
 ```
 
 ```{r top_markers, eval = T, class.source = 'fold-hide', fig.dim = c(10, dplyr::n_distinct(monocle3::clusters(cds))), fig.cap = "Plot of the mean expression across cells and percentage of cells in each group that express the top 3 marker genes of each group"}

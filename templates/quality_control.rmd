@@ -51,8 +51,7 @@ umap_void_theme <-
 
 # chunk setup
 knitr::opts_chunk$set(fig.align = "center",
-                      dpi = 300, 
-                      cache.path = paste0(curr_params$output$dir, "quality_control/quality_control_cache/"))
+                      dpi = 300)
 
 # set sample groupings to check at the clustering stage
 groupings <-
