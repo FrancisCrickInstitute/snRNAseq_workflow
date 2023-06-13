@@ -101,20 +101,18 @@ curr_params %>%
   flatten_list() %>%
   {tibble::tibble(
     param = names(.), 
-    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 100))
+    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 250))
   } %>%
   knitr::kable()
 ```
 
-# `Seurat` pre-processing
-
-## Load data
+# Load data
 
 ``` {r load_data, warning = F}
 seu <- readRDS(params$rds_file)
 ```
 
-```{r summary_statistics_plot, class.source = 'fold-hide', message = F, warning = F, fig.height = 5, fig.cap = "Plot of summary statistics by sample"}
+```{r summary_statistics_plot, class.source = 'fold-hide', message = F, warning = F, fig.height = 7, fig.cap = "Plot of summary statistics by sample"}
 p <-
   seu@meta.data %>%
   tibble::as_tibble() %>%
@@ -133,9 +131,9 @@ p <-
 p
 ```
 
-## Filter genes
+# Filter genes
 
-Filter nuclei per gene, based on the `n_nuclei_per_gene$min` argument. Genes that are present in very few nuclei of the dataset are uninformative and unlikely to help in differentiating between groups of nuclei. In general, most genes removed by this filtering step will be those not detected in any nuclei, which will help to trim the size of the object. Additionally, genes are removed that have entries in all nuclei but whose entries are all zero. 
+Filter nuclei per gene, based on the `filter.n_nuclei_per_gene.min` argument. Genes that are present in very few nuclei of the dataset are uninformative and unlikely to help in differentiating between groups of nuclei. In general, most genes removed by this filtering step will be those not detected in any nuclei, which will help to trim the size of the object. Additionally, genes are removed that have entries in all nuclei but whose entries are all zero. 
 
 The minimum number of nuclei per gene is set to **`r curr_params$filter$n_nuclei_per_gene$min`**.
 
@@ -147,7 +145,7 @@ seu <-
     rowSums(Seurat::GetAssayData(seu, slot="counts") > 0) >= curr_params$filter$n_nuclei_per_gene$min])
 ```
 
-## Filter nuclei
+# Filter nuclei
 
 Nucleus-level filtering is performed, applying cut-offs to `nCount_RNA`, `nFeature_RNA`, `percent_mito`, and `doublet` values of each nucleus.
 
@@ -156,26 +154,30 @@ Nucleus-level filtering is performed, applying cut-offs to `nCount_RNA`, `nFeatu
 * A high percentage of mitochondrial genes indicates death, loss of cytoplasmic RNA, or increased apoptosis. Differences in the application of this filter between scRNA-seq and snRNA-seq are not well covered in literature. Intuitively, snRNA-seq data should be treated with a more stringent cut-off, as it should only include nuclear RNA. However, the renal cortex has an exceptionally high level of mitochondrial activity, so this cut-off has been relaxed somewhat for the VHL dataset. 
 * Nuclei with a high nFeature_RNA:nCount_RNA ratio could be from dying cells.
 
-### Annotate doublets
+## Annotate doublets
 
 Putative doublets are identified using the `scDblFinder` package. This package creates artificial doublets by grouping together random pairs of nuclei within each sample to create pseudo-doublets, and then identifying nuclei that cluster near to these pseudo-doublets during dimensionality reduction. This co-clustering indicates that they carry a doublet signature. 
 
-The `remove_doublets` argument is set to **`r  curr_params$filter$doublets`**.
+The `filter.doublets` argument is set to **`r  curr_params$filter$doublets`**.
 `r if (curr_params$filter$doublets == T) {"Doublets will be identified and removed." }`
 `r if (curr_params$filter$doublets == F) {"A dummy column will be introduced, treating all nuclei as though they are singlets."}`
 
 ```{r identify_doublets, eval =  curr_params$filter$doublets == T, include =  curr_params$filter$doublets == T}
-seu_dbl <- 
-  scDblFinder::scDblFinder(
-    Seurat::as.SingleCellExperiment(seu), samples = "sample")
-seu$doublet <- as.numeric(seu_dbl$scDblFinder.class == "doublet")
+seu <-
+  xfun::cache_rds({
+    seu_dbl <- 
+      scDblFinder::scDblFinder(
+        Seurat::as.SingleCellExperiment(seu), samples = "sample")
+    seu$doublet <- as.numeric(seu_dbl$scDblFinder.class == "doublet")
+    seu
+  }, file = "seu_with_doublets.rds")
 ```
 
-```{r ignore_doublets, eval =  curr_params$filter$doublets == F, include =  curr_params$filter$doublets == F}
+```{r ignore_doublets, eval =  curr_params$filter$doublets == F, include = curr_params$filter$doublets == F}
 seu$doublet <- 0
 ```
 
-```{r detected_doublets, eval =  curr_params$filter$doublets == T, class.source = 'fold-hide', fig.cap = "Plot of detected doublets in each sample (using scDblFinder)"}
+```{r detected_doublets, eval = curr_params$filter$doublets == T, class.source = 'fold-hide', fig.cap = "Plot of detected doublets in each sample (using scDblFinder)"}
 p_dat <- 
   seu@meta.data[,c("sample", "doublet", "nCount_RNA", "nFeature_RNA")] %>% 
   dplyr::group_by(sample) %>%
@@ -210,12 +212,14 @@ p2 <-
   ggplot2::theme(axis.text = ggplot2::element_text(size = 7),
                  axis.text.x = ggplot2::element_text(angle = 90),
                  axis.title.y = ggplot2::element_blank(),
-                 legend.position = "bottom") +
+                 legend.position = "bottom") 
+p <- 
+  p1 + p2 +
   patchwork::plot_layout(ncol = 2, widths = c(1, 2))
-p1 + p2
+p
 ```
 
-### Annotate transcript types
+## Annotate transcript types
 
 Proportions of transcript types of interest (mitochondrial, ribosomal, globin) are annotated. Mitochondrial genes are particularly of interest for filtering, but it is good practice to inspect the others as well.
 
@@ -223,7 +227,7 @@ Proportions of transcript types of interest (mitochondrial, ribosomal, globin) a
 * `percent_ribo` - mRNA that code for ribosomal proteins. They do not point to specific issues, but it can be good to have a look at their relative abundance. They can have biological relevance.
 * `percent_globin` - Globin genes are very abundant in erythrocytes. Depending on your application, you can expect ‘contamination’ of erythrocytes and select against it.
 
-```{r annotate_transcript_types}
+```{r annotate_transcript_types, message = F, warning = F}
 transcript_types <-
   list(mito = "^MT-",
        ribo = "^RP[SL]",
@@ -241,14 +245,14 @@ transcript_types %>%
   })
 ```
 
-### Define nucleus-level filters
+## Define nucleus-level filters
 
 The `filter.do_filtering` argument is set to **`r curr_params$filter$do_filtering`**.
 `r if (curr_params$filter$do_filtering == T) {"Filters will be applied." }`
 `r if (curr_params$filter$do_filtering == F) {"Dummy filters will be set (min = -Inf, max = Inf) and all nuclei will be retained." }`
 
 ```{r get_filters}
-# get filters (user-provided or median + n_mads * MAD)
+# get filters
 if(curr_params$filter$do_filtering == T) {
   filters <- curr_params$filter[c("nCount_RNA", "nFeature_RNA", "percent_mito")]
   filters$doublet <- list(min = 0, max = ifelse(curr_params$filter$doublets == T, 0, 1))
@@ -287,7 +291,7 @@ seu@misc$nucleus_filtering <-
   dplyr::ungroup()
 ```
 
-#### Fail criteria statistics
+### Fail criteria statistics
 
 ```{r calc_n_retained, include = F}
 n_retained <- nrow(dplyr::filter(seu@misc$nucleus_filtering, pass))
@@ -324,7 +328,7 @@ p <-
   ggplot2::ggplot(ggplot2::aes(x = sample, y = n, fill = fail_criteria)) +
   ggplot2::geom_col() +
   ggplot2::theme_minimal() +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, size = 7)) +
   ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "grey")
 p
 ```
@@ -389,14 +393,14 @@ p
 p + ggplot2::scale_x_log10() + ggplot2::scale_y_log10()
 ```
 
-### `r if (curr_params$filter$do_filtering) {"Apply nucleus-level filters"}`
+## `r if (curr_params$filter$do_filtering) {"Apply nucleus-level filters"}`
 
 ```{r filter_nuclei, eval = curr_params$filter$do_filtering == T, include = curr_params$filter$do_filtering == T}
-# remove failing nuclei 
-seu <- subset(seu, cells = unique(dplyr::filter(seu@misc$nucleus_filtering, pass)$nucleus))
-# remove genes with no counts
-counts <- as.matrix(seu@assays$RNA@counts)
-seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
+seu <- 
+  xfun::cache_rds({
+    # remove failing nuclei 
+    subset(seu, cells = unique(dplyr::filter(seu@misc$nucleus_filtering, pass)$nucleus))
+  }, file = "seu_quality_controlled.rds")
 ```
 
 ```{r save}

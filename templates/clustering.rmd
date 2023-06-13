@@ -55,14 +55,8 @@ knitr::opts_chunk$set(fig.align = "center",
                       dpi = 300, 
                       cache.path = paste0(curr_params$output$dir, "clustering/clustering_cache/"))
 
-# set sample groupings to check at the clustering stage
-groupings <-
-  c("sample", "percent_mito", "percent_ribo", "percent_globin",
-    "date_prep", "nih_pid", "rin", "lesion_type", "tumour_size", "fuhrman_grade") %>%
-  # if genome is human, do cell cycle scoring (doesn't work with other genomes)
-  { if (grepl("hg38", curr_params$genome)) c(., "Phase") else . } %>%
-  # if checking for doublets, add to the groupings
-  { if (curr_params$filter$doublets == T) c(., "doublet") else . } 
+# reductions
+redus <- c("PCA", "UMAP")
 ```
 
 ```{r define_functions, include = F, eval = T}
@@ -124,7 +118,7 @@ curr_params %>%
   flatten_list() %>%
   {tibble::tibble(
     param = names(.), 
-    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 100))
+    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 250))
   } %>%
   knitr::kable()
 ```
@@ -178,7 +172,7 @@ Variables to regress out of the `SCTransform` residuals  (set by argument `vars_
 ```{r sctransform, results = F, warning = F}
 seu <- xfun::cache_rds({
   Seurat::SCTransform(seu, vars.to.regress = curr_params$vars_to_regress)
-}, file = "seu_transformed.rds")
+}, file = "seu_sctransform.rds")
 ```
 
 ## Annotate cell cycle phases
@@ -202,7 +196,7 @@ Dimensionality reduction is performed to isolate the strongest signals and to re
 ```{r run_pca}
 seu <- xfun::cache_rds({
   Seurat::RunPCA(seu)
-}, file = "seu_pca.rds")
+}, file = "seu_pca.rds") 
 ```
 
 ```{r pc1_vs_pc2_plot, class.source = 'fold-hide', fig.cap = "Plot of PC1 vs PC2, coloured by sample"}
@@ -254,13 +248,13 @@ cat("No value was provided for `n_dims`, so dimensionality will be calculated us
 The dimensionality of the dataset can be estimated using the `intrinsicDimension` package. This bypasses the manual approach of reading the elbow plot, but can sometimes be a bit too conservative. Therefore, if `n_dims` is not defined by the user, the dimensionality is set as double the `intrinsicDimension` estimate. 
 
 ```{r iD_n_dims}
-n_dims_iD <- xfun::cache_rds({
+iD_n_dims <- xfun::cache_rds({
   intrinsicDimension::maxLikGlobalDimEst(
     seu@reductions$pca@cell.embeddings,
     k = 10
   )$dim.est %>% round(0)
-}, file = "n_dims_iD.rds")
-generous_n_dims <- round(2 * n_dims_iD, 0)
+}, file = "iD_n_dims.rds")
+generous_n_dims <- round(2 * iD_n_dims, 0)
 ```
 
 ```{r iD_n_dims_set, include = curr_params$n_dims == FALSE, eval = curr_params$n_dims == FALSE}
@@ -276,7 +270,7 @@ p <-
     ggplot2::aes(xintercept = final_n_dims,
                  colour = ifelse(curr_params$n_dims == F, "chosen n_dims", "user-provided n_dims")),
                  linewidth = 1) &
-  ggplot2::geom_vline(ggplot2::aes(xintercept = n_dims_iD, colour = "intrisicDimensions"),
+  ggplot2::geom_vline(ggplot2::aes(xintercept = iD_n_dims, colour = "intrisicDimensions"),
                       linewidth = 1, linetype = "dashed") &
   ggplot2::geom_vline(ggplot2::aes(xintercept = generous_n_dims, colour = "generous (iD x 2)"),
                       linewidth = 1, linetype = "dashed") &
@@ -299,12 +293,11 @@ First, we must convert the data to monocle3's proprietary `cell_data_set` object
 
 ```{r seu_to_cds, results = F, warning = F}
 cds <- xfun::cache_rds({
-  cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
+  SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
   SummarizedExperiment::rowData(cds)$gene_short_name <- 
     row.names(SummarizedExperiment::rowData(cds))
   SummarizedExperiment::colData(cds)$Phase <-
     seu$Phase
-  cds
 }, file = "cds.rds")
 ```
 
@@ -315,7 +308,7 @@ First, we perform normalisation and principal component analysis again. We use t
 ```{r preprocessing}
 cds <- xfun::cache_rds({
   monocle3::preprocess_cds(cds, num_dim = final_n_dims)
-}, file = "cds_lin_dim_red.rds")
+}, file = "cds_lin_dim_red.cds")
 ```
 
 ## Non-linear dimensionality reduction 
@@ -325,22 +318,22 @@ Next, we perform non-linear dimensionality reduction of the data (UMAP).
 ```{r nonlin_dim_redu, results = F, warning = F, message = F}
 cds <- xfun::cache_rds({
   monocle3::reduce_dimension(cds, preprocess_method = "PCA")
-}, file = "cds_nonlin_dim_red.rds")
+}, file = "cds_nonlin_dim_red.cds")
 ```
 
 Plotting all different groupings of the data onto the reductions can help reveal batch effects. If certain experimental variables seem to strongly influence the grouping of cells, these effects can be removed. If so, use the `align_cds` step from [this tutorial](https://cole-trapnell-lab.github.io/monocle3/docs/clustering/#reduce-dimension).
 
-```{r avail_groupings, include = F}
-# amend groupings
-avail_groupings <- groupings[groupings %in% colnames(SummarizedExperiment::colData(cds))]
-# reductions
-redus <- c("PCA", "UMAP")
+```{r get_groupings, include = F}
+groupings <- 
+  colnames(seu@meta.data)[!(colnames(seu@meta.data) %in% 
+                              c("orig.ident", "species", 
+                                paste0("bc", 1:3, rep(c("_well", "_wind"), 3))))]
 ```
 
-```{r groupings_vs_reductions, class.source = 'fold-hide', fig.dim = get_fig_dims(n_plots = (length(redus) + 1) * length(avail_groupings), n_cols = 3), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings"}
+```{r groupings_vs_reductions, class.source = 'fold-hide', fig.dim = get_fig_dims(n_plots = 3 * length(groupings), n_cols = 3), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings"}
 # plot all groupings vs all reductions
 groupings_vs_reductions <- list()
-purrr::walk(avail_groupings, function(grouping) {
+purrr::walk(groupingd, function(grouping) {
   purrr::walk(redus, function(redu) {
     title <- paste0(redu, "_vs_", grouping)
     p <- 
@@ -364,11 +357,11 @@ purrr::walk(avail_groupings, function(grouping) {
 p <-
   gridExtra::marrangeGrob(
     grobs = groupings_vs_reductions,
-    nrow = length(avail_groupings),
+    nrow = length(groupings),
     ncol = length(redus) + 1,
     layout_matrix = matrix(
       1:length(groupings_vs_reductions),
-      length(avail_groupings),
+      length(groupings),
       length(redus) + 1,
       TRUE
     ),
@@ -419,7 +412,7 @@ cds <- xfun::cache_rds({
   SummarizedExperiment::colData(cds)$partition <- 
     factor(monocle3::partitions(cds), levels = sort(as.integer(levels(monocle3::partitions(cds)))))
   cds
-}, file = "cds_clustered.rds") 
+}, file = "cds_clustered.rds")
 ```
 
 ```{r clustering_tree, class.source = 'fold-hide', fig.dim = c(10, 5), fig.cap = "Clustering tree from partitions (grouping 1) to clusters (grouping 2) of cells"}

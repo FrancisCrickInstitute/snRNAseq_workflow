@@ -669,7 +669,7 @@ curr_params %>%
   flatten_list() %>%
   {tibble::tibble(
     param = names(.), 
-    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 100))
+    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 250))
   } %>%
   knitr::kable()
 ```
@@ -691,30 +691,32 @@ First, we identify the top genes that are most specifically expressed in each cl
 # marker_test_res <- monocle3::top_markers(cds, group_cells_by = "cluster", reference_cells = 1000)
 lvls <- c("cluster", "partition")
 
-# using a debugged version of the function ()
-cds_markers <- xfun::cache_rds({
+top_cluster_markers <- xfun::cache_rds({
+
+  # using a debugged version of the function top_markers()
   cds_markers <- 
     lvls %>%
     purrr::map(function(lvl) {
       top_markers_develop(cds, group_cells_by = lvl, genes_to_test_per_group = 100)
     }) %>%
     setNames(lvls)
-  cds_markers
-}, file = "cds_markers.rds")
-
-# get top 3 markers per cluster/partition
-top_cds_markers <- 
-  cds_markers %>%
-  purrr::map(function(lvl) {
-    lvl %>%
-      dplyr::as_tibble() %>%
-      dplyr::filter(fraction_expressing >= 0.10) %>%
-      dplyr::group_by(cell_group) %>%
-      dplyr::arrange(desc(as.numeric(cell_group))) %>%
-      dplyr::top_n(3, pseudo_R2)
-  })
-readr::write_tsv(top_cds_markers %>% dplyr::bind_rows(.id = "cell_grouping"), 
+  
+  # get top 3 markers per cluster/partition
+  top_cluster_markers <- 
+    cds_markers %>%
+    purrr::map(function(lvl) {
+      lvl %>%
+        dplyr::as_tibble() %>%
+        dplyr::filter(fraction_expressing >= 0.10) %>%
+        dplyr::group_by(cell_group) %>%
+        dplyr::arrange(desc(as.numeric(cell_group))) %>%
+        dplyr::top_n(3, pseudo_R2)
+    readr::write_tsv(top_cluster_markers %>% dplyr::bind_rows(.id = "cell_grouping"), 
                  "top_3_markers.tsv")
+  })
+  top_cluster_markers
+  
+}, file = "top_cluster_markers.rds")
 ```
 
 ```{r top_markers, eval = T, class.source = 'fold-hide', fig.dim = c(10, dplyr::n_distinct(monocle3::clusters(cds))), fig.cap = "Plot of the mean expression across cells and percentage of cells in each group that express the top 3 marker genes of each group"}
@@ -723,7 +725,7 @@ p <-
   purrr::map(function(lvl) {
     dittoSeq::dittoDotPlot(
       cds, 
-      vars = top_cds_markers[[lvl]] %>% dplyr::pull(gene_id) %>% unique(),
+      vars = top_cluster_markers[[lvl]] %>% dplyr::pull(gene_id) %>% unique(),
       group.by = lvl,
       x.labels.rotate = F) +
     ggplot2::coord_flip() +
@@ -1133,8 +1135,8 @@ cell_groupings_summary <- xfun::cache_rds({
       by = c("cell_grouping", "cell_group")
     ) %>%
     dplyr::left_join(
-      # top_cds_markers
-      top_cds_markers %>%
+      # top_cluster_markers
+      top_cluster_markers %>%
         dplyr::bind_rows(.id = "cell_grouping") %>%
         dplyr::group_by(cell_grouping, cell_group) %>% 
         dplyr::summarise(top_markers = paste(gene_id, collapse = ", ")),
@@ -1170,14 +1172,17 @@ knitr::kable(annots)
 ```
 
 ```{r annotate_celltypes}
-SummarizedExperiment::colData(cds) <-
-  cbind(
-    SummarizedExperiment::colData(cds),
-    SummarizedExperiment::colData(cds) %>%
-      tibble::as_tibble(rownames = "cell") %>%
-      dplyr::left_join(annots) %>%
-      dplyr::select(annotation)
-  )
+cds <- xfun::cache_rds({
+  SummarizedExperiment::colData(cds) <-
+    cbind(
+      SummarizedExperiment::colData(cds),
+      SummarizedExperiment::colData(cds) %>%
+        tibble::as_tibble(rownames = "cell") %>%
+        dplyr::left_join(annots) %>%
+        dplyr::select(annotation)
+    )
+  cds
+}, file = "cds_celltype_annotated.rds")
 ```
 
 ```{r save}

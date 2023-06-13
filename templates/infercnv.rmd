@@ -20,15 +20,12 @@ output:
 ---
 
 ```{r initialise, include = F}
-# magrittr, gridExtra, clustree, monocle3 must be loaded in the environment (due to package-specific bugs)
+# magrittr, gridExtra, monocle3 must be loaded in the environment (due to package-specific bugs)
 library(gridExtra)
 library(monocle3)
 library(magrittr)
 
 # load params file
-# base_dir=ifelse(Sys.info()["nodename"]=="Alexs-MacBook-Air-2.local","/Volumes/TracerX/","/camp/project/tracerX/");setwd(paste0(base_dir,"working/VHL_GERMLINE/tidda/snRNAseq_workflow/"))
-# cluster: # params <- list(params_file = "output/params.json")
-# local:   # params <- list(params_file = "test/local_params.json")
 curr_params <- 
   rjson::fromJSON(file = params$params_file) %>% 
   type.convert(as.is = T)
@@ -80,7 +77,7 @@ curr_params %>%
   flatten_list() %>%
   {tibble::tibble(
     param = names(.), 
-    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 100))
+    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 250))
   } %>%
   knitr::kable()
 ```
@@ -95,9 +92,9 @@ cds <- readRDS(params$rds_file)
 
 ## Run `inferCNV`
 
-`r if ("malignant" %ni% SummarizedExperiment::colData(cds)$final_annotation) { "inferCNV requires a malignant cluster as a query for CNV analysis, but the final celltype annotations do not include any 'malignant' cells. Please run the package again with a 'malignant' group specified in order to run inferCNV." }`
+`r if (!("malignant" %ni% SummarizedExperiment::colData(cds)$annotation)) { "inferCNV requires a malignant cluster as a query for CNV analysis, but the final celltype annotations do not include any 'malignant' cells. Please run the package again with a 'malignant' group specified in order to run inferCNV." }`
 
-```{r exit_if_no_malignant, eval = !("malignant" %in% SummarizedExperiment::colData(cds)$final_annotation)}
+```{r exit_if_no_malignant, eval = !("malignant" %in% SummarizedExperiment::colData(cds)$annotation)}
 # truncate document if no malignant annotations have been provided
 knitr::knit_exit()
 ```
@@ -135,18 +132,19 @@ infercnv_annots %>%
   readr::write_tsv("infercnv_annots.tsv", col_names = F)
 
 # create infercnv object
-infercnv_obj <-
- infercnv::CreateInfercnvObject(
-   raw_counts_matrix = as.matrix(cds@assays@data$counts),
-   annotations_file = "infercnv_annots.tsv",
-   gene_order_file = "gencode.v43.basic.annotation_clean.bed",
-   ref_group_names = ref_annots
- )
-
+infercnv_obj <- xfun::cache_rds({
+  infercnv::CreateInfercnvObject(
+    raw_counts_matrix = as.matrix(cds@assays@data$counts),
+    annotations_file = "infercnv_annots.tsv",
+    gene_order_file = "gencode.v43.basic.annotation_clean.bed",
+    ref_group_names = ref_annots
+  )
+}, file = "infercnv_obj_prelim.rds")
+ 
 # perform infercnv operations to reveal cnv signal
 dir.create("infercnv/")
 options(scipen = 100)
-infercnv_obj <-
+infercnv_obj <- xfun::cache_rds({
  infercnv::run(
    infercnv_obj,
    cutoff = 0.1,
@@ -157,4 +155,5 @@ infercnv_obj <-
    resume_mode = T,
    analysis_mode = "subclusters"
  )
+}, file = "infercnv_obj.rds")
 ```
