@@ -99,10 +99,10 @@ process load_input {
     """
 }
 
-// quality control
-process quality_control {
+// filtering
+process filtering {
   tag "${sample}"
-  publishDir "${params.output.dir}/${sample}/quality_control/", 
+  publishDir "${params.output.dir}/${sample}/filtering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
@@ -118,12 +118,12 @@ process quality_control {
 
   output: 
     path 'seu_filtered.rds', emit: ch_filtered
-    path 'quality_control.html' 
-    path 'quality_control_files/figure-html/*.png'
+    path 'filtering.html' 
+    path 'filtering_files/figure-html/*.png'
     
   script:
     """
-    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "quality_control.html", output_dir = getwd())'
+    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "filtering.html", output_dir = getwd())'
     """
 }
 
@@ -261,9 +261,9 @@ workflow {
   )
   
   // quality control and filtering
-  quality_control(
+  filtering(
     ch_input,
-    "${baseDir}/templates/quality_control.rmd", 
+    "${baseDir}/templates/filtering.rmd", 
     save_params.out.ch_params,
     load_input.out.ch_input
   )
@@ -273,7 +273,7 @@ workflow {
     ch_input,
     "${baseDir}/templates/clustering.rmd", 
     save_params.out.ch_params, 
-    quality_control.out.ch_filtered
+    filtering.out.ch_filtered
   ) 
   
   // cell type annotation
@@ -296,7 +296,7 @@ workflow {
   
   // merge samples
   merge_samples (
-    quality_control.out.ch_filtered.collect()
+    filtering.out.ch_filtered.collect()
   )
   
 }

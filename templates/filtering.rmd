@@ -1,5 +1,5 @@
 ---
-title: "snRNAseq workflow: quality control"
+title: "snRNAseq workflow: filtering"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 geometry: margin=1in
 fontfamily: mathpazo

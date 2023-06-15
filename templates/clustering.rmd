@@ -408,9 +408,13 @@ cds <- xfun::cache_rds({
   cds <- monocle3::cluster_cells(cds, random_seed = random_seed)
   # add it to the colData and reorder clusters and partitions numerically
   SummarizedExperiment::colData(cds)$cluster <- 
-    factor(monocle3::clusters(cds), levels = sort(as.integer(levels(monocle3::clusters(cds)))))
+    factor(
+      monocle3::clusters(cds), 
+      levels = cds %>% monocle3::clusters() %>% unique() %>% as.integer() %>% sort())
   SummarizedExperiment::colData(cds)$partition <- 
-    factor(monocle3::partitions(cds), levels = sort(as.integer(levels(monocle3::partitions(cds)))))
+    factor(
+      monocle3::partitions(cds), 
+      levels = cds %>% monocle3::partitions() %>% unique() %>% as.integer() %>% sort())
   cds
 }, file = "cds_clustered.rds")
 ```
