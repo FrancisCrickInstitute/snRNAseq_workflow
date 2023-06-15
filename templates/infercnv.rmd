@@ -91,7 +91,7 @@ cds <- readRDS(params$rds_file)
 
 ## Run `inferCNV`
 
-`r if (!("malignant" %ni% SummarizedExperiment::colData(cds)$annotation)) { "inferCNV requires a malignant cluster as a query for CNV analysis, but the final celltype annotations do not include any 'malignant' cells. Please run the package again with a 'malignant' group specified in order to run inferCNV." }`
+`r if (!("malignant" %in% SummarizedExperiment::colData(cds)$annotation)) { "inferCNV requires a malignant cluster as a query for CNV analysis, but the final celltype annotations do not include any 'malignant' cells. Please run the package again with a 'malignant' group specified in order to run inferCNV." }`
 
 ```{r exit_if_no_malignant, eval = !("malignant" %in% SummarizedExperiment::colData(cds)$annotation)}
 # truncate document if no malignant annotations have been provided

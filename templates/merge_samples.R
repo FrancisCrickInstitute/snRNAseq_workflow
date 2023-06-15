@@ -13,20 +13,11 @@ seu_ls <-
   lapply(readRDS)
 
 # merge
-seu <- Reduce(merge, seu_ls)
-seu@misc <- 
-  do.call(Map, c(dplyr::bind_rows, 
-    seu_ls %>%
-      purrr::map(function(i) {
-        i@misc %>%
-          purrr::map(function(slot) {
-            if (is.data.frame(slot)) {
-              slot
-            }
-          })
-      }) 
-    )
-  )
+seu@misc$sample_metadata <-
+  seu_ls %>% 
+  purrr::map(~ .x@misc$sample_metadata) %>% 
+  dplyr::bind_rows() %>% 
+  dplyr::distinct()
 
 # save
 saveRDS(seu, "seu.rds")

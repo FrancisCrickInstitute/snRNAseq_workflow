@@ -428,7 +428,7 @@ p <-
 p
 ```
 
-```{r clusters_and_partitions, class.source = 'fold-hide', fig.dim = c(10, 5), fig.cap = "Plot of monocle3 UMAP, coloured by cluster and by partition"}
+```{r clusters_and_partitions, warning = F, class.source = 'fold-hide', fig.dim = c(10, 5), fig.cap = "Plot of monocle3 UMAP, coloured by cluster and by partition"}
 final_umap <- 
   lvls %>%
   purrr::map(function(lvl) {

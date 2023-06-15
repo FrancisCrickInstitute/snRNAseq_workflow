@@ -903,16 +903,16 @@ p
 
 ## Manual celltype annotation using curated literature markers
 
-`r if (curr_params$celltype_annotation$markers_file == F) {"No markers_file given." }`
+`r if (curr_params$annotating$markers_file == F) {"No markers_file given." }`
 
-```{r exit_if_no_markers, eval = curr_params$celltype_annotation$markers_file == F, include = F}
+```{r exit_if_no_markers, eval = curr_params$annotating$markers_file == F, include = F}
 knitr::knit_exit()
 ```
 
 ```{r cds_avail_markers, echo = F}
 # load markers
 markers <-
-  curr_params$celltype_annotation$markers_file %>%
+  curr_params$annotating$markers_file %>%
   readr::read_tsv() %>%
   {split(.$gene, .$population)}
 # get markers present in the dataset
@@ -1154,15 +1154,15 @@ knitr::kable(cell_groupings_summary, digits = 3)
 
 # Final celltype annotations
 
-`r if (curr_params$celltype_annotation$celltype_annotations_file == F) {"No celltype_annotations_file given." }`
+`r if (curr_params$annotating$annotations_file == F) {"No annotations_file given." }`
 
-```{r exit_if_no_annots, eval = curr_params$celltype_annotation$celltype_annotations_file == F, include = F}
+```{r exit_if_no_annots, eval = curr_params$annotating$annotations_file == F, include = F}
 knitr::knit_exit()
 ```
 
 ```{r load_annots}
 annots <- 
-  curr_params$celltype_annotation$celltype_annotations_file %>%
+  curr_params$annotating$annotations_file %>%
   readr::read_tsv() %>%
   dplyr::mutate(dplyr::across(everything(), as.factor))
 ```

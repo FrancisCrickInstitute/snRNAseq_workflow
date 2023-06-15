@@ -53,9 +53,9 @@ nextflow run <ARGUMENTS>
   --n_dims                        integer, number of PCs
   --vars_to_regress               vector of variables to regress out of the SCTransform residuals
   
-  celltype_annotation:
+  annotating celltypes:
   --markers_file                  file containing markers for celltype annotation, must contain 'gene' and 'population' columns
-  --celltype_annotations_file     file containing final celltype annotations for the dataset, must contain an 'annotation' column and a column matching one of the metadata columns (e.g., 'cell', 'cluster' or 'partition') of the object
+  --annotations_file              file containing final celltype annotations for the dataset, must contain an 'annotation' column and a column matching one of the metadata columns (e.g., 'cell', 'cluster' or 'partition') of the object
   
   infercnv:
   --infercnv.reference_celltypes  comma-delimited list of annotations to use as a reference
@@ -158,9 +158,9 @@ process clustering {
 }
 
 // celltype annotation
-process celltype_annotation {
+process annotating {
   tag "${sample}"
-  publishDir "${params.output.dir}/${sample}/celltype_annotation/", 
+  publishDir "${params.output.dir}/${sample}/annotating/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
@@ -176,12 +176,12 @@ process celltype_annotation {
 
   output: 
     path 'cds_celltype_annotated.rds', emit: ch_annotated, optional: true
-    path 'celltype_annotation.html' 
-    path 'celltype_annotation_files/figure-html/*.png'
+    path 'annotating.html' 
+    path 'annotating_files/figure-html/*.png'
     
   script:
     """
-    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "celltype_annotation.html", output_dir = getwd())'
+    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "annotating.html", output_dir = getwd())'
     """
 }
 
@@ -203,10 +203,10 @@ process infercnv {
     path rds_file
 
   output: 
-    path 'infercnv.rds', emit: ch_infercnv
     path 'infercnv.html' 
-    path 'infercnv_files/figure-html/*.png'
-    path 'infercnv/*'
+    path 'infercnv_files/figure-html/*.png', optional: true
+    path 'infercnv.rds', emit: ch_infercnv, optional: true
+    path 'infercnv/*', optional: true
     
   script:
     """
@@ -277,20 +277,22 @@ workflow {
   ) 
   
   // cell type annotation
-  celltype_annotation(
+  annotating(
     ch_input,
-    "${baseDir}/templates/celltype_annotation.rmd", 
+    "${baseDir}/templates/annotating.rmd", 
     save_params.out.ch_params, 
     clustering.out.ch_clustered
   ) 
   
   // infercnv - run if reference celltypes provided
-  if ( params.infercnv.reference_celltypes != false & params.infercnv.gene_order_file != false ) {
+  if ( params.annotating.annotations_file != false &
+       params.infercnv.reference_celltypes != false & 
+       params.infercnv.gene_order_file != false ) {
     infercnv(
       ch_input,
       "${baseDir}/templates/infercnv.rmd",
       save_params.out.ch_params,
-      celltype_annotation.out.ch_annotated
+      annotating.out.ch_annotated
     )
   }
   
@@ -298,5 +300,7 @@ workflow {
   merge_samples (
     filtering.out.ch_filtered.collect()
   )
+  
+  
   
 }
