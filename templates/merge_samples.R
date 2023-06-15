@@ -15,7 +15,7 @@ seu_ls <-
 # merge
 seu <- Reduce(merge, seu_ls)
 seu@misc <- 
-  do.call(Map, c(rbind, 
+  do.call(Map, c(dplyr::bind_rows, 
     seu_ls %>%
       purrr::map(function(i) {
         i@misc %>%

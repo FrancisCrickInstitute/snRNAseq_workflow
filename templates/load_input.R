@@ -58,14 +58,22 @@ if (platform == "10X Genomics") {
   
 }
 
+# subset Seurat object to sample
+seu <- subset(x = seu, subset = sample == args$sample)
+
 # add sample metadata
 cat("Adding sample metadata...\n")
   
-# read in sample metadata and add to misc slot
+# read in sample metadata and add to Seurat misc slot, subset to sample
 seu@misc$sample_metadata <-
-  readr::read_tsv(args$sample_metadata_file, show_col_types = F)
+  readr::read_tsv(args$sample_metadata_file, show_col_types = F) %>%
+  dplyr::filter(sample == args$sample)
 
-# add to Seurat object meta.data
+# remove columns that are all NA
+seu@misc$sample_metadata <-
+  seu@misc$sample_metadata[, colSums(is.na(seu@misc$sample_metadata)) != nrow(seu@misc$sample_metadata)]
+
+# add to Seurat meta.data
 seu@meta.data <-
   dplyr::left_join(
     seu@meta.data,
@@ -76,12 +84,6 @@ rownames(seu@meta.data) <- colnames(seu)
 # remove genes with no counts
 counts <- as.matrix(seu@assays$RNA@counts)
 seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
-
-# subset to sample
-seu <- subset(x = seu, subset = sample == args$sample)
-seu@misc$sample_metadata <-
-  seu@misc$sample_metadata %>%
-  dplyr::filter(sample == args$sample)
 
 # save
 saveRDS(seu, "seu.rds")

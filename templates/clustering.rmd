@@ -178,7 +178,7 @@ seu <- xfun::cache_rds({
 
 Nuclei are assigned a score representing the likelihood that they are in each phase of the cell cycle. This is based on the expression levels of genes associated with each phase. The highest probability phase of each nucleus is stored in a new "Phase" column of the metadata.
 
-```{r annotate_cell_cycle_phases}
+```{r annotate_cell_cycle_phases, eval = F}
 seu <- Seurat::CellCycleScoring(
   seu,
   s.features = Seurat::cc.genes$s.genes,
@@ -293,10 +293,13 @@ First, we must convert the data to monocle3's proprietary `cell_data_set` object
 ```{r seu_to_cds, results = F, warning = F}
 cds <- xfun::cache_rds({
   cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
+  cds@metadata$sample_metadata <- seu@misc$sample_metadata
   SummarizedExperiment::rowData(cds)$gene_short_name <- 
     row.names(SummarizedExperiment::rowData(cds))
-  SummarizedExperiment::colData(cds)$Phase <-
-    seu$Phase
+  if ("Phase" %in% colnames(SummarizedExperiment::colData(cds))) {
+    SummarizedExperiment::colData(cds)$Phase <-
+      seu$Phase
+  }
   cds
 }, file = "cds.rds")
 ```
@@ -324,10 +327,7 @@ cds <- xfun::cache_rds({
 Plotting all different groupings of the data onto the reductions can help reveal batch effects. If certain experimental variables seem to strongly influence the grouping of cells, these effects can be removed. If so, use the `align_cds` step from [this tutorial](https://cole-trapnell-lab.github.io/monocle3/docs/clustering/#reduce-dimension).
 
 ```{r get_groupings, include = F}
-groupings <- 
-  colnames(seu@misc$sample_metadata)[!(colnames(seu@meta.data) %in% 
-                              c("orig.ident", "species", 
-                                paste0("bc", 1:3, rep(c("_well", "_wind"), 3))))]
+groupings <- colnames(cds@metadata$sample_metadata)
 ```
 
 ```{r groupings_vs_reductions, class.source = 'fold-hide', fig.dim = get_fig_dims(n_plots = 3 * length(groupings), n_cols = 3), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings"}
@@ -343,7 +343,7 @@ purrr::walk(groupings, function(grouping) {
         color_cells_by = grouping,
         show_trajectory_graph = F, 
         label_cell_groups = F) 
-    if (!is.numeric(SummarizedExperiment::colData(cds)[, grouping])) {
+    if (!is.numeric(cds@metadata$sample_metadata[, grouping, drop = T])) {
       p <- p + ditto_colours
     }
     groupings_vs_reductions[[paste0(grouping, "_legend")]] <<-
