@@ -88,7 +88,7 @@ process load_input {
     tuple val(sample), val(dir)
     
   output:
-    tuple val(sample), path'seu.rds', emit: ch_loaded
+    tuple val(sample), path('seu.rds'), emit: ch_loaded
     
   script:
     """
@@ -96,6 +96,25 @@ process load_input {
       "${sample}" \
       "${dir.join(',')}" \
       "${params.input.sample_metadata_file}"
+    """
+}
+
+// merge samples
+process merge_samples {
+  publishDir "${params.output.dir}/merge/",
+    mode: 'copy',
+    pattern: "*.rds"
+  
+  input:
+    path rds_files, stageAs: "?/*"
+    
+  output:
+    tuple val(""), path('seu.rds'), emit: ch_merged
+    
+  script:
+    """
+    Rscript ${baseDir}/templates/merge_samples.R \
+      ${rds_files.join(',')}
     """
 }
 
@@ -111,44 +130,25 @@ process filtering {
   time 2.hour
 
   input:
-    tuple val(sample), val(dir)
+    tuple val(sample), path(rds_file)
     path rmd_file
     path params_file
 
   output: 
-    path 'seu.rds'
-    path 'seu_filtered.rds', emit: ch_filtered
+    tuple val(sample), path('seu_filtered.rds'), emit: ch_filtered
     path 'filtering.html' 
     path 'filtering_files/figure-html/*.png'
     
   script:
     """
-    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", sample = "${sample}", dir = "${dir.join(',')}", sample_metadata_file = "${params.input.sample_metadata_file}"), output_file = "filtering.html", output_dir = getwd())'
-    """
-}
-
-// merge samples
-process merge_samples {
-  publishDir "${params.output.dir}/merge/",
-    mode: 'copy',
-    pattern: "*.rds"
-  
-  input:
-    path rmd_files, stageAs: "?/*"
-    
-  output:
-    path 'seu.rds', emit: ch_merged
-    
-  script:
-    """
-    Rscript ${baseDir}/templates/merge_samples.R \
-      ${rmd_files.join(',')}
+    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "filtering.html", output_dir = getwd())'
     """
 }
 
 // clustering
 process clustering {
-  publishDir "${params.output.dir}/clustering/", 
+  tag "${sample}"
+  publishDir "${params.output.dir}/${sample}/clustering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
@@ -159,12 +159,12 @@ process clustering {
   errorStrategy  { task.attempt <= maxRetries  ? 'retry' : 'finish' }  
 
   input:
+    tuple val(sample), path(rds_file)
     path rmd_file
     path params_file
-    path rds_file
 
   output: 
-    path 'cds_clustered.rds', emit: ch_clustered
+    tuple val(sample), path('cds_clustered.rds'), emit: ch_clustered
     path 'clustering.html' 
     path 'clustering_files/figure-html/*.png'
     
@@ -176,7 +176,8 @@ process clustering {
 
 // celltype annotation
 process annotating {
-  publishDir "${params.output.dir}/annotating/", 
+  tag "${sample}"
+  publishDir "${params.output.dir}/${sample}/annotating/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
@@ -185,12 +186,12 @@ process annotating {
   time 2.hour
 
   input:
+    tuple val(sample), path(rds_file)
     path rmd_file
     path params_file
-    path rds_file
 
   output: 
-    path 'cds_celltype_annotated.rds', emit: ch_annotated, optional: true
+    tuple val(sample), path('cds_celltype_annotated.rds'), emit: ch_annotated, optional: true
     path 'annotating.html' 
     path 'annotating_files/figure-html/*.png'
     
@@ -202,7 +203,8 @@ process annotating {
 
 // infercnv
 process infercnv {
-  publishDir "${params.output.dir}/infercnv/", 
+  tag "${sample}"
+  publishDir "${params.output.dir}/${sample}/infercnv/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,infercnv/*}"
   conda "environment.yml"
@@ -211,9 +213,9 @@ process infercnv {
   time 10.hour
 
   input:
+    tuple val(sample), path(rds_file)
     path rmd_file
     path params_file
-    path rds_file
 
   output: 
     path 'infercnv.html' 
@@ -227,7 +229,7 @@ process infercnv {
     """
 }
 
-// workflow
+// pipeline workflow
 workflow {
   
   // show help message if the user specifies the --help flag at runtime
@@ -250,30 +252,30 @@ workflow {
   // save params
   save_params()
   
+  // load input
+  load_input(
+    ch_input
+  )
+  
   // quality control and filtering
   filtering(
-    ch_input,
+    load_input.out.ch_loaded,
     "${baseDir}/templates/filtering.rmd", 
     save_params.out.ch_params,
   )
   
-  // merge samples
-  merge_samples (
-    filtering.out.ch_filtered.collect()
-  )
-  
   // dimensionality reduction and clustering
   clustering(
+    filtering.out.ch_filtered,
     "${baseDir}/templates/clustering.rmd", 
-    save_params.out.ch_params, 
-    merge_samples.out.ch_merged
+    save_params.out.ch_params
   ) 
   
   // cell type annotation
   annotating(
+    clustering.out.ch_clustered,
     "${baseDir}/templates/annotating.rmd", 
-    save_params.out.ch_params, 
-    clustering.out.ch_clustered
+    save_params.out.ch_params
   ) 
   
   // infercnv - run if reference celltypes provided
@@ -281,10 +283,17 @@ workflow {
        params.infercnv.reference_celltypes != false & 
        params.infercnv.gene_order_file != false ) {
     infercnv(
+      annotating.out.ch_annotated,
       "${baseDir}/templates/infercnv.rmd",
-      save_params.out.ch_params,
-      annotating.out.ch_annotated
+      save_params.out.ch_params
     )
   }
   
+  // merge samples
+  merge_samples (
+    filtering.out.ch_filtered
+    .map {sample, rds_file -> rds_file}
+    .collect()
+  )
+
 }

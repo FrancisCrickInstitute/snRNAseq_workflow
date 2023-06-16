@@ -63,9 +63,6 @@ seu_ls <-
       
     }
     
-    # subset Seurat object to sample
-    seu <- subset(x = seu, subset = sample == args$sample)
-    
     # add input path to metadata
     seu@meta.data$dir <- dir
     
@@ -80,16 +77,21 @@ seu <- Reduce(merge, seu_ls)
 # add sample metadata
 cat("Adding sample metadata...\n")
   
-# read in sample metadata and add to Seurat misc slot, subset to sample
+# read in sample metadata and add to Seurat misc slot, subset to sample, remove columns that are all NA
 seu@misc$sample_metadata <-
-  readr::read_tsv(args$sample_metadata_file, show_col_types = F) %>%
-  dplyr::filter(sample == args$sample)
-
-# remove columns that are all NA
+  readr::read_tsv(args$sample_metadata_file, show_col_types = F) 
 seu@misc$sample_metadata <-
   seu@misc$sample_metadata[, colSums(is.na(seu@misc$sample_metadata)) != nrow(seu@misc$sample_metadata)]
 
-# add to Seurat meta.data
+# optionally subset Seurat object to sample
+if (args$sample != "") {
+  seu <- subset(x = seu, subset = sample == args$sample)
+  seu@misc$sample_metadata <-
+    seu@misc$sample_metadata %>%
+    dplyr::filter(sample == args$sample)
+}
+
+# add to Seurat meta.data slot
 seu@meta.data <-
   dplyr::left_join(
     seu@meta.data,
