@@ -5,10 +5,8 @@ library(magrittr)
 args <-
   commandArgs(trailingOnly = T) %>% 
   setNames(c("sample", "dir", "sample_metadata_file")) %>%
-  strsplit(",") 
-
-# input files
-input_files <- list.files(args$dir)
+  strsplit(",") %>%
+  as.list()
 
 # platform specs
 platform_files <- list(
@@ -16,50 +14,68 @@ platform_files <- list(
   "10X Genomics" = c("matrix.mtx.gz", "features.tsv.gz", "genes.tsv.gz", "barcodes.tsv.gz")
 )
 
-# detect platform
-platform <-
-  platform_files %>%
-  purrr::map(~ (.x %>% intersect(input_files) %>% length) == 3) %>%
-  unlist() %>%
-  {platform_files[.]} %>%
-  names()
+seu_ls <-
+  args$dir %>%
+  purrr::map(function(dir) {
+    
+    # input files
+    input_files <- list.files(dir)
+    
+    # detect platform
+    platform <-
+      platform_files %>%
+      purrr::map(~ (.x %>% intersect(input_files) %>% length) == 3) %>%
+      unlist() %>%
+      {platform_files[.]} %>%
+      names()
+    
+    # read
+    cat("Platform", platform, "detected. Reading...\n")
+    if (platform == "10X Genomics") {
+      
+      # read in expression matrix
+      dge_mat <- Seurat::Read10X(dir)
+      
+      # create seurat object
+      seu <- Seurat::CreateSeuratObject(counts = dge_mat)
+      
+    } else if (platform == "Parse Biosciences") {
+      
+      # read in expression matrix
+      dge_mat <- Seurat::ReadParseBio(dir)
+      
+      # read in cell metadata
+      cell_metadata <-
+        dir %>%
+        paste0("/cell_metadata.csv") %>%
+        readr::read_csv(show_col_types = F) %>%
+        tibble::column_to_rownames("bc_wells") %>%
+        as.data.frame()
+      
+      # create seurat object
+      seu <-
+        dge_mat %>%
+        Seurat::CreateSeuratObject(
+          names.field = 0,
+          meta.data = cell_metadata, 
+          min.cells = 1
+        )
+      
+    }
+    
+    # subset Seurat object to sample
+    seu <- subset(x = seu, subset = sample == args$sample)
+    
+    # add input path to metadata
+    seu@meta.data$dir <- dir
+    
+    # return
+    seu
+    
+  })
 
-# read
-cat("Platform", platform, "detected. Reading...\n")
-if (platform == "10X Genomics") {
-  
-  # read in expression matrix
-  dge_mat <- Seurat::Read10X(args$dir)
-  
-  # create seurat object
-  seu <- Seurat::CreateSeuratObject(counts = dge_mat)
-  
-} else if (platform == "Parse Biosciences") {
-  
-  # read in expression matrix
-  dge_mat <- Seurat::ReadParseBio(args$dir)
-  
-  # read in cell metadata
-  cell_metadata <-
-    args$dir %>%
-    paste0("/cell_metadata.csv") %>%
-    readr::read_csv(show_col_types = F) %>%
-    tibble::column_to_rownames("bc_wells") %>%
-    as.data.frame()
-  
-  # create seurat object
-  seu <-
-    dge_mat %>%
-    Seurat::CreateSeuratObject(
-      names.field = 0,
-      meta.data = cell_metadata, 
-      min.cells = 1
-    )
-  
-}
-
-# subset Seurat object to sample
-seu <- subset(x = seu, subset = sample == args$sample)
+# merge
+seu <- Reduce(merge, seu_ls)
 
 # add sample metadata
 cat("Adding sample metadata...\n")

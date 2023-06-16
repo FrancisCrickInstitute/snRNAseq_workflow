@@ -13,6 +13,7 @@ seu_ls <-
   lapply(readRDS)
 
 # merge
+seu <- Reduce(merge, seu_ls)
 seu@misc$sample_metadata <-
   seu_ls %>% 
   purrr::map(~ .x@misc$sample_metadata) %>% 
