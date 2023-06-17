@@ -152,12 +152,7 @@ process clustering {
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
-  cpus 2
-  time 2.hour
-  memory { 50.GB * task.attempt }
-  errorStrategy = { task.exitStatus in [143,137,104,134,139] ? 'retry' : 'finish' }
-  maxRetries = 4
-
+  
   input:
     tuple val(id), path(rds_file)
     path rmd_file
