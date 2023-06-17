@@ -78,11 +78,9 @@ process save_params {
 // load input
 process load_input {
   tag "${sample}"
+  label 'process_low'
   publishDir "${params.output.dir}/${sample}/", 
     mode: 'copy'
-  cpus 1
-  memory 64.GB
-  time 1.hour
     
   input:
     tuple val(sample), val(dir)
@@ -101,7 +99,8 @@ process load_input {
 
 // merge samples
 process merge_samples {
-  publishDir "${params.output.dir}/merge/",
+  label 'process_medium'
+  publishDir "${params.output.dir}",
     mode: 'copy',
     pattern: "*.rds"
   
@@ -121,13 +120,11 @@ process merge_samples {
 // filtering
 process filtering {
   tag "${sample}"
+  label 'process_medium'
   publishDir "${params.output.dir}/${sample}/filtering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
-  cpus 2
-  memory 40.GB
-  time 2.hour
 
   input:
     tuple val(sample), path(rds_file)
@@ -148,6 +145,7 @@ process filtering {
 // clustering
 process clustering {
   tag "${sample}"
+  label 'process_medium'
   publishDir "${params.output.dir}/${sample}/clustering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
@@ -155,8 +153,8 @@ process clustering {
   cpus 2
   time 2.hour
   memory { 50.GB * task.attempt }
-  maxRetries 4
-  errorStrategy  { task.attempt <= maxRetries  ? 'retry' : 'finish' }  
+  errorStrategy = { task.exitStatus in [143,137,104,134,139] ? 'retry' : 'finish' }
+  maxRetries = 4
 
   input:
     tuple val(sample), path(rds_file)
@@ -176,14 +174,12 @@ process clustering {
 
 // celltype annotation
 process annotating {
-  tag "${sample}"
+  tag "${sample}"  
+  label 'process_medium'
   publishDir "${params.output.dir}/${sample}/annotating/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
-  cpus 2
-  memory 20.GB
-  time 2.hour
 
   input:
     tuple val(sample), path(rds_file)
@@ -204,6 +200,7 @@ process annotating {
 // infercnv
 process infercnv {
   tag "${sample}"
+  label 'process_medium'
   publishDir "${params.output.dir}/${sample}/infercnv/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,infercnv/*}"
@@ -230,6 +227,47 @@ process infercnv {
 }
 
 // pipeline workflow
+workflow snRNAseq_workflow {
+  take:
+    ch_loaded
+    ch_params
+    
+  main:
+    
+    // quality control and filtering
+    filtering(
+      ch_loaded,
+      "${baseDir}/templates/filtering.rmd", 
+      ch_params,
+    )
+    
+    // dimensionality reduction and clustering
+    clustering(
+      filtering.out.ch_filtered,
+      "${baseDir}/templates/clustering.rmd", 
+      ch_params
+    ) 
+    
+    // cell type annotation
+    annotating(
+      clustering.out.ch_clustered,
+      "${baseDir}/templates/annotating.rmd", 
+      ch_params
+    ) 
+    
+    // infercnv - run if reference celltypes provided
+    if ( params.annotating.annotations_file != false &
+         params.infercnv.reference_celltypes != false & 
+         params.infercnv.gene_order_file != false ) {
+      infercnv(
+        annotating.out.ch_annotated,
+        "${baseDir}/templates/infercnv.rmd",
+        ch_params
+      )
+    }
+
+}
+
 workflow {
   
   // show help message if the user specifies the --help flag at runtime
@@ -241,59 +279,34 @@ workflow {
       exit 1
   }
   
+  // save params
+  save_params()
+  
   // generate one channel per sample
   Channel
     .fromPath(params.input.manifest_file)
     .splitCsv(header:true, sep:'\t')
     .map { row -> tuple( row.sample, row.dir ) }
     .groupTuple()
-    .set { ch_input }
+    .set { ch_samples }
   
-  // save params
-  save_params()
-  
-  // load input
+  // load each sample
   load_input(
-    ch_input
+    ch_samples
   )
-  
-  // quality control and filtering
-  filtering(
-    load_input.out.ch_loaded,
-    "${baseDir}/templates/filtering.rmd", 
-    save_params.out.ch_params,
-  )
-  
-  // dimensionality reduction and clustering
-  clustering(
-    filtering.out.ch_filtered,
-    "${baseDir}/templates/clustering.rmd", 
-    save_params.out.ch_params
-  ) 
-  
-  // cell type annotation
-  annotating(
-    clustering.out.ch_clustered,
-    "${baseDir}/templates/annotating.rmd", 
-    save_params.out.ch_params
-  ) 
-  
-  // infercnv - run if reference celltypes provided
-  if ( params.annotating.annotations_file != false &
-       params.infercnv.reference_celltypes != false & 
-       params.infercnv.gene_order_file != false ) {
-    infercnv(
-      annotating.out.ch_annotated,
-      "${baseDir}/templates/infercnv.rmd",
-      save_params.out.ch_params
-    )
-  }
   
   // merge samples
-  merge_samples (
-    filtering.out.ch_filtered
-    .map {sample, rds_file -> rds_file}
+  merge_samples(
+    load_input.out.ch_loaded
+    .map { sample, rds_file -> rds_file }
     .collect()
   )
-
+  
+  // run on each sample and on all samples
+  snRNAseq_workflow(
+    merge_samples.out.ch_merged
+      .concat(load_input.out.ch_loaded),
+    save_params.out.ch_params
+  )
+  
 }

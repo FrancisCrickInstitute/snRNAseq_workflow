@@ -229,7 +229,7 @@ Proportions of transcript types of interest (mitochondrial, ribosomal, globin) a
 * `percent_ribo` - mRNA that code for ribosomal proteins. They do not point to specific issues, but it can be good to have a look at their relative abundance. They can have biological relevance.
 * `percent_globin` - Globin genes are very abundant in erythrocytes. Depending on your application, you can expect ‘contamination’ of erythrocytes and select against it.
 
-```{r annotate_transcript_types, message = F, warning = F}
+```{r annotate_transcript_types, message = F, warning = F, echo = F}
 transcript_types <-
   list(mito = "^MT-",
        ribo = "^RP[SL]",
@@ -402,6 +402,9 @@ seu <-
   xfun::cache_rds({
     # remove failing nuclei 
     subset(seu, cells = unique(dplyr::filter(seu@misc$nucleus_filtering, pass)$nucleus))
+    # remove genes with no counts
+    counts <- as.matrix(seu@assays$RNA@counts)
+    seu <- subset(seu, features = rownames(counts[rowSums(counts) > 0, ]))
   }, file = "seu_filtered.rds")
 ```
 

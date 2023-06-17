@@ -253,7 +253,7 @@ iD_n_dims <- xfun::cache_rds({
     k = 10
   )$dim.est %>% round(0)
 }, file = "iD_n_dims.rds")
-generous_n_dims <- round(2 * iD_n_dims, 0)
+generous_n_dims <- round(2 * ifelse(iD_n_dims == 0, 1, iD_n_dims), 0)
 ```
 
 ```{r iD_n_dims_set, include = curr_params$n_dims == FALSE, eval = curr_params$n_dims == FALSE}
@@ -335,6 +335,7 @@ groupings <- colnames(cds@metadata$sample_metadata)
 groupings_vs_reductions <- list()
 purrr::walk(groupings, function(grouping) {
   purrr::walk(redus, function(redu) {
+    print(grouping)
     title <- paste0(redu, "_vs_", grouping)
     p <- 
       monocle3::plot_cells(

@@ -792,8 +792,8 @@ saveRDS(cds, "cds_singler_annotated.rds")
 annotation_col <- 
   SummarizedExperiment::colData(cds)[, c("cluster", "partition", "singler_annot_main")] %>% 
   as.data.frame()
-if (dplyr::n_distinct(SummarizedExperiment::colData(cds)$nih_pid, na.rm = T) > 1) {
-  annotation_col$nih_pid <- SummarizedExperiment::colData(cds)$nih_pid
+if (dplyr::n_distinct(SummarizedExperiment::colData(cds)$patient_id, na.rm = T) > 1) {
+  annotation_col$patient_id <- SummarizedExperiment::colData(cds)$patient_id
 }
 if (dplyr::n_distinct(SummarizedExperiment::colData(cds)$lesion_type, na.rm = T) > 1) {
   annotation_col$lesion_type <- SummarizedExperiment::colData(cds)$lesion_type
@@ -970,11 +970,13 @@ multiple_clusters <- dplyr::n_distinct(cell_group_df$cluster) > 1
 ### Modules vs clusters
 
 ```{r modules_vs_clusters_heatmap, eval = multiple_clusters == T, echo = F, warning = F, message = F, fig.dim = c(10, 20), fig.cap = "Heatmap of all module scores for all monocle3 clusters"}
-agg_mat <- 
+agg_mat <- xfun::cache_rds({
   monocle3::aggregate_gene_expression(
     cds, 
     gene_group_df, 
     cell_group_df[, c("cell", "cluster")])
+}, file = "agg_mat.rds")
+  
 p <-
   pheatmap::pheatmap(agg_mat, scale = "row", clustering_method = "ward.D2",
                      annotation_col = col_annotations,
