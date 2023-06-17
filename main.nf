@@ -81,6 +81,7 @@ process load_input {
   label 'process_low'
   publishDir "${params.output.dir}/${id}/", 
     mode: 'copy'
+  conda 'r-environment r-essentials r-base'
     
   input:
     tuple val(id), val(id_col), val(dir)
