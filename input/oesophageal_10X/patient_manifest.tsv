@@ -1,4 +1,4 @@
-key	key_col	dir
+id	id_col	dir
 A	patient_id	cellranger/output/A_pre_T0_biopsy/outs/filtered_feature_bc_matrix/
 A	patient_id	cellranger/output/A_post_T1_biopsy/outs/filtered_feature_bc_matrix/
 A	patient_id	cellranger/output/A_post_T2_biopsy/outs/filtered_feature_bc_matrix/
