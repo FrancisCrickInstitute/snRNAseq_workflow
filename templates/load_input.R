@@ -4,7 +4,7 @@ library(magrittr)
 # args
 args <-
   commandArgs(trailingOnly = T) %>% 
-  setNames(c("key", "key_col", "dir", "sample_metadata_file")) %>%
+  setNames(c("id", "id_col", "dir", "sample_metadata_file")) %>%
   strsplit(",") %>%
   as.list()
 
@@ -29,6 +29,10 @@ seu_ls <-
       {platform_files[.]} %>%
       names()
     
+    if (platform == "10X Genomics" & args$id_col != "sample") {
+      stop("10X Genomics implementation only supports sample IDs!")
+    }
+    
     # read
     cat("Platform", platform, "detected. Reading...\n")
     if (platform == "10X Genomics") {
@@ -38,6 +42,9 @@ seu_ls <-
       
       # create seurat object
       seu <- Seurat::CreateSeuratObject(counts = dge_mat)
+      
+      # add id column
+      seu@meta.data[, args$id_col] <- args$id
       
     } else if (platform == "Parse Biosciences") {
       
@@ -76,19 +83,20 @@ seu <- Reduce(merge, seu_ls)
 
 # add sample metadata
 cat("Adding sample metadata...\n")
-  
+
 # read in sample metadata and add to Seurat misc slot, subset to sample, remove columns that are all NA
 seu@misc$sample_metadata <-
   readr::read_tsv(args$sample_metadata_file, show_col_types = F) 
 
-# optionally subset Seurat object to key
-if (args$key != "") {
-  cat("Subsetting", args$key_col, "to", args$key, "...\n")
-  seu <- seu[, seu@meta.data[, args$key_col] == args$key] 
+# optionally subset Seurat object to id
+if (args$id != "") {
+  cat("Subsetting", args$id_col, "to", args$id, "...\n")
+  seu <- seu[, seu@meta.data[, args$id_col] == args$id] 
   seu@misc$sample_metadata <- 
     seu@misc$sample_metadata %>%
-    dplyr::filter(get(args$key_col) == args$key)
+    dplyr::filter(get(args$id_col) == args$id)
 }
+cat("Done subsetting!\n")
 
 # remove columns that are all NA
 seu@misc$sample_metadata <-

@@ -335,7 +335,6 @@ groupings <- colnames(cds@metadata$sample_metadata)
 groupings_vs_reductions <- list()
 purrr::walk(groupings, function(grouping) {
   purrr::walk(redus, function(redu) {
-    print(grouping)
     title <- paste0(redu, "_vs_", grouping)
     p <- 
       monocle3::plot_cells(

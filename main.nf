@@ -107,7 +107,7 @@ process merge_samples {
     pattern: "*.rds"
   
   input:
-    path rds_files, stageAs: "?/*"
+    path rds_files, stageAs: "seu??.rds"
     
   output:
     tuple val("merged"), path('seu.rds'), emit: ch_merged
@@ -147,7 +147,7 @@ process filtering {
 // clustering
 process clustering {
   tag "${id}"
-  label 'process_medium'
+  label "${ id = 'merged' ? 'process_high_memory' : 'process_medium' }"
   publishDir "${params.output.dir}/${id}/clustering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
