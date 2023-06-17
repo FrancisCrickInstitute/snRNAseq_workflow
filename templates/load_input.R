@@ -4,7 +4,7 @@ library(magrittr)
 # args
 args <-
   commandArgs(trailingOnly = T) %>% 
-  setNames(c("sample", "dir", "sample_metadata_file")) %>%
+  setNames(c("key", "key_col", "dir", "sample_metadata_file")) %>%
   strsplit(",") %>%
   as.list()
 
@@ -81,12 +81,13 @@ cat("Adding sample metadata...\n")
 seu@misc$sample_metadata <-
   readr::read_tsv(args$sample_metadata_file, show_col_types = F) 
 
-# optionally subset Seurat object to sample
-if (args$sample != "") {
-  seu <- subset(x = seu, subset = sample == args$sample)
-  seu@misc$sample_metadata <-
+# optionally subset Seurat object to key
+if (args$key != "") {
+  cat("Subsetting", args$key_col, "to", args$key, "...\n")
+  seu <- seu[, seu@meta.data[, args$key_col] == args$key] 
+  seu@misc$sample_metadata <- 
     seu@misc$sample_metadata %>%
-    dplyr::filter(sample == args$sample)
+    dplyr::filter(get(args$key_col) == args$key)
 }
 
 # remove columns that are all NA

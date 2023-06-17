@@ -77,30 +77,32 @@ process save_params {
 
 // load input
 process load_input {
-  tag "${sample}"
+  tag "${id}"
   label 'process_low'
-  publishDir "${params.output.dir}/${sample}/", 
+  publishDir "${params.output.dir}/${id}/", 
     mode: 'copy'
     
   input:
-    tuple val(sample), val(dir)
+    tuple val(id), val(id_col), val(dir)
     
   output:
-    tuple val(sample), path('seu.rds'), emit: ch_loaded
+    tuple val(id), path('seu.rds'), emit: ch_loaded
     
   script:
     """
     Rscript ${baseDir}/templates/load_input.R \
-      "${sample}" \
-      "${dir.join(',')}" \
+      "${id}" \
+      "${id_col}" \
+      "${dir}" \
       "${params.input.sample_metadata_file}"
     """
 }
 
 // merge samples
 process merge_samples {
+  tag "merged"
   label 'process_medium'
-  publishDir "${params.output.dir}",
+  publishDir "${params.output.dir}/merged/",
     mode: 'copy',
     pattern: "*.rds"
   
@@ -108,7 +110,7 @@ process merge_samples {
     path rds_files, stageAs: "?/*"
     
   output:
-    tuple val(""), path('seu.rds'), emit: ch_merged
+    tuple val("merged"), path('seu.rds'), emit: ch_merged
     
   script:
     """
@@ -119,20 +121,20 @@ process merge_samples {
 
 // filtering
 process filtering {
-  tag "${sample}"
+  tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/${sample}/filtering/", 
+  publishDir "${params.output.dir}/${id}/filtering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
 
   input:
-    tuple val(sample), path(rds_file)
+    tuple val(id), path(rds_file)
     path rmd_file
     path params_file
 
   output: 
-    tuple val(sample), path('seu_filtered.rds'), emit: ch_filtered
+    tuple val(id), path('seu_filtered.rds'), emit: ch_filtered
     path 'filtering.html' 
     path 'filtering_files/figure-html/*.png'
     
@@ -144,9 +146,9 @@ process filtering {
 
 // clustering
 process clustering {
-  tag "${sample}"
+  tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/${sample}/clustering/", 
+  publishDir "${params.output.dir}/${id}/clustering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
@@ -157,12 +159,12 @@ process clustering {
   maxRetries = 4
 
   input:
-    tuple val(sample), path(rds_file)
+    tuple val(id), path(rds_file)
     path rmd_file
     path params_file
 
   output: 
-    tuple val(sample), path('cds_clustered.rds'), emit: ch_clustered
+    tuple val(id), path('cds_clustered.rds'), emit: ch_clustered
     path 'clustering.html' 
     path 'clustering_files/figure-html/*.png'
     
@@ -174,20 +176,20 @@ process clustering {
 
 // celltype annotation
 process annotating {
-  tag "${sample}"  
+  tag "${id}"  
   label 'process_medium'
-  publishDir "${params.output.dir}/${sample}/annotating/", 
+  publishDir "${params.output.dir}/${id}/annotating/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
   conda "environment.yml"
 
   input:
-    tuple val(sample), path(rds_file)
+    tuple val(id), path(rds_file)
     path rmd_file
     path params_file
 
   output: 
-    tuple val(sample), path('cds_celltype_annotated.rds'), emit: ch_annotated, optional: true
+    tuple val(id), path('cds_celltype_annotated.rds'), emit: ch_annotated, optional: true
     path 'annotating.html' 
     path 'annotating_files/figure-html/*.png'
     
@@ -199,18 +201,15 @@ process annotating {
 
 // infercnv
 process infercnv {
-  tag "${sample}"
+  tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/${sample}/infercnv/", 
+  publishDir "${params.output.dir}/${id}/infercnv/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,infercnv/*}"
   conda "environment.yml"
-  cpus 2
-  memory 60.GB
-  time 10.hour
 
   input:
-    tuple val(sample), path(rds_file)
+    tuple val(id), path(rds_file)
     path rmd_file
     path params_file
 
@@ -272,7 +271,7 @@ workflow {
   
   // show help message if the user specifies the --help flag at runtime
   // or if any required params are not provided
-  if ( params.help || ! params.input.manifest_file || !params.input.sample_metadata_file ){
+  if ( params.help || ! params.input.manifest_file || !params.input.sample_metadata_file ) {
       // invoke the function above which prints the help message
       help_message()
       // exit out and do not run anything else
@@ -281,25 +280,24 @@ workflow {
   
   // save params
   save_params()
-  
-  // generate one channel per sample
+    
+  // generate one channel per id
   Channel
     .fromPath(params.input.manifest_file)
     .splitCsv(header:true, sep:'\t')
-    .map { row -> tuple( row.sample, row.dir ) }
-    .groupTuple()
-    .set { ch_samples }
+    .map { row -> tuple( row.id, row.id_col, row.dir ) }
+    .set { ch_ids }
   
-  // load each sample
+  // load each id
   load_input(
-    ch_samples
+    ch_ids
   )
   
-  // merge samples
+  // merge all ids
   merge_samples(
     load_input.out.ch_loaded
-    .map { sample, rds_file -> rds_file }
-    .toSortedList()
+    .map { id, rds_file -> rds_file }
+    .collect()
   )
   
   // run on each sample and on all samples

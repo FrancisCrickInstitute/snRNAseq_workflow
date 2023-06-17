@@ -1,0 +1,157 @@
+---
+title: "snRNAseq workflow: dimensionality reduction and clustering"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+params:
+  params_file: false
+  rds_file: false
+output:
+  html_document:
+    keep_md: true
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: true
+    theme: lumen
+---
+
+```{r initialise, include = F}
+# magrittr, gridExtra, clustree, monocle3 must be loaded in the environment (due to package-specific bugs)
+library(clustree)
+library(gridExtra)
+library(monocle3)
+library(magrittr)
+
+# load params file
+curr_params <- 
+  rjson::fromJSON(file = params$params_file) %>% 
+  type.convert(as.is = T)
+
+# set seed for repeatability
+set.seed(42)
+random_seed = 42
+
+# set ggplot presets
+ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_update(legend.text = ggplot2::element_text(size = 7))
+ditto_colours <- list(ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "white"),
+                      ggplot2::scale_colour_manual(values = dittoSeq::dittoColors(), na.value = "white"))
+umap_void_theme <-
+  ggplot2::theme(axis.text = ggplot2::element_blank(),
+                 axis.title = ggplot2::element_blank(),
+                 axis.ticks = ggplot2::element_blank(),
+                 legend.position = "none",
+                 plot.margin = ggplot2::unit(c(2,2,2,2), "pt"))
+
+# chunk setup
+knitr::opts_chunk$set(fig.align = "center",
+                      dpi = 300)
+
+# reductions
+redus <- c("PCA", "UMAP")
+```
+
+```{r define_functions, include = F, eval = T}
+# flatten lists
+flatten_list <- function (x, use.names = TRUE, classes = "ANY") 
+{
+    len <- sum(rapply(x, function(x) 1L, classes = classes))
+    y <- vector("list", len)
+    i <- 0L
+    items <- rapply(x, function(x) {
+        i <<- i + 1L
+        y[[i]] <<- x
+        TRUE
+    }, classes = classes)
+    if (use.names && !is.null(nm <- names(items))) 
+        names(y) <- nm
+    y
+}
+
+# calculate plot height for grids
+get_fig_dims <- function(n_plots, n_cols = NULL, grid_width = 10, height_to_width_ratio = 1) {
+  # get dims
+  dims <- ggplot2::wrap_dims(n_plots, n_cols)
+  # get scale
+  scale <- grid_width / dims[1]
+  # get height
+  grid_height <- (dims[2] * scale) * height_to_width_ratio
+  # return dims
+  c(grid_width, grid_height)
+}
+
+# Get cluster centroids from a Seurat or cell_data_set object
+get_centroids <- function(object, reduction, lvl) {
+
+  if (class(object)[1] == "Seurat") {
+    embeddings <- object@reductions[[reduction]]@cell.embeddings
+    metadata <- object@meta.data
+  } else if (class(object)[1] == "cell_data_set") {
+    embeddings <- SingleCellExperiment::reducedDims(object)[[reduction]]
+    metadata <- SummarizedExperiment::colData(object) %>% dplyr::as_tibble()
+  }
+
+  dplyr::tibble(
+    x = embeddings[,1],
+    y = embeddings[,2],
+    metadata
+  ) %>%
+    dplyr::group_by(get(lvl)) %>%
+    dplyr::summarise(x = median(x), y = median(y)) %>%
+    dplyr::rename(!!lvl := `get(lvl)`)
+
+}
+```
+
+# Run info {-}
+
+```{r curr_params, echo = F}
+curr_params %>%
+  flatten_list() %>%
+  {tibble::tibble(
+    param = names(.), 
+    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 250))
+  } %>%
+  knitr::kable()
+```
+
+# Dimensionality reduction and clustering
+
+```{r load_seu}
+seu <- readRDS(params$rds_file)
+
+seu <- xfun::cache_rds({
+  Seurat::FindVariableFeatures(seu)
+}, file = "seu_hvg.rds")
+
+seu <- xfun::cache_rds({
+  Seurat::SCTransform(seu, vars.to.regress = curr_params$vars_to_regress)
+}, file = "seu_sctransform.rds")
+
+seu <- Seurat::CellCycleScoring(
+  seu,
+  s.features = Seurat::cc.genes$s.genes,
+  g2m.features = Seurat::cc.genes$g2m.genes
+)
+
+seu <- xfun::cache_rds({
+  Seurat::RunPCA(seu)
+}, file = "seu_pca.rds")
+
+final_n_dims <- 30
+
+seu <- xfun::cache_rds({
+  seu <- Seurat::FindNeighbors(seu, dims = 1:final_n_dims)
+  seu <- Seurat::FindClusters(seu, resolution = 0.5)
+  seu <- Seurat::RunUMAP(seu, dims = 1:final_n_dims)
+  seu
+}, file = "seu_clustered.rds")
+
+Seurat::DimPlot(seu, reduction = "umap")
+
+saveRDS(seu, "seu_clustered.rds")
+```
