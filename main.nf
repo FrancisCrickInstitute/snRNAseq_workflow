@@ -299,7 +299,7 @@ workflow {
   merge_samples(
     load_input.out.ch_loaded
     .map { sample, rds_file -> rds_file }
-    .collect()
+    .toSortedList()
   )
   
   // run on each sample and on all samples
