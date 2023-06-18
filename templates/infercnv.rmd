@@ -34,18 +34,6 @@ curr_params <-
 set.seed(42)
 random_seed = 42
 
-# set ggplot presets
-ggplot2::theme_set(ggplot2::theme_bw())
-ggplot2::theme_update(legend.text = ggplot2::element_text(size = 7))
-ditto_colours <- list(ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "white"),
-                      ggplot2::scale_colour_manual(values = dittoSeq::dittoColors(), na.value = "white"))
-umap_void_theme <-
-  ggplot2::theme(axis.text = ggplot2::element_blank(),
-                 axis.title = ggplot2::element_blank(),
-                 axis.ticks = ggplot2::element_blank(),
-                 legend.position = "none",
-                 plot.margin = ggplot2::unit(c(2,2,2,2), "pt"))
-
 # chunk setup
 knitr::opts_chunk$set(fig.align = "center",
                       dpi = 300)
@@ -91,10 +79,10 @@ cds <- readRDS(params$rds_file)
 
 ## Run `inferCNV`
 
-`r if (!("malignant" %in% SummarizedExperiment::colData(cds)$annotation)) { "inferCNV requires a malignant cluster as a query for CNV analysis, but the final celltype annotations do not include any 'malignant' cells. Please run the package again with a 'malignant' group specified in order to run inferCNV." }`
+`r if (!curr_params$reference_samples & !("malignant" %in% SummarizedExperiment::colData(cds)$annotation)) { "inferCNV requires either reference versus query samples or a malignant cluster as a query for CNV analysis. Either final celltype annotations must include 'malignant' cells, or reference sampmles must be provided. Please run the package again with a 'malignant' group specified in order to run inferCNV." }`
 
-```{r exit_if_no_malignant, eval = !("malignant" %in% SummarizedExperiment::colData(cds)$annotation)}
-# truncate document if no malignant annotations have been provided
+```{r exit_if_no_malignant, eval = (curr_params$infercnv$reference_samples == F & !("malignant" %in% SummarizedExperiment::colData(cds)$annotation))}
+# truncate document 
 knitr::knit_exit()
 ```
 
@@ -105,12 +93,46 @@ From [**github.com/broadinstitute/inferCNV/wiki**](https://github.com/broadinsti
 > *InferCNV is used to explore tumor single cell RNA-Seq data to identify evidence for somatic large-scale chromosomal copy number alterations, such as gains or deletions of entire chromosomes or large segments of chromosomes. This is done by exploring expression intensity of genes across positions of tumor genome in comparison to a set of reference 'normal' cells. A heatmap is generated illustrating the relative expression intensities across each chromosome, and it often becomes readily apparent as to which regions of the tumor genome are over-abundant or less-abundant as compared to that of normal cells.*
 
 ```{r get_ref_cts}
-ref_annots <- stringr::str_split(curr_params$infercnv$reference_celltypes, ",")[[1]]
+if (curr_params$infercnv$reference_celltypes != F) {
+  ref_val <- curr_params$infercnv$reference_celltypes
+  ref_col <- "annotation"
+} else if (curr_params$infercnv$reference_samples != F) {
+  ref_val <- curr_params$infercnv$reference_samples
+  ref_col <- "sample"
+} else if (curr_params$infercnv$reference_celltypes != F & 
+           curr_params$infercnv$reference_samples != F){
+  # truncate document
+  message("Both reference samples and celltypes given. Pick one!")
+  knitr::knit_exit()
+} else {
+  # truncate document
+  message("No reference samples or celltypes given!")
+  knitr::knit_exit()
+}
+ref_val <- stringr::str_split(ref_val, ",")[[1]]
 ```
 
-We annotate all `r paste(ref, sep = " and ")` cells as matched normal and use this to infer copy number variants in the malignant population. Unlike CNVs called from bulk genotyping data, `inferCNV` can also reveal subclonal events in the tumour that only occur in some cell lineages, but not others. 
+We annotate all `r paste(paste(ref_val, sep = " and "), ref_col)` as matched normal and use this to infer copy number variants in the malignant population. Unlike CNVs called from bulk genotyping data, `inferCNV` can also reveal subclonal events in the tumour that only occur in some cell lineages, but not others. 
 
-```{r run_infercnv}
+```{r infercnv_annots_sample, eval = ref_col == "sample", include = ref_col == "sample}
+# label populations as normal or malignant sample
+infercnv_annots <-
+  cds %>%
+  SummarizedExperiment::colData() %>%
+  tibble::as_tibble(rownames = "cell") %>%
+  dplyr::transmute(
+    cell,
+    infercnv_population = dplyr::case_when(
+      sample %in% ref_val ~ sample,
+      TRUE ~ paste0("malignant_", sample))
+  ) %>%
+  dplyr::group_by(infercnv_population) %>%
+  # remove lineages containing only 1 cell
+  dplyr::filter(dplyr::n() > 1)
+```
+
+```{r infercnv_annots_celltype, eval = ref_col == "annotation", include = ref_col == "annotation"}
+# label populations as normal or malignant celltype
 infercnv_annots <-
   cds %>%
   SummarizedExperiment::colData() %>%
@@ -125,7 +147,9 @@ infercnv_annots <-
     dplyr::group_by(infercnv_population) %>%
     # remove lineages containing only 1 cell
     dplyr::filter(dplyr::n() > 1)
+```
 
+```{r infercnv_obj}
 # save
 infercnv_annots %>%
   readr::write_tsv("infercnv_annots.tsv", col_names = F)
@@ -135,8 +159,8 @@ infercnv_obj <- xfun::cache_rds({
   infercnv::CreateInfercnvObject(
     raw_counts_matrix = as.matrix(cds@assays@data$counts),
     annotations_file = "infercnv_annots.tsv",
-    gene_order_file = "gencode.v43.basic.annotation_clean.bed",
-    ref_group_names = ref_annots
+    gene_order_file = curr_params$infercnv$gene_order_file,
+    ref_group_names = ref_val
   )
 }, file = "infercnv_obj_prelim.rds")
  

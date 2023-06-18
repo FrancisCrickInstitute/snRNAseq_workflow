@@ -82,7 +82,6 @@ process load_input {
   publishDir "${params.output.dir}/${id}/", 
     mode: 'copy'
   
-  
   input:
     tuple val(id), val(id_col), val(dir)
     
@@ -123,7 +122,7 @@ process merge_samples {
 // filtering
 process filtering {
   tag "${id}"
-  label 'process_medium'
+  label "${ id = 'merged' ? 'process_high_memory' : 'process_medium' }"
   publishDir "${params.output.dir}/${id}/filtering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
@@ -222,7 +221,8 @@ workflow snRNAseq_workflow {
   take:
     ch_loaded
     ch_params
-    
+  emit:
+    annotating.out.ch_annotated
   main:
     
     // quality control and filtering
@@ -245,17 +245,6 @@ workflow snRNAseq_workflow {
       "${baseDir}/templates/annotating.rmd", 
       ch_params
     ) 
-    
-    // infercnv - run if reference celltypes provided
-    if ( params.annotating.annotations_file != false &
-         params.infercnv.reference_celltypes != false & 
-         params.infercnv.gene_order_file != false ) {
-      infercnv(
-        annotating.out.ch_annotated,
-        "${baseDir}/templates/infercnv.rmd",
-        ch_params
-      )
-    }
 
 }
 
@@ -299,4 +288,29 @@ workflow {
     save_params.out.ch_params
   )
   
+  // collected merged output
+  snRNAseq_workflow.out
+    .map { it -> tuple( it[0].findAll { it.first() == "merged" } ) }
+    .view { "$it is the merged channel!" }
+    //.set {ch_merged_annotated}
+  
+  // infercnv - run if reference celltypes or samples provided, on merged output
+  // TODO: make this work on annotated output for infercnv.reference_samples or
+  // clustered output for infercnv.reference_celltypes and work on all merged samples
+  // or all patient samples or annotated individual samples!
+  //if (  params.infercnv.gene_order_file != false &
+  //      ((params.infercnv.reference_samples != false) ||
+  //      (params.infercnv.reference_celltypes != false & params.annotating.annotations_file != false))
+  //   ) {
+  //  infercnv(
+  //    // merged samples will be the first out
+  //    ch_merged_annotated,
+  //    "${baseDir}/templates/infercnv.rmd",
+  //    ch_params
+  //  )
+  }
+  
 }
+
+
+
