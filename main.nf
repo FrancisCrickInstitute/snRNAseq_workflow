@@ -81,9 +81,7 @@ process load_input {
   label 'process_low'
   publishDir "${params.output.dir}/${id}/", 
     mode: 'copy'
-  conda "environment.yml"
 
-    
   input:
     tuple val(id), val(id_col), val(dir)
     
@@ -128,7 +126,6 @@ process filtering {
   publishDir "${params.output.dir}/${id}/filtering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
-  conda "environment.yml"
 
   input:
     tuple val(id), path(rds_file)
@@ -153,8 +150,7 @@ process clustering {
   publishDir "${params.output.dir}/${id}/clustering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
-  conda "environment.yml"
-  
+
   input:
     tuple val(id), path(rds_file)
     path rmd_file
@@ -178,7 +174,6 @@ process annotating {
   publishDir "${params.output.dir}/${id}/annotating/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
-  conda "environment.yml"
 
   input:
     tuple val(id), path(rds_file)
@@ -203,7 +198,6 @@ process infercnv {
   publishDir "${params.output.dir}/${id}/infercnv/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,infercnv/*}"
-  conda "environment.yml"
 
   input:
     tuple val(id), path(rds_file)

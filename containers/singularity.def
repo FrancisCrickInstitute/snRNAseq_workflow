@@ -11,6 +11,7 @@ From: continuumio/miniconda3
     environment.yml
 
 %post
+  
   /opt/conda/bin/conda env create -f environment.yml
 
 %runscript
