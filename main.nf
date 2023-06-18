@@ -81,7 +81,8 @@ process load_input {
   label 'process_low'
   publishDir "${params.output.dir}/${id}/", 
     mode: 'copy'
-
+  
+  
   input:
     tuple val(id), val(id_col), val(dir)
     
@@ -100,7 +101,7 @@ process load_input {
 
 // merge samples
 process merge_samples {
-  tag "merged"
+  tag "merging"
   label 'process_medium'
   publishDir "${params.output.dir}/merged/",
     mode: 'copy',
