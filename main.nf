@@ -81,7 +81,8 @@ process load_input {
   label 'process_low'
   publishDir "${params.output.dir}/${id}/", 
     mode: 'copy'
-  conda '/rds/general/user/art4017/home/anaconda3/envs/vhl2'
+  conda "environment.yml"
+
     
   input:
     tuple val(id), val(id_col), val(dir)
