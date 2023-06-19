@@ -913,7 +913,7 @@ knitr::knit_exit()
 # load markers
 markers <-
   curr_params$annotating$markers_file %>%
-  readr::read_tsv() %>%
+  readr::read_tsv(show_col_types = F) %>%
   {split(.$gene, .$population)}
 # get markers present in the dataset
 avail_markers <- markers %>% purrr::map(intersect, rownames(cds))

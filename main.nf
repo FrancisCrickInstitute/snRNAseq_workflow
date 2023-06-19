@@ -100,7 +100,7 @@ process load_input {
 
 // merge samples
 process merge_samples {
-  tag "merging"
+  tag "merged"
   label 'process_medium'
   publishDir "${params.output.dir}/merged/",
     mode: 'copy',
@@ -272,17 +272,31 @@ workflow {
     ch_ids
   )
   
-  // merge all ids
-  merge_samples(
-    load_input.out.ch_loaded
-    .map { id, rds_file -> rds_file }
-    .collect()
-  )
+  // initiate ch_run
+  Channel
+    .empty()
+    .set { ch_run }
+  if ( params.input.run_all ) {
+    // merge all samples
+    merge_samples(
+      load_input.out.ch_loaded
+      .map { id, rds_file -> rds_file }
+      .collect()
+    )
+    // add merged samples to ch_run
+    merge_samples.out.ch_merged
+      .set { ch_run }
+  }
+  if ( params.input.run_each ) {
+    // add each sample to ch_run
+    ch_run
+      .concat(load_input.out.ch_loaded)
+      .set { ch_run }
+  }
   
   // run on each sample and on all samples
   snRNAseq_workflow(
-    merge_samples.out.ch_merged
-      .concat(load_input.out.ch_loaded),
+    ch_run,
     save_params.out.ch_params
   )
   

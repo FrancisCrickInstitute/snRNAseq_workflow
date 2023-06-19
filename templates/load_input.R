@@ -88,6 +88,14 @@ cat("Adding sample metadata...\n")
 seu@misc$sample_metadata <-
   readr::read_tsv(args$sample_metadata_file, show_col_types = F) 
 
+# add to Seurat meta.data slot
+seu@meta.data <-
+  dplyr::left_join(
+    seu@meta.data,
+    seu@misc$sample_metadata,
+    by = "sample")
+rownames(seu@meta.data) <- colnames(seu)
+
 # optionally subset Seurat object to id
 if (args$id != "") {
   cat("Subsetting", args$id_col, "to", args$id, "...\n")
@@ -101,14 +109,6 @@ cat("Done subsetting!\n")
 # remove columns that are all NA
 seu@misc$sample_metadata <-
   seu@misc$sample_metadata[, colSums(is.na(seu@misc$sample_metadata)) != nrow(seu@misc$sample_metadata)]
-
-# add to Seurat meta.data slot
-seu@meta.data <-
-  dplyr::left_join(
-    seu@meta.data,
-    seu@misc$sample_metadata,
-    by = "sample")
-rownames(seu@meta.data) <- colnames(seu)
 
 # remove genes with no counts
 counts <- as.matrix(seu@assays$RNA@counts)
