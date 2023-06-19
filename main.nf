@@ -221,8 +221,6 @@ workflow snRNAseq_workflow {
   take:
     ch_loaded
     ch_params
-  emit:
-    annotating.out.ch_annotated
   main:
     
     // quality control and filtering
@@ -289,9 +287,9 @@ workflow {
   )
   
   // collected merged output
-  snRNAseq_workflow.out
-    .map { it -> tuple( it[0].findAll { it.first() == "merged" } ) }
-    .view { "$it is the merged channel!" }
+  //snRNAseq_workflow.out
+  //  .map { it -> tuple( it[0].findAll { it.first() == "merged" } ) }
+  //  .view { "$it is the merged channel!" }
     //.set {ch_merged_annotated}
   
   // infercnv - run if reference celltypes or samples provided, on merged output
@@ -308,7 +306,7 @@ workflow {
   //    "${baseDir}/templates/infercnv.rmd",
   //    ch_params
   //  )
-  }
+  //}
   
 }
 

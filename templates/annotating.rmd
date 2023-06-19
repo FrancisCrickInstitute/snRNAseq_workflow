@@ -923,7 +923,7 @@ avail_markers <- markers %>% purrr::map(intersect, rownames(cds))
 
 `r length(unique(unlist(avail_markers)))` of these marker genes are present in the dataset.
 
-```{r all_modules_heatmap, echo = F, warning = F, message = F, fig.dim = c(10, 20), fig.cap = "Heatmap of all module scores for all monocle3 clusters"}
+```{r all_modules_heatmap, echo = F, warning = F, message = F, fig.dim = c(10, length(avail_markers) / 2), fig.cap = "Heatmap of all module scores for all monocle3 clusters"}
 df <- 
   avail_markers %>%
   purrr::map(dplyr::as_tibble) %>%
