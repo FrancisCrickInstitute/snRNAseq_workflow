@@ -12,14 +12,14 @@ ml purge
 . ~/.bashrc
 conda activate vhl2
 
-# # run vhl
-# nextflow run . \
-#   -c config/VHL_ParseBio.config \
-#   -c config/crick.config \
-#   -resume
+# run vhl
+nextflow run . \
+  -c config/VHL_ParseBio.config \
+  -c config/crick.config \
+  -resume
   
 # run pdos
-nextflow run . \
-  -c config/ccRCC_PDOs.config \
-  -c config/crick.config 
+# nextflow run . \
+#   -c config/ccRCC_PDOs.config \
+#   -c config/crick.config 
 
