@@ -27,7 +27,7 @@ nextflow run <ARGUMENTS>
   
   (required)
   
-  --input.manifest_file            directory containing sparse matrix of aligned snRNA-seq data
+  --input.manifest_file           directory containing sparse matrix of aligned snRNA-seq data
   --input.sample_metadata_file    file containing sample metadata, must contain a 'sample' column
   
   (optional)
@@ -41,21 +41,22 @@ nextflow run <ARGUMENTS>
   
   filters:
   --filter.do_filtering           logical, default is true
+  --filter.n_mads                  integer, number of median absolute deviancies for outlier detection
   --filter.doublets               logical, default is true
-  --filter.n_nuclei_per_gene.max  integer, defailt is 5
-  --filter.nCount_RNA.max         integer, default is 10000
-  --filter.nCount_RNA.min         integer, default is 300
-  --filter.nFeature_RNA.max       integer, default is 10000
-  --filter.nFeature_RNA.min       integer, default is 200
-  --filter.percent_mito.max       proportion (0-1), default is 0.1
+  --filter.n_nuclei_per_gene.max  integer or 'adaptive', defailt is 5
+  --filter.nCount_RNA.max         integer or 'adaptive', default is 10000
+  --filter.nCount_RNA.min         integer or 'adaptive', default is 300
+  --filter.nFeature_RNA.max       integer or 'adaptive', default is 10000
+  --filter.nFeature_RNA.min       integer or 'adaptive', default is 200
+  --filter.percent_mito.max       proportion (0-1) or 'adaptive', default is 0.1
   
   dimensionality reduction and clustering:
   --n_dims                        integer, number of PCs
   --vars_to_regress               vector of variables to regress out of the SCTransform residuals
   
   annotating celltypes:
-  --markers_file                  file containing markers for celltype annotation, must contain 'gene' and 'population' columns
-  --annotations_file              file containing final celltype annotations for the dataset, must contain an 'annotation' column and a column matching one of the metadata columns (e.g., 'cell', 'cluster' or 'partition') of the object
+  --annotate.markers_file         file containing markers for celltype annotation, must contain 'gene' and 'population' columns
+  --annotate.annotations_file     file containing final celltype annotations for the dataset, must contain an 'annotation' column and a column matching one of the metadata columns (e.g., 'cell', 'cluster' or 'partition') of the object
   
   infercnv:
   --infercnv.reference_celltypes  comma-delimited list of annotations to use as a reference
@@ -98,27 +99,6 @@ process load_input {
     """
 }
 
-// merge samples
-process merge_samples {
-  tag "merged"
-  label 'process_medium'
-  publishDir "${params.output.dir}/merged/",
-    mode: 'copy',
-    pattern: "*.rds"
-  
-  input:
-    path rds_files, stageAs: "seu??.rds"
-    
-  output:
-    tuple val("merged"), path('seu.rds'), emit: ch_merged
-    
-  script:
-    """
-    Rscript ${baseDir}/templates/merge_samples.R \
-      ${rds_files.join(',')}
-    """
-}
-
 // filtering
 process filtering {
   tag "${id}"
@@ -140,6 +120,27 @@ process filtering {
   script:
     """
     Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "filtering.html", output_dir = getwd())'
+    """
+}
+
+// merge samples
+process merge_samples {
+  tag "merged"
+  label 'process_medium'
+  publishDir "${params.output.dir}/merged/",
+    mode: 'copy',
+    pattern: "*.rds"
+  
+  input:
+    path rds_files, stageAs: "seu??.rds"
+    
+  output:
+    tuple val("merged"), path('seu.rds'), emit: ch_merged
+    
+  script:
+    """
+    Rscript ${baseDir}/templates/merge_samples.R \
+      ${rds_files.join(',')}
     """
 }
 
@@ -219,20 +220,13 @@ process infercnv {
 // pipeline workflow
 workflow snRNAseq_workflow {
   take:
-    ch_loaded
+    ch_filtered
     ch_params
   main:
     
-    // quality control and filtering
-    filtering(
-      ch_loaded,
-      "${baseDir}/templates/filtering.rmd", 
-      ch_params,
-    )
-    
     // dimensionality reduction and clustering
     clustering(
-      filtering.out.ch_filtered,
+      ch_filtered,
       "${baseDir}/templates/clustering.rmd", 
       ch_params
     ) 
@@ -272,6 +266,13 @@ workflow {
     ch_ids
   )
   
+  // quality control and filtering
+  filtering(
+    load_input.out.ch_loaded,
+    "${baseDir}/templates/filtering.rmd", 
+    save_params.out.ch_params,
+  )
+  
   // initiate ch_run
   Channel
     .empty()
@@ -279,7 +280,7 @@ workflow {
   if ( params.input.run_all ) {
     // merge all samples
     merge_samples(
-      load_input.out.ch_loaded
+      filtering.out.ch_filtered
       .map { id, rds_file -> rds_file }
       .collect()
     )
@@ -290,7 +291,7 @@ workflow {
   if ( params.input.run_each ) {
     // add each sample to ch_run
     ch_run
-      .concat(load_input.out.ch_loaded)
+      .concat(filtering.out.ch_filtered)
       .set { ch_run }
   }
   
@@ -312,7 +313,7 @@ workflow {
   // or all patient samples or annotated individual samples!
   //if (  params.infercnv.gene_order_file != false &
   //      ((params.infercnv.reference_samples != false) ||
-  //      (params.infercnv.reference_celltypes != false & params.annotating.annotations_file != false))
+  //      (params.infercnv.reference_celltypes != false & params.annotate.annotations_file != false))
   //   ) {
   //  infercnv(
   //    // merged samples will be the first out

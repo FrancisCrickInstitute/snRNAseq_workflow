@@ -324,13 +324,29 @@ cds <- xfun::cache_rds({
 }, file = "cds_nonlin_dim_red.cds")
 ```
 
+```{r pca_and_umap, class.source = 'fold-hide', fig.dim = c(10, 5), fig.cap = "Plot of monocle3 PCA and UMAP"}
+p <- 
+  c("PCA", "UMAP") %>%
+  purrr::map(function(redu) {
+    monocle3::plot_cells(
+        cds, 
+        color_cells_by = "sample",
+        reduction_method = redu, 
+        show_trajectory_graph = F, 
+        label_cell_groups = F) +
+      ditto_colours +
+      ggplot2::theme(legend.position = "none")
+  }) 
+p[[1]] + p[[2]]
+```
+
 Plotting all different groupings of the data onto the reductions can help reveal batch effects. If certain experimental variables seem to strongly influence the grouping of cells, these effects can be removed. If so, use the `align_cds` step from [this tutorial](https://cole-trapnell-lab.github.io/monocle3/docs/clustering/#reduce-dimension).
 
 ```{r get_groupings, include = F}
 groupings <- colnames(cds@metadata$sample_metadata)
 ```
 
-```{r groupings_vs_reductions, class.source = 'fold-hide', fig.dim = get_fig_dims(n_plots = 3 * length(groupings), n_cols = 3), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings"}
+```{r groupings_vs_reductions, class.source = 'fold-hide', fig.dim = get_fig_dims(n_plots = 3 * length(groupings), n_cols = 3), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings", eval = (nrow(cds@metadata$sample_metadata) > 1) == T}
 # plot all groupings vs all reductions
 groupings_vs_reductions <- list()
 purrr::walk(groupings, function(grouping) {
@@ -405,7 +421,7 @@ We can now cluster the cells. Monocle3 does not require a user-defined clusterin
 ```{r cluster_cells}
 lvls <- c("cluster", "partition")
 cds <- xfun::cache_rds({
-  cds <- monocle3::cluster_cells(cds, random_seed = random_seed)
+  cds <- monocle3::cluster_cells(cds, random_seed = random_seed, cluster_method = "louvain")
   # add it to the colData and reorder clusters and partitions numerically
   SummarizedExperiment::colData(cds)$cluster <- 
     factor(
