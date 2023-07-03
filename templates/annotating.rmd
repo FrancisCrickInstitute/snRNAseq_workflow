@@ -748,7 +748,7 @@ The package `SingleR` returns "the best annotation for each cell in a test datas
 Some annotations will contain very few nuclei. These are usually not of interest and clutter up plotting, so we remove annotations assigned to < 10 nuclei.
 
 ```{r singler_annots, message = F, warning = F}
-singler_refs <- celldex::HumanPrimaryCellAtlasData()
+singler_refs <- celldex::BlueprintEncodeData()
 
 cds_singler <- xfun::cache_rds({
   cds_singler <- SingleR::SingleR(
@@ -773,7 +773,7 @@ cds <- xfun::cache_rds({
             dplyr::select(singler_annot_fine, singler_annot_main = label.main))
         )
   # add main/fine labels for partitions/clusters
-  for (lvl in lvls) {
+  for (lvl in c("cluster", "partition")) {
     for (annot in c("singler_annot_fine", "singler_annot_main")) {
       SummarizedExperiment::colData(cds)[, paste(lvl, annot, sep = "_")] <-
         get_singler_annot_label(cds, annot, lvl)
@@ -810,7 +810,7 @@ p
 
 ```{r umap_vs_singler_annots, class.source = 'fold-hide', results = F, fig.width = 10, fig.height = 10, fig.cap = "Plot of UMAP clusters, coloured by SingleR annotation and labelled by the major SingleR annotation(s) per cluster"}
 p <- list()
-purrr::walk(lvls, function(lvl) {
+purrr::walk(c("cluster", "partition"), function(lvl) {
   purrr::walk(c("singler_annot_fine", "singler_annot_main"), function(annot) {
     label_col <- paste(lvl, annot, sep = "_")
     p_i <-
@@ -903,16 +903,16 @@ p
 
 ## Manual celltype annotation using curated literature markers
 
-`r if (curr_params$annotate$markers_file == F) {"No markers_file given." }`
+`r if (curr_params$annotating$markers_file == F) {"No markers_file given." }`
 
-```{r exit_if_no_markers, eval = curr_params$annotate$markers_file == F, include = F}
+```{r exit_if_no_markers, eval = curr_params$annotating$markers_file == F, include = F}
 knitr::knit_exit()
 ```
 
 ```{r cds_avail_markers, echo = F}
 # load markers
 markers <-
-  curr_params$annotate$markers_file %>%
+  curr_params$annotating$markers_file %>%
   readr::read_tsv(show_col_types = F) %>%
   {split(.$gene, .$population)}
 # get markers present in the dataset
@@ -1156,15 +1156,15 @@ knitr::kable(cell_groupings_summary, digits = 3)
 
 # Final celltype annotations
 
-`r if (curr_params$annotate$annotations_file == F) {"No annotations_file given." }`
+`r if (curr_params$annotating$annotations_file == F) {"No annotations_file given." }`
 
-```{r exit_if_no_annots, eval = curr_params$annotate$annotations_file == F, include = F}
+```{r exit_if_no_annots, eval = curr_params$annotating$annotations_file == F, include = F}
 knitr::knit_exit()
 ```
 
 ```{r load_annots}
 annots <- 
-  curr_params$annotate$annotations_file %>%
+  curr_params$annotating$annotations_file %>%
   readr::read_tsv() %>%
   dplyr::mutate(dplyr::across(everything(), as.factor))
 ```

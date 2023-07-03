@@ -4,5 +4,7 @@ A_post_T1_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/A_post_
 A_post_T2_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/A_post_T2_biopsy/outs/filtered_feature_bc_matrix/
 A_post_N1_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/A_post_N1_biopsy/outs/filtered_feature_bc_matrix/
 A_post_N2_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/A_post_N2_biopsy/outs/filtered_feature_bc_matrix/
+B_post_T1_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/B_post_T1_biopsy/outs/filtered_feature_bc_matrix/
+B_post_N1_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/B_post_N1_biopsy/outs/filtered_feature_bc_matrix/
 C_post_T2_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/C_post_T2_biopsy/outs/filtered_feature_bc_matrix/
 C_post_N1_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/C_post_N1_biopsy/outs/filtered_feature_bc_matrix/

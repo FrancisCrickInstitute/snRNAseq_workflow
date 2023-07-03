@@ -1,0 +1,2649 @@
+N E X T F L O W  ~  version 23.04.1
+Launching `./main.nf` [golden_angela] DSL2 - revision: b7d6b272a4
+
+snRNAseq workflow
+=================
+manifest file:        input/oesophageal_10X/test/sample_manifest.tsv
+sample metadata file: /rds/general/user/art4017/home/cellranger/output/sample_metadata.tsv
+output dir:           output/test/
+
+[-        ] process > save_params -
+
+[-        ] process > save_params                  -
+[-        ] process > load_input                   -
+[-        ] process > filtering                    -
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+[-        ] process > save_params                  -
+[-        ] process > load_input                   [  0%] 0 of 7
+[-        ] process > filtering                    -
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+[58/284fec] process > save_params                  [100%] 1 of 1, cached: 1 ✔
+[-        ] process > load_input                   [  0%] 0 of 7
+[-        ] process > filtering                    -
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (1)
+[58/284fec] process > save_params                  [100%] 1 of 1, cached: 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [  0%] 0 of 7
+[-        ] process > filtering                    -
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (3)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[52/7b26c1] process > load_input (A_post_N2_biopsy) [  0%] 0 of 7
+[-        ] process > filtering                     -
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (5)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[33/2b9685] process > load_input (C_post_T2_biopsy) [  0%] 0 of 7
+[-        ] process > filtering                     -
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (7)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[18/6d8dd5] process > load_input (A_post_N1_biopsy) [  0%] 0 of 7
+[-        ] process > filtering                     -
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (7)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[18/6d8dd5] process > load_input (A_post_N1_biopsy) [  0%] 0 of 7
+[-        ] process > filtering                     -
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (7)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[18/6d8dd5] process > load_input (A_post_N1_biopsy) [  0%] 0 of 7
+[-        ] process > filtering                     -
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (7)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[52/7b26c1] process > load_input (A_post_N2_biopsy) [ 28%] 2 of 7
+[-        ] process > filtering                     [  0%] 0 of 2
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (8)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[52/7b26c1] process > load_input (A_post_N2_biopsy) [ 28%] 2 of 7
+[55/77de28] process > filtering (A_post_N2_biopsy)  [  0%] 0 of 2
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (9)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[52/7b26c1] process > load_input (A_post_N2_biopsy) [ 28%] 2 of 7
+[ac/feedc5] process > filtering (A_pre_T0_biopsy)   [  0%] 0 of 2
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (9)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[18/6d8dd5] process > load_input (A_post_N1_biopsy) [ 71%] 5 of 7
+[ac/feedc5] process > filtering (A_pre_T0_biopsy)   [  0%] 0 of 5
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (11)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[18/6d8dd5] process > load_input (A_post_N1_biopsy) [ 71%] 5 of 7
+[cd/a6ec7b] process > filtering (C_post_T2_biopsy)  [  0%] 0 of 5
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (12)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[18/6d8dd5] process > load_input (A_post_N1_biopsy) [ 71%] 5 of 7
+[23/7a75fc] process > filtering (A_post_N1_biopsy)  [  0%] 0 of 5
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (12)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)  [  0%] 0 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[bd/e9cdf9] process > filtering (A_post_T2_biopsy)  [  0%] 0 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[bd/e9cdf9] process > filtering (A_post_T2_biopsy)  [  0%] 0 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[bd/e9cdf9] process > filtering (A_post_T2_biopsy)  [  0%] 0 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[ac/feedc5] process > filtering (A_pre_T0_biopsy)   [ 14%] 1 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[cd/a6ec7b] process > filtering (C_post_T2_biopsy)  [ 28%] 2 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[55/77de28] process > filtering (A_post_N2_biopsy)  [ 42%] 3 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[e5/9b076f] process > filtering (A_post_T1_biopsy)  [ 57%] 4 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[e5/9b076f] process > filtering (A_post_T1_biopsy)  [ 57%] 4 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[e5/9b076f] process > filtering (A_post_T1_biopsy)  [ 57%] 4 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[f4/a3f885] process > filtering (C_post_N1_biopsy)  [ 71%] 5 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[bd/e9cdf9] process > filtering (A_post_T2_biopsy)  [ 85%] 6 of 7
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (14)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)  [100%] 7 of 7 ✔
+[-        ] process > merge_samples                 [  0%] 0 of 1
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (15)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)  [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)        [  0%] 0 of 1
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (15)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)  [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)        [  0%] 0 of 1
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (15)
+[58/284fec] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)  [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)        [100%] 1 of 1 ✔
+[-        ] process > snRNAseq_workflow:clustering  [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating  -
+
+executor >  pbspro (16)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[25/5a863a] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (17)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[bb/4465e2] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (18)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[f5/e8a49d] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (19)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[4e/dccb18] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (21)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[5e/105948] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (23)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[05/cede57] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (23)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[05/cede57] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (23)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[05/cede57] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (23)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[05/cede57] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (23)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[bb/4465e2] process > snRNAseq_workflow:clusterin... [ 12%] 1 of 8
+[-        ] process > snRNAseq_workflow:annotating   [  0%] 0 of 1
+
+executor >  pbspro (24)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[bb/4465e2] process > snRNAseq_workflow:clusterin... [ 12%] 1 of 8
+[2a/eb4984] process > snRNAseq_workflow:annotatin... [  0%] 0 of 1
+
+executor >  pbspro (24)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[bb/4465e2] process > snRNAseq_workflow:clusterin... [ 12%] 1 of 8
+[2a/eb4984] process > snRNAseq_workflow:annotatin... [  0%] 0 of 1
+
+executor >  pbspro (24)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[4e/dccb18] process > snRNAseq_workflow:clusterin... [ 25%] 2 of 8
+[2a/eb4984] process > snRNAseq_workflow:annotatin... [  0%] 0 of 2
+
+executor >  pbspro (25)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[4e/dccb18] process > snRNAseq_workflow:clusterin... [ 25%] 2 of 8
+[03/c226a2] process > snRNAseq_workflow:annotatin... [  0%] 0 of 2
+
+executor >  pbspro (25)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[4e/dccb18] process > snRNAseq_workflow:clusterin... [ 25%] 2 of 8
+[03/c226a2] process > snRNAseq_workflow:annotatin... [  0%] 0 of 2
+
+executor >  pbspro (25)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[4e/dccb18] process > snRNAseq_workflow:clusterin... [ 25%] 2 of 8
+[03/c226a2] process > snRNAseq_workflow:annotatin... [  0%] 0 of 2
+
+executor >  pbspro (25)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[f5/e8a49d] process > snRNAseq_workflow:clusterin... [ 37%] 3 of 8
+[03/c226a2] process > snRNAseq_workflow:annotatin... [  0%] 0 of 3
+
+executor >  pbspro (26)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[f5/e8a49d] process > snRNAseq_workflow:clusterin... [ 37%] 3 of 8
+[70/8be6c1] process > snRNAseq_workflow:annotatin... [  0%] 0 of 3
+
+executor >  pbspro (26)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[25/5a863a] process > snRNAseq_workflow:clusterin... [ 44%] 4 of 9, failed: 1...
+[70/8be6c1] process > snRNAseq_workflow:annotatin... [  0%] 0 of 3
+[25/5a863a] NOTE: Process `snRNAseq_workflow:clustering (merged)` terminated for an unknown reason -- Likely it has been terminated by the external system -- Execution is retried (1)
+
+executor >  pbspro (27)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [ 44%] 4 of 9, failed: 1...
+[70/8be6c1] process > snRNAseq_workflow:annotatin... [  0%] 0 of 3
+[25/5a863a] NOTE: Process `snRNAseq_workflow:clustering (merged)` terminated for an unknown reason -- Likely it has been terminated by the external system -- Execution is retried (1)
+
+executor >  pbspro (27)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[a5/aeaf4d] process > snRNAseq_workflow:clusterin... [ 55%] 5 of 9, failed: 1...
+[70/8be6c1] process > snRNAseq_workflow:annotatin... [  0%] 0 of 4
+
+
+executor >  pbspro (28)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[a5/aeaf4d] process > snRNAseq_workflow:clusterin... [ 55%] 5 of 9, failed: 1...
+[69/30d6ae] process > snRNAseq_workflow:annotatin... [  0%] 0 of 4
+
+
+executor >  pbspro (28)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[a5/aeaf4d] process > snRNAseq_workflow:clusterin... [ 55%] 5 of 9, failed: 1...
+[69/30d6ae] process > snRNAseq_workflow:annotatin... [  0%] 0 of 4
+
+executor >  pbspro (28)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[a5/aeaf4d] process > snRNAseq_workflow:clusterin... [ 55%] 5 of 9, failed: 1...
+[69/30d6ae] process > snRNAseq_workflow:annotatin... [  0%] 0 of 4
+
+executor >  pbspro (28)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[5e/105948] process > snRNAseq_workflow:clusterin... [ 66%] 6 of 9, failed: 1...
+[69/30d6ae] process > snRNAseq_workflow:annotatin... [  0%] 0 of 5
+
+executor >  pbspro (29)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[5e/105948] process > snRNAseq_workflow:clusterin... [ 66%] 6 of 9, failed: 1...
+[42/7cea1a] process > snRNAseq_workflow:annotatin... [  0%] 0 of 5
+
+executor >  pbspro (29)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[5e/105948] process > snRNAseq_workflow:clusterin... [ 66%] 6 of 9, failed: 1...
+[42/7cea1a] process > snRNAseq_workflow:annotatin... [  0%] 0 of 5
+
+executor >  pbspro (29)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[05/cede57] process > snRNAseq_workflow:clusterin... [ 77%] 7 of 9, failed: 1...
+[42/7cea1a] process > snRNAseq_workflow:annotatin... [  0%] 0 of 6
+
+executor >  pbspro (30)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[05/cede57] process > snRNAseq_workflow:clusterin... [ 77%] 7 of 9, failed: 1...
+[f3/96b8da] process > snRNAseq_workflow:annotatin... [  0%] 0 of 6
+
+executor >  pbspro (30)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[05/cede57] process > snRNAseq_workflow:clusterin... [ 77%] 7 of 9, failed: 1...
+[f3/96b8da] process > snRNAseq_workflow:annotatin... [  0%] 0 of 6
+
+executor >  pbspro (30)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[f3/96b8da] process > snRNAseq_workflow:annotatin... [  0%] 0 of 7
+
+executor >  pbspro (31)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[7e/27beb1] process > snRNAseq_workflow:annotatin... [  0%] 0 of 7
+
+executor >  pbspro (31)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[7e/27beb1] process > snRNAseq_workflow:annotatin... [  0%] 0 of 7
+
+executor >  pbspro (31)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[42/7cea1a] process > snRNAseq_workflow:annotatin... [ 12%] 1 of 8, failed: 1...
+[42/7cea1a] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (32)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[2c/689164] process > snRNAseq_workflow:annotatin... [ 12%] 1 of 8, failed: 1...
+[42/7cea1a] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (32)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[2c/689164] process > snRNAseq_workflow:annotatin... [ 12%] 1 of 8, failed: 1...
+
+
+executor >  pbspro (32)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[70/8be6c1] process > snRNAseq_workflow:annotatin... [ 22%] 2 of 9, failed: 2...
+[70/8be6c1] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (33)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[04/b9d7af] process > snRNAseq_workflow:annotatin... [ 22%] 2 of 9, failed: 2...
+[70/8be6c1] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (33)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[04/b9d7af] process > snRNAseq_workflow:annotatin... [ 22%] 2 of 9, failed: 2...
+
+
+executor >  pbspro (33)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[7e/27beb1] process > snRNAseq_workflow:annotatin... [ 30%] 3 of 10, failed: ...
+[7e/27beb1] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (34)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[3e/717048] process > snRNAseq_workflow:annotatin... [ 30%] 3 of 10, failed: ...
+[7e/27beb1] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (34)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[3e/717048] process > snRNAseq_workflow:annotatin... [ 30%] 3 of 10, failed: ...
+
+
+executor >  pbspro (34)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[03/c226a2] process > snRNAseq_workflow:annotatin... [ 36%] 4 of 11, failed: ...
+[03/c226a2] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (35)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[22/e74990] process > snRNAseq_workflow:annotatin... [ 36%] 4 of 11, failed: ...
+[03/c226a2] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (35)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[2c/689164] process > snRNAseq_workflow:annotatin... [ 41%] 5 of 12, failed: ...
+[2c/689164] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+
+executor >  pbspro (36)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[67/2ebdde] process > snRNAseq_workflow:annotatin... [ 41%] 5 of 12, failed: ...
+[2c/689164] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+
+executor >  pbspro (36)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[f3/96b8da] process > snRNAseq_workflow:annotatin... [ 46%] 6 of 13, failed: ...
+[f3/96b8da] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+
+executor >  pbspro (37)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[29/e7a90d] process > snRNAseq_workflow:annotatin... [ 46%] 6 of 13, failed: ...
+[f3/96b8da] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+
+executor >  pbspro (37)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[69/30d6ae] process > snRNAseq_workflow:annotatin... [ 50%] 7 of 14, failed: ...
+[69/30d6ae] NOTE: Process `snRNAseq_workflow:annotating (A_post_T1_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+
+executor >  pbspro (38)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[b7/577599] process > snRNAseq_workflow:annotatin... [ 50%] 7 of 14, failed: ...
+[69/30d6ae] NOTE: Process `snRNAseq_workflow:annotating (A_post_T1_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+
+executor >  pbspro (38)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[b7/577599] process > snRNAseq_workflow:annotatin... [ 50%] 7 of 14, failed: ...
+
+
+executor >  pbspro (38)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[b7/577599] process > snRNAseq_workflow:annotatin... [ 50%] 7 of 14, failed: ...
+
+
+executor >  pbspro (38)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[3e/717048] process > snRNAseq_workflow:annotatin... [ 57%] 8 of 14, failed: ...
+[3e/717048] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (39)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[57/54528c] process > snRNAseq_workflow:annotatin... [ 53%] 8 of 15, failed: ...
+[3e/717048] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (39)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[57/54528c] process > snRNAseq_workflow:annotatin... [ 53%] 8 of 15, failed: ...
+[04/b9d7af] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+
+executor >  pbspro (40)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[3b/17d383] process > snRNAseq_workflow:annotatin... [ 56%] 9 of 16, failed: ...
+[04/b9d7af] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+
+executor >  pbspro (40)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[2a/eb4984] process > snRNAseq_workflow:annotatin... [ 58%] 10 of 17, failed:...
+[2a/eb4984] NOTE: Process `snRNAseq_workflow:annotating (A_post_N2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+
+executor >  pbspro (41)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[0d/8deb5d] process > snRNAseq_workflow:annotatin... [ 58%] 10 of 17, failed:...
+[2a/eb4984] NOTE: Process `snRNAseq_workflow:annotating (A_post_N2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+
+executor >  pbspro (41)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[0d/8deb5d] process > snRNAseq_workflow:annotatin... [ 58%] 10 of 17, failed:...
+
+
+executor >  pbspro (41)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[22/e74990] process > snRNAseq_workflow:annotatin... [ 61%] 11 of 18, failed:...
+[22/e74990] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (42)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[b6/895331] process > snRNAseq_workflow:annotatin... [ 61%] 11 of 18, failed:...
+[22/e74990] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (42)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[b6/895331] process > snRNAseq_workflow:annotatin... [ 61%] 11 of 18, failed:...
+
+
+executor >  pbspro (42)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[b6/895331] process > snRNAseq_workflow:annotatin... [ 61%] 11 of 18, failed:...
+
+
+executor >  pbspro (42)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[b6/895331] process > snRNAseq_workflow:annotatin... [ 61%] 11 of 18, failed:...
+
+executor >  pbspro (42)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[b6/895331] process > snRNAseq_workflow:annotatin... [ 61%] 11 of 18, failed:...
+
+executor >  pbspro (42)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[b7/577599] process > snRNAseq_workflow:annotatin... [ 63%] 12 of 19, failed:...
+[b7/577599] NOTE: Process `snRNAseq_workflow:annotating (A_post_T1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (43)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[01/f04421] process > snRNAseq_workflow:annotatin... [ 63%] 12 of 19, failed:...
+[b7/577599] NOTE: Process `snRNAseq_workflow:annotating (A_post_T1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (43)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[01/f04421] process > snRNAseq_workflow:annotatin... [ 63%] 12 of 19, failed:...
+
+
+executor >  pbspro (43)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[67/2ebdde] process > snRNAseq_workflow:annotatin... [ 65%] 13 of 20, failed:...
+[67/2ebdde] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (44)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[2f/cf6521] process > snRNAseq_workflow:annotatin... [ 65%] 13 of 20, failed:...
+[67/2ebdde] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (44)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[2f/cf6521] process > snRNAseq_workflow:annotatin... [ 65%] 13 of 20, failed:...
+
+
+executor >  pbspro (44)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[29/e7a90d] process > snRNAseq_workflow:annotatin... [ 66%] 14 of 21, failed:...
+[29/e7a90d] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (45)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[a3/9efd81] process > snRNAseq_workflow:annotatin... [ 66%] 14 of 21, failed:...
+[29/e7a90d] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (45)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[a3/9efd81] process > snRNAseq_workflow:annotatin... [ 66%] 14 of 21, failed:...
+
+
+executor >  pbspro (45)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[57/54528c] process > snRNAseq_workflow:annotatin... [ 68%] 15 of 22, failed:...
+[57/54528c] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (46)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[ed/466645] process > snRNAseq_workflow:annotatin... [ 68%] 15 of 22, failed:...
+[57/54528c] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (46)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[ed/466645] process > snRNAseq_workflow:annotatin... [ 68%] 15 of 22, failed:...
+
+
+executor >  pbspro (46)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[b6/895331] process > snRNAseq_workflow:annotatin... [ 69%] 16 of 23, failed:...
+[b6/895331] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (47)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[77/5d303c] process > snRNAseq_workflow:annotatin... [ 69%] 16 of 23, failed:...
+[b6/895331] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (47)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[77/5d303c] process > snRNAseq_workflow:annotatin... [ 69%] 16 of 23, failed:...
+
+
+executor >  pbspro (47)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[2f/cf6521] process > snRNAseq_workflow:annotatin... [ 70%] 17 of 24, failed:...
+[2f/cf6521] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (48)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[0f/2ce705] process > snRNAseq_workflow:annotatin... [ 70%] 17 of 24, failed:...
+[2f/cf6521] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (48)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[0f/2ce705] process > snRNAseq_workflow:annotatin... [ 70%] 17 of 24, failed:...
+
+
+executor >  pbspro (48)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[0f/2ce705] process > snRNAseq_workflow:annotatin... [ 70%] 17 of 24, failed:...
+
+
+executor >  pbspro (48)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[3b/17d383] process > snRNAseq_workflow:annotatin... [ 72%] 18 of 25, failed:...
+[3b/17d383] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (49)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[23/64bd4c] process > snRNAseq_workflow:annotatin... [ 72%] 18 of 25, failed:...
+[3b/17d383] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (49)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[23/64bd4c] process > snRNAseq_workflow:annotatin... [ 72%] 18 of 25, failed:...
+
+
+executor >  pbspro (49)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[01/f04421] process > snRNAseq_workflow:annotatin... [ 73%] 19 of 26, failed:...
+[01/f04421] NOTE: Process `snRNAseq_workflow:annotating (A_post_T1_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (50)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[d3/b66cee] process > snRNAseq_workflow:annotatin... [ 73%] 19 of 26, failed:...
+[01/f04421] NOTE: Process `snRNAseq_workflow:annotating (A_post_T1_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (50)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[d3/b66cee] process > snRNAseq_workflow:annotatin... [ 73%] 19 of 26, failed:...
+
+
+executor >  pbspro (50)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[ed/466645] process > snRNAseq_workflow:annotatin... [ 74%] 20 of 27, failed:...
+[ed/466645] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (51)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[d5/95916d] process > snRNAseq_workflow:annotatin... [ 74%] 20 of 27, failed:...
+[ed/466645] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (51)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[0d/8deb5d] process > snRNAseq_workflow:annotatin... [ 77%] 21 of 27, failed:...
+[ed/466645] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+[0d/8deb5d] NOTE: Process `snRNAseq_workflow:annotating (A_post_N2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (52)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[25/ff06b7] process > snRNAseq_workflow:annotatin... [ 75%] 21 of 28, failed:...
+[ed/466645] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+[0d/8deb5d] NOTE: Process `snRNAseq_workflow:annotating (A_post_N2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (52)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2e/902297] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[25/ff06b7] process > snRNAseq_workflow:annotatin... [ 75%] 21 of 28, failed:...
+
+
+
+executor >  pbspro (52)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[25/ff06b7] process > snRNAseq_workflow:annotatin... [ 72%] 21 of 29, failed:...
+
+
+
+executor >  pbspro (53)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[78/383e60] process > snRNAseq_workflow:annotatin... [ 72%] 21 of 29, failed:...
+
+executor >  pbspro (53)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[77/5d303c] process > snRNAseq_workflow:annotatin... [ 73%] 22 of 30, failed:...
+[77/5d303c] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (54)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[f9/03cfe1] process > snRNAseq_workflow:annotatin... [ 73%] 22 of 30, failed:...
+[77/5d303c] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (54)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[f9/03cfe1] process > snRNAseq_workflow:annotatin... [ 73%] 22 of 30, failed:...
+[77/5d303c] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (54)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[f9/03cfe1] process > snRNAseq_workflow:annotatin... [ 73%] 22 of 30, failed:...
+
+
+executor >  pbspro (54)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[f9/03cfe1] process > snRNAseq_workflow:annotatin... [ 73%] 22 of 30, failed:...
+
+
+executor >  pbspro (54)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[a3/9efd81] process > snRNAseq_workflow:annotatin... [ 76%] 23 of 30, failed:...
+[a3/9efd81] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (54)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[a3/9efd81] process > snRNAseq_workflow:annotatin... [ 74%] 23 of 31, failed:...
+[a3/9efd81] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (55)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[8b/1f7ae3] process > snRNAseq_workflow:annotatin... [ 74%] 23 of 31, failed:...
+[a3/9efd81] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (55)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[8b/1f7ae3] process > snRNAseq_workflow:annotatin... [ 74%] 23 of 31, failed:...
+
+
+executor >  pbspro (55)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[0f/2ce705] process > snRNAseq_workflow:annotatin... [ 75%] 24 of 32, failed:...
+[0f/2ce705] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (5)
+
+executor >  pbspro (56)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[e1/236bd4] process > snRNAseq_workflow:annotatin... [ 75%] 24 of 32, failed:...
+[0f/2ce705] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (5)
+
+executor >  pbspro (56)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[e1/236bd4] process > snRNAseq_workflow:annotatin... [ 75%] 24 of 32, failed:...
+
+
+executor >  pbspro (56)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[23/64bd4c] process > snRNAseq_workflow:annotatin... [ 75%] 25 of 33, failed:...
+[23/64bd4c] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (57)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[db/dfab35] process > snRNAseq_workflow:annotatin... [ 75%] 25 of 33, failed:...
+[23/64bd4c] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (57)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[d5/95916d] process > snRNAseq_workflow:annotatin... [ 76%] 26 of 34, failed:...
+[d5/95916d] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (5)
+
+
+executor >  pbspro (58)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[de/83186e] process > snRNAseq_workflow:annotatin... [ 76%] 26 of 34, failed:...
+[d5/95916d] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (5)
+
+
+executor >  pbspro (58)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[de/83186e] process > snRNAseq_workflow:annotatin... [ 76%] 26 of 34, failed:...
+
+
+executor >  pbspro (58)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[de/83186e] process > snRNAseq_workflow:annotatin... [ 76%] 26 of 34, failed:...
+ERROR ~ Error executing process > 'snRNAseq_workflow:annotating (C_post_N1_biopsy)'
+
+Caused by:
+  Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1)
+
+Command executed:
+
+  Rscript -e 'rmarkdown::render("annotating.rmd", params = list(params_file = "params.json", rds_file = "cds_clustered.rds"), output_file = "annotating.html", output_dir = getwd())'
+
+Command exit status:
+  1
+
+Command output:
+  1/48                                
+  2/48 [initialise]                   
+  3/48                                
+  4/48 [define_functions]             
+  5/48                                
+  6/48 [curr_params]                  
+  7/48                                
+  8/48 [load_seu]                     
+  9/48                                
+  10/48 [cluster_markers]              
+  11/48                                
+  12/48 [top_markers]                  
+  13/48                                
+  14/48 [singler_annots]               
+  15/48                                
+  16/48 [save_singler]                 
+  17/48                                
+  18/48 [singler_annot_fine_heatmap]   
+  19/48                                
+  20/48 [umap_vs_singler_annots]       
+  21/48                                
+  22/48 [singler_annots_bar]           
+  23/48                                
+  24/48 [singler_annots_alluvial]      
+  25/48                                
+  26/48 [exit_if_no_markers]           
+  27/48                                
+  28/48 [cds_avail_markers]            
+  29/48                                
+  30/48 [all_modules_heatmap]          
+  31/48                                
+  32/48 [modules_vs_clusters_heatmap]  
+  33/48                                
+  34/48 [modules_vs_partitions_heatmap]
+  35/48                                
+  36/48 [knit_module_plots]            
+
+Command error:
+  
+  
+  processing file: annotating.rmd
+  
+  Quitting from lines NA-6 [knit_module_plots] (annotating.rmd)
+  Error in `parse_block()`:
+  ! Duplicate chunk label 'fibroblast', which has been used for the chunk:
+  p <- plot_markers_on_umap(cds, ml = ct_markers, final_umap)
+  p
+  Backtrace:
+   1. knitr::knit_child(...)
+   2. knitr::knit(..., tangle = opts_knit$get("tangle"), envir = envir)
+   3. knitr:::process_file(text, output)
+   4. knitr:::split_file(lines = text)
+   5. base::lapply(...)
+   6. knitr (local) FUN(X[[i]], ...)
+   7. knitr:::parse_block(g[-1], g[1], params.src, markdown_mode)
+  Execution halted
+
+Work dir:
+  /rds/general/user/art4017/home/snRNAseq_workflow/work_test/e1/236bd47393a1a238b803eed0d42a68
+
+Tip: view the complete command output by changing to the process work dir and entering the command `cat .command.out`
+
+ -- Check '.nextflow.log' file for details
+WARN: Killing running tasks (7)
+
+executor >  pbspro (58)
+[58/284fec] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7 ✔
+[23/7a75fc] process > filtering (A_post_N1_biopsy)   [100%] 7 of 7 ✔
+[bb/003108] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[70/ff92d7] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[de/83186e] process > snRNAseq_workflow:annotatin... [100%] 27 of 27, failed:...
+ERROR ~ Error executing process > 'snRNAseq_workflow:annotating (C_post_N1_biopsy)'
+
+Caused by:
+  Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1)
+
+Command executed:
+
+  Rscript -e 'rmarkdown::render("annotating.rmd", params = list(params_file = "params.json", rds_file = "cds_clustered.rds"), output_file = "annotating.html", output_dir = getwd())'
+
+Command exit status:
+  1
+
+Command output:
+  1/48                                
+  2/48 [initialise]                   
+  3/48                                
+  4/48 [define_functions]             
+  5/48                                
+  6/48 [curr_params]                  
+  7/48                                
+  8/48 [load_seu]                     
+  9/48                                
+  10/48 [cluster_markers]              
+  11/48                                
+  12/48 [top_markers]                  
+  13/48                                
+  14/48 [singler_annots]               
+  15/48                                
+  16/48 [save_singler]                 
+  17/48                                
+  18/48 [singler_annot_fine_heatmap]   
+  19/48                                
+  20/48 [umap_vs_singler_annots]       
+  21/48                                
+  22/48 [singler_annots_bar]           
+  23/48                                
+  24/48 [singler_annots_alluvial]      
+  25/48                                
+  26/48 [exit_if_no_markers]           
+  27/48                                
+  28/48 [cds_avail_markers]            
+  29/48                                
+  30/48 [all_modules_heatmap]          
+  31/48                                
+  32/48 [modules_vs_clusters_heatmap]  
+  33/48                                
+  34/48 [modules_vs_partitions_heatmap]
+  35/48                                
+  36/48 [knit_module_plots]            
+
+Command error:
+  
+  
+  processing file: annotating.rmd
+  
+  Quitting from lines NA-6 [knit_module_plots] (annotating.rmd)
+  Error in `parse_block()`:
+  ! Duplicate chunk label 'fibroblast', which has been used for the chunk:
+  p <- plot_markers_on_umap(cds, ml = ct_markers, final_umap)
+  p
+  Backtrace:
+   1. knitr::knit_child(...)
+   2. knitr::knit(..., tangle = opts_knit$get("tangle"), envir = envir)
+   3. knitr:::process_file(text, output)
+   4. knitr:::split_file(lines = text)
+   5. base::lapply(...)
+   6. knitr (local) FUN(X[[i]], ...)
+   7. knitr:::parse_block(g[-1], g[1], params.src, markdown_mode)
+  Execution halted
+
+Work dir:
+  /rds/general/user/art4017/home/snRNAseq_workflow/work_test/e1/236bd47393a1a238b803eed0d42a68
+
+Tip: view the complete command output by changing to the process work dir and entering the command `cat .command.out`
+
+ -- Check '.nextflow.log' file for details
+
+N E X T F L O W  ~  version 23.04.1
+Launching `./main.nf` [goofy_carson] DSL2 - revision: 621802130a
+
+snRNAseq workflow
+=================
+manifest file:        input/oesophageal_10X/test/sample_manifest.tsv
+sample metadata file: /rds/general/user/art4017/home/cellranger/output/sample_metadata.tsv
+output dir:           output/test/
+
+[-        ] process > save_params -
+
+[-        ] process > save_params                  -
+[-        ] process > load_input                   -
+[-        ] process > filtering                    -
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+[-        ] process > save_params                  [  0%] 0 of 1
+[-        ] process > load_input                   -
+[-        ] process > filtering                    -
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+[-        ] process > save_params                  [  0%] 0 of 1
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[-        ] process > filtering                    -
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (1)
+[42/0c72ce] process > save_params                  [  0%] 0 of 1
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[-        ] process > filtering                    -
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (1)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[-        ] process > filtering                    [  0%] 0 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (2)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[cb/75b2ff] process > filtering (A_pre_T0_biopsy)  [  0%] 0 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (4)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy) [  0%] 0 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (6)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[15/193d26] process > filtering (C_post_T2_biopsy) [  0%] 0 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy) [  0%] 0 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy) [  0%] 0 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy) [  0%] 0 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[34/991527] process > filtering (A_post_N2_biopsy) [ 14%] 1 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[15/193d26] process > filtering (C_post_T2_biopsy) [ 42%] 3 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[74/5eb449] process > filtering (A_post_N1_biopsy) [ 57%] 4 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[3f/00096e] process > filtering (A_post_T1_biopsy) [ 71%] 5 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy) [ 85%] 6 of 7
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[-        ] process > merge_samples                [  0%] 0 of 1
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (9)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)       [  0%] 0 of 1
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (9)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)       [  0%] 0 of 1
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (9)
+[42/0c72ce] process > save_params                  [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy) [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy) [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)       [100%] 1 of 1 ✔
+[-        ] process > snRNAseq_workflow:clustering [  0%] 0 of 6
+[-        ] process > snRNAseq_workflow:annotating -
+
+executor >  pbspro (10)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[38/393bfe] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (12)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[78/635627] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (14)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[8c/d6b5f2] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (16)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[52/feb14b] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (17)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[7e/aa9682] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (17)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[7e/aa9682] process > snRNAseq_workflow:clusterin... [  0%] 0 of 8
+[-        ] process > snRNAseq_workflow:annotating   -
+
+executor >  pbspro (17)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[a2/fbfb11] process > snRNAseq_workflow:clusterin... [ 12%] 1 of 8
+[-        ] process > snRNAseq_workflow:annotating   [  0%] 0 of 1
+
+executor >  pbspro (18)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[a2/fbfb11] process > snRNAseq_workflow:clusterin... [ 12%] 1 of 8
+[b6/829214] process > snRNAseq_workflow:annotatin... [  0%] 0 of 1
+
+executor >  pbspro (19)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[78/635627] process > snRNAseq_workflow:clusterin... [ 25%] 2 of 8
+[8c/ceef92] process > snRNAseq_workflow:annotatin... [  0%] 0 of 2
+
+executor >  pbspro (19)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[7d/dac489] process > snRNAseq_workflow:clusterin... [ 37%] 3 of 8
+[8c/ceef92] process > snRNAseq_workflow:annotatin... [  0%] 0 of 3
+
+executor >  pbspro (20)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[7d/dac489] process > snRNAseq_workflow:clusterin... [ 37%] 3 of 8
+[3b/92ec19] process > snRNAseq_workflow:annotatin... [  0%] 0 of 3
+
+executor >  pbspro (20)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[7d/dac489] process > snRNAseq_workflow:clusterin... [ 37%] 3 of 8
+[3b/92ec19] process > snRNAseq_workflow:annotatin... [  0%] 0 of 3
+
+executor >  pbspro (20)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[5a/1196df] process > snRNAseq_workflow:clusterin... [ 50%] 4 of 8
+[3b/92ec19] process > snRNAseq_workflow:annotatin... [  0%] 0 of 4
+
+executor >  pbspro (21)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[5a/1196df] process > snRNAseq_workflow:clusterin... [ 50%] 4 of 8
+[22/a69bfa] process > snRNAseq_workflow:annotatin... [  0%] 0 of 4
+
+executor >  pbspro (21)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[5a/1196df] process > snRNAseq_workflow:clusterin... [ 50%] 4 of 8
+[22/a69bfa] process > snRNAseq_workflow:annotatin... [  0%] 0 of 4
+
+executor >  pbspro (21)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[8c/d6b5f2] process > snRNAseq_workflow:clusterin... [ 62%] 5 of 8
+[22/a69bfa] process > snRNAseq_workflow:annotatin... [  0%] 0 of 5
+
+executor >  pbspro (22)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[8c/d6b5f2] process > snRNAseq_workflow:clusterin... [ 62%] 5 of 8
+[d6/1c7327] process > snRNAseq_workflow:annotatin... [  0%] 0 of 5
+
+executor >  pbspro (22)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[8c/d6b5f2] process > snRNAseq_workflow:clusterin... [ 62%] 5 of 8
+[d6/1c7327] process > snRNAseq_workflow:annotatin... [  0%] 0 of 5
+
+executor >  pbspro (22)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[52/feb14b] process > snRNAseq_workflow:clusterin... [ 75%] 6 of 8
+[d6/1c7327] process > snRNAseq_workflow:annotatin... [  0%] 0 of 6
+
+executor >  pbspro (23)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[52/feb14b] process > snRNAseq_workflow:clusterin... [ 75%] 6 of 8
+[70/a896a8] process > snRNAseq_workflow:annotatin... [  0%] 0 of 6
+
+executor >  pbspro (23)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[52/feb14b] process > snRNAseq_workflow:clusterin... [ 75%] 6 of 8
+[70/a896a8] process > snRNAseq_workflow:annotatin... [  0%] 0 of 6
+
+executor >  pbspro (23)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[52/feb14b] process > snRNAseq_workflow:clusterin... [ 75%] 6 of 8
+[70/a896a8] process > snRNAseq_workflow:annotatin... [  0%] 0 of 6
+
+executor >  pbspro (23)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[7e/aa9682] process > snRNAseq_workflow:clusterin... [ 87%] 7 of 8
+[70/a896a8] process > snRNAseq_workflow:annotatin... [  0%] 0 of 7
+
+executor >  pbspro (24)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[7e/aa9682] process > snRNAseq_workflow:clusterin... [ 87%] 7 of 8
+[af/3b2f9a] process > snRNAseq_workflow:annotatin... [  0%] 0 of 7
+
+executor >  pbspro (24)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[7e/aa9682] process > snRNAseq_workflow:clusterin... [ 87%] 7 of 8
+[af/3b2f9a] process > snRNAseq_workflow:annotatin... [  0%] 0 of 7
+
+executor >  pbspro (24)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[38/393bfe] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[af/3b2f9a] process > snRNAseq_workflow:annotatin... [  0%] 0 of 7
+[38/393bfe] NOTE: Process `snRNAseq_workflow:clustering (merged)` terminated for an unknown reason -- Likely it has been terminated by the external system -- Execution is retried (1)
+
+executor >  pbspro (25)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[af/3b2f9a] process > snRNAseq_workflow:annotatin... [  0%] 0 of 7
+[38/393bfe] NOTE: Process `snRNAseq_workflow:clustering (merged)` terminated for an unknown reason -- Likely it has been terminated by the external system -- Execution is retried (1)
+
+executor >  pbspro (25)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [ 88%] 8 of 9, failed: 1...
+[af/3b2f9a] process > snRNAseq_workflow:annotatin... [  0%] 0 of 7
+
+
+executor >  pbspro (25)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[af/3b2f9a] process > snRNAseq_workflow:annotatin... [  0%] 0 of 8
+
+
+executor >  pbspro (26)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[72/bd511b] process > snRNAseq_workflow:annotatin... [  0%] 0 of 8
+
+executor >  pbspro (26)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[72/bd511b] process > snRNAseq_workflow:annotatin... [  0%] 0 of 8
+
+executor >  pbspro (27)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[86/83d968] process > snRNAseq_workflow:annotatin... [ 11%] 1 of 9, failed: 1...
+[d6/1c7327] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (27)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[86/83d968] process > snRNAseq_workflow:annotatin... [ 11%] 1 of 9, failed: 1...
+
+
+executor >  pbspro (27)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[8c/ceef92] process > snRNAseq_workflow:annotatin... [ 20%] 2 of 10, failed: ...
+[8c/ceef92] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (28)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[e2/bf0a86] process > snRNAseq_workflow:annotatin... [ 20%] 2 of 10, failed: ...
+[8c/ceef92] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (28)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[e2/bf0a86] process > snRNAseq_workflow:annotatin... [ 20%] 2 of 10, failed: ...
+
+
+executor >  pbspro (28)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[3b/92ec19] process > snRNAseq_workflow:annotatin... [ 27%] 3 of 11, failed: ...
+[3b/92ec19] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (29)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[b5/8b76d7] process > snRNAseq_workflow:annotatin... [ 27%] 3 of 11, failed: ...
+[3b/92ec19] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (29)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[b5/8b76d7] process > snRNAseq_workflow:annotatin... [ 27%] 3 of 11, failed: ...
+
+
+executor >  pbspro (29)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[af/3b2f9a] process > snRNAseq_workflow:annotatin... [ 33%] 4 of 12, failed: ...
+[af/3b2f9a] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (30)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[eb/2ccf15] process > snRNAseq_workflow:annotatin... [ 33%] 4 of 12, failed: ...
+[af/3b2f9a] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (30)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[eb/2ccf15] process > snRNAseq_workflow:annotatin... [ 33%] 4 of 12, failed: ...
+
+
+executor >  pbspro (30)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[86/83d968] process > snRNAseq_workflow:annotatin... [ 38%] 5 of 13, failed: ...
+[86/83d968] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (31)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[18/ffdbe3] process > snRNAseq_workflow:annotatin... [ 38%] 5 of 13, failed: ...
+[86/83d968] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (31)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[18/ffdbe3] process > snRNAseq_workflow:annotatin... [ 38%] 5 of 13, failed: ...
+
+
+executor >  pbspro (31)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[70/a896a8] process > snRNAseq_workflow:annotatin... [ 42%] 6 of 14, failed: ...
+[70/a896a8] NOTE: Process `snRNAseq_workflow:annotating (A_post_T1_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (32)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[e4/0002be] process > snRNAseq_workflow:annotatin... [ 42%] 6 of 14, failed: ...
+[70/a896a8] NOTE: Process `snRNAseq_workflow:annotating (A_post_T1_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (32)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[e4/0002be] process > snRNAseq_workflow:annotatin... [ 42%] 6 of 14, failed: ...
+
+
+executor >  pbspro (33)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[42/cc5c36] process > snRNAseq_workflow:annotatin... [ 46%] 7 of 15, failed: ...
+[b6/829214] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (33)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[42/cc5c36] process > snRNAseq_workflow:annotatin... [ 46%] 7 of 15, failed: ...
+
+
+executor >  pbspro (33)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[22/a69bfa] process > snRNAseq_workflow:annotatin... [ 50%] 8 of 16, failed: ...
+[22/a69bfa] NOTE: Process `snRNAseq_workflow:annotating (A_post_N2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (34)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[9c/33a41f] process > snRNAseq_workflow:annotatin... [ 50%] 8 of 16, failed: ...
+[22/a69bfa] NOTE: Process `snRNAseq_workflow:annotating (A_post_N2_biopsy)` terminated with an error exit status (1) -- Execution is retried (1)
+
+executor >  pbspro (34)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[9c/33a41f] process > snRNAseq_workflow:annotatin... [ 50%] 8 of 16, failed: ...
+
+
+executor >  pbspro (34)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[18/ffdbe3] process > snRNAseq_workflow:annotatin... [ 52%] 9 of 17, failed: ...
+[18/ffdbe3] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (35)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[30/e3f8d6] process > snRNAseq_workflow:annotatin... [ 52%] 9 of 17, failed: ...
+[18/ffdbe3] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (35)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[30/e3f8d6] process > snRNAseq_workflow:annotatin... [ 52%] 9 of 17, failed: ...
+
+
+executor >  pbspro (35)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[eb/2ccf15] process > snRNAseq_workflow:annotatin... [ 55%] 10 of 18, failed:...
+[eb/2ccf15] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (36)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[19/677934] process > snRNAseq_workflow:annotatin... [ 55%] 10 of 18, failed:...
+[eb/2ccf15] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (36)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[19/677934] process > snRNAseq_workflow:annotatin... [ 55%] 10 of 18, failed:...
+
+
+executor >  pbspro (36)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[b5/8b76d7] process > snRNAseq_workflow:annotatin... [ 57%] 11 of 19, failed:...
+[b5/8b76d7] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (37)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[24/37bcbf] process > snRNAseq_workflow:annotatin... [ 57%] 11 of 19, failed:...
+[b5/8b76d7] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (37)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[24/37bcbf] process > snRNAseq_workflow:annotatin... [ 57%] 11 of 19, failed:...
+
+
+executor >  pbspro (37)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[e2/bf0a86] process > snRNAseq_workflow:annotatin... [ 60%] 12 of 20, failed:...
+[e2/bf0a86] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (38)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[1f/9fe619] process > snRNAseq_workflow:annotatin... [ 60%] 12 of 20, failed:...
+[e2/bf0a86] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (38)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[1f/9fe619] process > snRNAseq_workflow:annotatin... [ 60%] 12 of 20, failed:...
+
+
+executor >  pbspro (39)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[98/37e40f] process > snRNAseq_workflow:annotatin... [ 61%] 13 of 21, failed:...
+[42/cc5c36] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (39)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[30/e3f8d6] process > snRNAseq_workflow:annotatin... [ 63%] 14 of 22, failed:...
+[42/cc5c36] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+[30/e3f8d6] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (40)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[ec/b02c13] process > snRNAseq_workflow:annotatin... [ 63%] 14 of 22, failed:...
+[42/cc5c36] NOTE: Process `snRNAseq_workflow:annotating (A_pre_T0_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+[30/e3f8d6] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (40)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[ec/b02c13] process > snRNAseq_workflow:annotatin... [ 63%] 14 of 22, failed:...
+
+
+
+executor >  pbspro (40)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[19/677934] process > snRNAseq_workflow:annotatin... [ 65%] 15 of 23, failed:...
+[19/677934] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+
+executor >  pbspro (41)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[aa/787972] process > snRNAseq_workflow:annotatin... [ 65%] 15 of 23, failed:...
+[19/677934] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (41)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[aa/787972] process > snRNAseq_workflow:annotatin... [ 65%] 15 of 23, failed:...
+
+
+executor >  pbspro (41)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[aa/787972] process > snRNAseq_workflow:annotatin... [ 65%] 15 of 23, failed:...
+[e4/0002be] NOTE: Process `snRNAseq_workflow:annotating (A_post_T1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (42)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[79/ccb99a] process > snRNAseq_workflow:annotatin... [ 66%] 16 of 24, failed:...
+[e4/0002be] NOTE: Process `snRNAseq_workflow:annotating (A_post_T1_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (42)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[79/ccb99a] process > snRNAseq_workflow:annotatin... [ 66%] 16 of 24, failed:...
+
+
+executor >  pbspro (42)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[ec/b02c13] process > snRNAseq_workflow:annotatin... [ 68%] 17 of 25, failed:...
+[ec/b02c13] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (5)
+
+executor >  pbspro (43)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[b2/ad1f05] process > snRNAseq_workflow:annotatin... [ 68%] 17 of 25, failed:...
+[ec/b02c13] NOTE: Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (5)
+
+executor >  pbspro (43)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[b2/ad1f05] process > snRNAseq_workflow:annotatin... [ 68%] 17 of 25, failed:...
+
+
+executor >  pbspro (43)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[9c/33a41f] process > snRNAseq_workflow:annotatin... [ 69%] 18 of 26, failed:...
+[9c/33a41f] NOTE: Process `snRNAseq_workflow:annotating (A_post_N2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (44)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[bc/174d69] process > snRNAseq_workflow:annotatin... [ 69%] 18 of 26, failed:...
+[9c/33a41f] NOTE: Process `snRNAseq_workflow:annotating (A_post_N2_biopsy)` terminated with an error exit status (1) -- Execution is retried (2)
+
+executor >  pbspro (44)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[bc/174d69] process > snRNAseq_workflow:annotatin... [ 69%] 18 of 26, failed:...
+
+
+executor >  pbspro (44)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[1f/9fe619] process > snRNAseq_workflow:annotatin... [ 70%] 19 of 27, failed:...
+[1f/9fe619] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (45)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[fb/2dc549] process > snRNAseq_workflow:annotatin... [ 70%] 19 of 27, failed:...
+[1f/9fe619] NOTE: Process `snRNAseq_workflow:annotating (C_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (45)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[fb/2dc549] process > snRNAseq_workflow:annotatin... [ 70%] 19 of 27, failed:...
+
+
+executor >  pbspro (45)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[24/37bcbf] process > snRNAseq_workflow:annotatin... [ 71%] 20 of 28, failed:...
+[24/37bcbf] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (46)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[1d/c00675] process > snRNAseq_workflow:annotatin... [ 71%] 20 of 28, failed:...
+[24/37bcbf] NOTE: Process `snRNAseq_workflow:annotating (A_post_N1_biopsy)` terminated with an error exit status (1) -- Execution is retried (3)
+
+executor >  pbspro (46)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[1d/c00675] process > snRNAseq_workflow:annotatin... [ 71%] 20 of 28, failed:...
+
+
+executor >  pbspro (46)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[aa/787972] process > snRNAseq_workflow:annotatin... [ 72%] 21 of 29, failed:...
+[aa/787972] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (47)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[59/5f085a] process > snRNAseq_workflow:annotatin... [ 72%] 21 of 29, failed:...
+[aa/787972] NOTE: Process `snRNAseq_workflow:annotating (A_post_T2_biopsy)` terminated with an error exit status (1) -- Execution is retried (4)
+
+executor >  pbspro (47)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[59/5f085a] process > snRNAseq_workflow:annotatin... [ 72%] 21 of 29, failed:...
+
+
+executor >  pbspro (47)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[59/5f085a] process > snRNAseq_workflow:annotatin... [ 72%] 21 of 29, failed:...
+ERROR ~ Error executing process > 'snRNAseq_workflow:annotating (C_post_N1_biopsy)'
+
+Caused by:
+  Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1)
+
+Command executed:
+
+  Rscript -e 'rmarkdown::render("annotating.rmd", params = list(params_file = "params.json", rds_file = "cds_clustered.rds"), output_file = "annotating.html", output_dir = getwd())'
+
+Command exit status:
+  1
+
+Command output:
+  1/48                                
+  2/48 [initialise]                   
+  3/48                                
+  4/48 [define_functions]             
+  5/48                                
+  6/48 [curr_params]                  
+  7/48                                
+  8/48 [load_seu]                     
+  9/48                                
+  10/48 [cluster_markers]              
+  11/48                                
+  12/48 [top_markers]                  
+  13/48                                
+  14/48 [singler_annots]               
+  15/48                                
+  16/48 [save_singler]                 
+  17/48                                
+  18/48 [singler_annot_fine_heatmap]   
+  19/48                                
+  20/48 [umap_vs_singler_annots]       
+  21/48                                
+  22/48 [singler_annots_bar]           
+  23/48                                
+  24/48 [singler_annots_alluvial]      
+  25/48                                
+
+Command error:
+  
+  
+  processing file: annotating.rmd
+  
+  Quitting from lines 904-907 (annotating.rmd)
+  Error in `if (curr_params$annotating$markers_file == F) ...`:
+  ! argument is of length zero
+  Execution halted
+
+Work dir:
+  /rds/general/user/art4017/home/snRNAseq_workflow/work_test/b2/ad1f05a565864aca9bb2db127560ff
+
+Tip: view the complete command output by changing to the process work dir and entering the command `cat .command.out`
+
+ -- Check '.nextflow.log' file for details
+WARN: Killing running tasks (7)
+
+executor >  pbspro (47)
+[42/0c72ce] process > save_params                    [100%] 1 of 1 ✔
+[0c/2341d9] process > load_input (A_pre_T0_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[3e/8e1886] process > filtering (A_post_T2_biopsy)   [100%] 7 of 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 9 of 9, failed: 1...
+[59/5f085a] process > snRNAseq_workflow:annotatin... [100%] 22 of 22, failed:...
+ERROR ~ Error executing process > 'snRNAseq_workflow:annotating (C_post_N1_biopsy)'
+
+Caused by:
+  Process `snRNAseq_workflow:annotating (C_post_N1_biopsy)` terminated with an error exit status (1)
+
+Command executed:
+
+  Rscript -e 'rmarkdown::render("annotating.rmd", params = list(params_file = "params.json", rds_file = "cds_clustered.rds"), output_file = "annotating.html", output_dir = getwd())'
+
+Command exit status:
+  1
+
+Command output:
+  1/48                                
+  2/48 [initialise]                   
+  3/48                                
+  4/48 [define_functions]             
+  5/48                                
+  6/48 [curr_params]                  
+  7/48                                
+  8/48 [load_seu]                     
+  9/48                                
+  10/48 [cluster_markers]              
+  11/48                                
+  12/48 [top_markers]                  
+  13/48                                
+  14/48 [singler_annots]               
+  15/48                                
+  16/48 [save_singler]                 
+  17/48                                
+  18/48 [singler_annot_fine_heatmap]   
+  19/48                                
+  20/48 [umap_vs_singler_annots]       
+  21/48                                
+  22/48 [singler_annots_bar]           
+  23/48                                
+  24/48 [singler_annots_alluvial]      
+  25/48                                
+
+Command error:
+  
+  
+  processing file: annotating.rmd
+  
+  Quitting from lines 904-907 (annotating.rmd)
+  Error in `if (curr_params$annotating$markers_file == F) ...`:
+  ! argument is of length zero
+  Execution halted
+
+Work dir:
+  /rds/general/user/art4017/home/snRNAseq_workflow/work_test/b2/ad1f05a565864aca9bb2db127560ff
+
+Tip: view the complete command output by changing to the process work dir and entering the command `cat .command.out`
+
+ -- Check '.nextflow.log' file for details
+
+N E X T F L O W  ~  version 23.04.1
+Launching `./main.nf` [sharp_cantor] DSL2 - revision: 621802130a
+
+snRNAseq workflow
+=================
+manifest file:        input/oesophageal_10X/test/sample_manifest.tsv
+sample metadata file: /rds/general/user/art4017/home/cellranger/output/sample_metadata.tsv
+output dir:           output/test/
+
+[-        ] process > save_params                  -
+[-        ] process > load_input                   -
+[-        ] process > filtering                    -
+[-        ] process > merge_samples                -
+[-        ] process > snRNAseq_workflow:clustering -
+[-        ] process > snRNAseq_workflow:annotating -
+
+[42/0c72ce] process > save_params                   [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy) [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[-        ] process > merge_samples                 -
+[-        ] process > snRNAseq_workflow:clustering  -
+[-        ] process > snRNAseq_workflow:annotating  -
+
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[-        ] process > snRNAseq_workflow:annotating   -
+
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[-        ] process > snRNAseq_workflow:annotating   [  0%] 0 of 8
+
+executor >  pbspro (1)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[b6/e00fe7] process > snRNAseq_workflow:annotatin... [  0%] 0 of 8
+
+executor >  pbspro (3)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[df/e0ab02] process > snRNAseq_workflow:annotatin... [  0%] 0 of 8
+
+executor >  pbspro (4)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[8d/ff4878] process > snRNAseq_workflow:annotatin... [  0%] 0 of 8
+
+executor >  pbspro (6)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[87/b9b726] process > snRNAseq_workflow:annotatin... [  0%] 0 of 8
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[8f/a9a7d7] process > snRNAseq_workflow:annotatin... [  0%] 0 of 8
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[8f/a9a7d7] process > snRNAseq_workflow:annotatin... [  0%] 0 of 8
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[8f/a9a7d7] process > snRNAseq_workflow:annotatin... [  0%] 0 of 8
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[7c/bdf4a6] process > snRNAseq_workflow:annotatin... [ 12%] 1 of 8
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[8d/ff4878] process > snRNAseq_workflow:annotatin... [ 25%] 2 of 8
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[df/e0ab02] process > snRNAseq_workflow:annotatin... [ 37%] 3 of 8
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[87/b9b726] process > snRNAseq_workflow:annotatin... [ 50%] 4 of 8
+
+executor >  pbspro (8)
+[42/0c72ce] process > save_params                    [100%] 1 of 1, cached: 1 ✔
+[08/fdd1c7] process > load_input (A_post_T2_biopsy)  [100%] 7 of 7, cached: 7 ✔
+[fd/c663e7] process > filtering (C_post_N1_biopsy)   [100%] 7 of 7, cached: 7 ✔
+[db/b0400f] process > merge_samples (merged)         [100%] 1 of 1, cached: 1 ✔
+[2f/27739c] process > snRNAseq_workflow:clusterin... [100%] 8 of 8, cached: 8 ✔
+[94/692a08] process > snRNAseq_workflow:annotatin... [ 62%] 5 of 8

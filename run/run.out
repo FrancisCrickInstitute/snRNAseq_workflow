@@ -1,0 +1,12 @@
+N E X T F L O W  ~  version 23.04.1
+Launching `./main.nf` [silly_cray] DSL2 - revision: 621802130a
+ERROR ~ Unable to acquire lock on session with ID 12c975ed-9292-4d4b-a241-6d6cd1cf87cd
+
+Common reasons for this error are:
+ - You are trying to resume the execution of an already running pipeline
+ - A previous execution was abruptly interrupted, leaving the session open
+
+You can see which process is holding the lock file by using the following command:
+ - lsof /rds/general/user/art4017/home/snRNAseq_workflow/.nextflow/cache/12c975ed-9292-4d4b-a241-6d6cd1cf87cd/db/LOCK
+
+ -- Check '.nextflow.log' file for details

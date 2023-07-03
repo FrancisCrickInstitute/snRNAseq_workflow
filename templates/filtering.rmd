@@ -256,29 +256,8 @@ The `filter.do_filtering` argument is set to **`r curr_params$filter$do_filterin
 ```{r get_filters}
 # get filters
 if(curr_params$filter$do_filtering == T) {
-  
-  # set filters
   filters <- curr_params$filter[c("nCount_RNA", "nFeature_RNA", "percent_mito")]
   filters$doublet <- list(min = 0, max = ifelse(curr_params$filter$doublets == T, 0, 1))
-  
-  # get adaptive filters
-  filters %>% names %>%
-    purrr::map(function(filt) {
-      filters[[filt]] %>% names %>%
-        purrr::map(function(bound) {
-          if (filters[[filt]][[bound]] == "adaptive") {
-            type <- ifelse(bound == "max", "higher", "lower")
-            outliers <-
-              scater::isOutlier(
-                seu@meta.data[, filt, drop = T],
-                nmads = curr_params$filter$n_mads,
-                type = type
-              ) 
-            filters[[filt]][[bound]] <<- attributes(outliers)$thresholds[type]
-          }
-        })
-    })
-  
 } else {
   filters <- list(
     "doublet" = list(min = -Inf, max = Inf),
