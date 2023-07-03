@@ -1,52 +1,18 @@
-snRNAseq_workflow image built as a modification of 'almurphy-scfdev-dev.img'.
+# snRNAseq nextflow workflow
 
-Build a sandbox of the image, enter the sandbox and open R:
-
-```
-singularity build --sandbox snRNAseq_workflow/ docker://almurphy/scfdev:dev
-singularity shell --writable snRNAseq_workflow/
-Apptainer *:~> R
-```
-
-Then in R inside the container, run install.packages() or BiocManager::install() to download the following packages in this order:
-
-* dplyr
-* Seurat
-* SeuratWrapper
-* inferCNV
-* SingleR
-* scDblFinder
-* celldex
-* Matrix
-* stringr
-* reshape2
-* RColorBrewer
-* ggplot2
-* pheatmap
-* purrr
-* rmarkdown
-* xfun
-* Monocle3
-* rjson
-* clustree
-* dittoSeq
-* ggforce
-* ggrepel
-* magrittr
-* readr
-* SummarizedExperiment
-* janitor
-* gridExtra
-* intrinsicDimension
-* knitr
-* lemon
-* patchwork
-* rlang
-
-Then exit the container (`exit`) and convert it to an image:
+The essential components of the workflow repository are:
+- `main.nf`: Contains the primary workflow code which pulls in all additional code from the repository
+- `modules/`: Contains all of the sub-workflows which are used to organize large chunks of analysis
+- `templates/`: Contains all of the code which is executed in each individual step of the workflow
 
 ```
-singularity build snRNAseq_workflow.img snRNAseq_workflow/
-```
+ml purge
+ml Nextflow/22.10.3
+ml Singularity/3.6.4
+ml CAMP_proxy
 
+cd /nemo/project/proj-tracerX/working/VHL_GERMLINE/tidda/snRNAseq_workflow/
+
+nextflow run . -c config/VHL_ParseBio.config -resume
+```
 
