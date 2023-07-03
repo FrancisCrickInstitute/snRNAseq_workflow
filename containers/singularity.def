@@ -10,3 +10,4 @@ From: continuumio/miniconda3
 
 %runscript
     exec /opt/conda/envs/$(head -n 1 environment.yml | cut -f 2 -d ' ')/bin/"$@"
+
