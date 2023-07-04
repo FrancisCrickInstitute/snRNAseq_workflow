@@ -105,7 +105,7 @@ process filtering {
   label "${ id = 'merged' ? 'process_high_memory' : 'process_medium' }"
   publishDir "${params.output.dir}/${id}/filtering/", 
     mode: 'copy', 
-    pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
+    pattern: "{*.html,*.rds,*_files/figure-html/*.png,nucleus_filtering.rds}"
 
   input:
     tuple val(id), path(rds_file)
@@ -114,6 +114,7 @@ process filtering {
 
   output: 
     tuple val(id), path('seu_filtered.rds'), emit: ch_filtered
+    path 'seu_filters.rds', emit: ch_qc
     path 'filtering.html' 
     path 'filtering_files/figure-html/*.png'
     
@@ -174,7 +175,7 @@ process annotating {
   label 'process_medium'
   publishDir "${params.output.dir}/${id}/annotating/", 
     mode: 'copy', 
-    pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
+    pattern: "{*.html,*.rds,*_files/figure-html/*.png,cell_groupings_summary.tsv,top_3_markers.tsv}"
 
   input:
     tuple val(id), path(rds_file)
@@ -183,8 +184,10 @@ process annotating {
 
   output: 
     tuple val(id), path('cds_celltype_annotated.rds'), emit: ch_annotated, optional: true
+    path 'cds_singler_annotated.rds'
     path 'annotating.html' 
     path 'annotating_files/figure-html/*.png'
+    path 'top_3_markers.tsv'
     
   script:
     """
@@ -272,6 +275,13 @@ workflow {
     "${baseDir}/templates/filtering.rmd", 
     save_params.out.ch_params,
   )
+  
+  // merge qc
+  //merge_qc(
+  //  filtering.out.ch_qc.collect(),
+  //  "${baseDir}/templates/merge_qc.rmd", 
+  //  save_params.out.ch_params
+  //)
   
   // initiate ch_run
   Channel

@@ -4,8 +4,10 @@ Build a sandbox of the image, enter the sandbox and open R:
 
 ```
 singularity build --sandbox snRNAseq_workflow/ docker://almurphy/scfdev:dev
-singularity shell --writable snRNAseq_workflow/
-Apptainer *:~> R
+$ singularity shell -f --writable snRNAseq_workflow/
+INFO:    User not listed in /etc/subuid, trying root-mapped namespace
+INFO:    Using fakeroot command combined with root-mapped namespace
+Apptainer> R
 ```
 
 Then in R inside the container, run install.packages() or BiocManager::install() to download the following packages in this order:
@@ -42,6 +44,20 @@ Then in R inside the container, run install.packages() or BiocManager::install()
 * lemon
 * patchwork
 * rlang
+
+Install a previous version of EWCE from GitHub:
+
+```
+devtools::install_github("neurogenomics/EWCE")
+```
+
+The install PyTorch and scGPT using pip:
+
+```
+pip install torchvision
+pip install cuda-python==11.7.0
+pip install scgpt
+```
 
 Then exit the container (`exit`) and convert it to an image:
 

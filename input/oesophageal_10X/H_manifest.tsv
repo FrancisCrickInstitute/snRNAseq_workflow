@@ -1,7 +1,0 @@
-id	id_col	dir
-H_pre_T0_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/H_pre_T0_biopsy/outs/filtered_feature_bc_matrix/
-H_post_T1_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/H_post_T1_biopsy/outs/filtered_feature_bc_matrix/
-H_post_T2_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/H_post_T2_biopsy/outs/filtered_feature_bc_matrix/
-H_post_N1_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/H_post_N1_biopsy/outs/filtered_feature_bc_matrix/
-H_post_N2_biopsy	sample	/rds/general/user/art4017/home/cellranger/output/H_post_N2_biopsy/outs/filtered_feature_bc_matrix/
-H_post_T3_organoid	sample	/rds/general/user/art4017/home/cellranger/output/H_post_T3_organoid/outs/filtered_feature_bc_matrix/

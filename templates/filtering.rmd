@@ -7,9 +7,6 @@ fontsize: 11pt
 params:
   params_file: false
   rds_file: false
-  sample: false
-  sample_metadata_file: false
-  dir: false
 output:
   html_document:
     keep_md: true
@@ -261,11 +258,10 @@ if(curr_params$filter$do_filtering == T) {
   filters <- curr_params$filter[c("nCount_RNA", "nFeature_RNA", "percent_mito")]
   filters$doublet <- list(min = 0, max = ifelse(curr_params$filter$doublets == T, 0, 1))
   
-  # get adaptive filters
   filters %>% names %>%
-    purrr::map(function(filt) {
+    purrr::walk(function(filt) {
       filters[[filt]] %>% names %>%
-        purrr::map(function(bound) {
+        purrr::walk(function(bound) {
           if (filters[[filt]][[bound]] == "adaptive") {
             type <- ifelse(bound == "max", "higher", "lower")
             outliers <-
@@ -273,8 +269,8 @@ if(curr_params$filter$do_filtering == T) {
                 seu@meta.data[, filt, drop = T],
                 nmads = curr_params$filter$n_mads,
                 type = type
-              ) 
-            filters[[filt]][[bound]] <<- attributes(outliers)$thresholds[type]
+                ) 
+            filters[[filt]][[bound]] <<- unname(attributes(outliers)$thresholds[type])
           }
         })
     })
@@ -312,6 +308,10 @@ seu@misc$nucleus_filtering <-
                   paste(collapse = ",") %>% dplyr::na_if(., "")) %>%
   tidyr::pivot_wider(id_cols = c("nucleus", "sample", "pass", "fail_criteria")) %>%
   dplyr::ungroup()
+
+# save
+seu@misc[c("nucleus_filtering", "filters")] %>%
+  saveRDS("seu_filters.rds")
 ```
 
 ### Fail criteria statistics

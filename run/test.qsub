@@ -16,7 +16,7 @@ nextflow run . \
   -c config/imperial.config \
   -profile imperial \
   -with-singularity /rds/general/user/art4017/home/nf-core/scflow/work/singularity/snRNAseq_workflow2.img \
-  --input.manifest_file input/oesophageal_10X/test/sample_manifest.tsv \
-  --output.dir output/test/ \
-  -w work_test/ \
+  --input.manifest_file input/oesophageal_10X/sample_manifest_by_patient_without_organoids/K.tsv \
+  --output.dir output/oesophageal_10X/by_patient_without_organoids/K/ \
+  -w work_by_patient/K/ \
   -resume
