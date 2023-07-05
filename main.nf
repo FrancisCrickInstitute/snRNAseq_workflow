@@ -53,6 +53,7 @@ nextflow run <ARGUMENTS>
   dimensionality reduction and clustering:
   --n_dims                        integer, number of PCs
   --vars_to_regress               vector of variables to regress out of the SCTransform residuals
+  --clustering_resolution         resolution for clustering
   
   annotating celltypes:
   --annotate.markers_file         file containing markers for celltype annotation, must contain 'gene' and 'population' columns
@@ -102,7 +103,7 @@ process load_input {
 // filtering
 process filtering {
   tag "${id}"
-  label "${ id = 'merged' ? 'process_high_memory' : 'process_medium' }"
+  label 'process_medium'
   publishDir "${params.output.dir}/${id}/filtering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,nucleus_filtering.rds}"
@@ -148,7 +149,7 @@ process merge_samples {
 // clustering
 process clustering {
   tag "${id}"
-  label "${ id = 'merged' ? 'process_high_memory' : 'process_medium' }"
+  label 'process_medium'
   publishDir "${params.output.dir}/${id}/clustering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
@@ -239,7 +240,7 @@ workflow snRNAseq_workflow {
       clustering.out.ch_clustered,
       "${baseDir}/templates/annotating.rmd", 
       ch_params
-    ) 
+    )
 
 }
 
@@ -276,13 +277,6 @@ workflow {
     save_params.out.ch_params,
   )
   
-  // merge qc
-  //merge_qc(
-  //  filtering.out.ch_qc.collect(),
-  //  "${baseDir}/templates/merge_qc.rmd", 
-  //  save_params.out.ch_params
-  //)
-  
   // initiate ch_run
   Channel
     .empty()
@@ -310,12 +304,6 @@ workflow {
     ch_run,
     save_params.out.ch_params
   )
-  
-  // collected merged output
-  //snRNAseq_workflow.out
-  //  .map { it -> tuple( it[0].findAll { it.first() == "merged" } ) }
-  //  .view { "$it is the merged channel!" }
-    //.set {ch_merged_annotated}
   
   // infercnv - run if reference celltypes or samples provided, on merged output
   // TODO: make this work on annotated output for infercnv.reference_samples or

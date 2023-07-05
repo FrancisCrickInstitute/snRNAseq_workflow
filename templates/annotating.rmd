@@ -757,6 +757,7 @@ cds_singler <- xfun::cache_rds({
     labels = colnames(singler_refs))
   cds_singler
 }, file = "cds_singler.rds")
+saveRDS("cds_singler.rds")
 
 cds <- xfun::cache_rds({
   # add singler annotation
@@ -765,13 +766,13 @@ cds <- xfun::cache_rds({
     cbind(
       cds_singler %>%
         dplyr::as_tibble() %>%
-        dplyr::select(singler_annot_fine = labels) %>%
-        dplyr::group_by(singler_annot_fine) %>%
+        dplyr::select(label = labels) %>%
         dplyr::left_join(
           SummarizedExperiment::colData(singler_refs) %>%
-            tibble::as_tibble(rownames = "singler_annot_fine") %>%
-            dplyr::select(singler_annot_fine, singler_annot_main = label.main))
-        )
+            tibble::as_tibble(rownames = "label") %>%
+            dplyr::select(label, singler_annot_fine = label.fine, singler_annot_main = label.main)) %>%
+        dplyr::select(-label)
+        ) 
   # add main/fine labels for partitions/clusters
   for (lvl in lvls) {
     for (annot in c("singler_annot_fine", "singler_annot_main")) {
@@ -782,11 +783,6 @@ cds <- xfun::cache_rds({
   # return
   cds
 }, file = "cds_singler_annotated.rds")
-
-saveRDS(cds, "cds_singler_annotated.rds")
-```
-
-```{r save_singler}
 saveRDS(cds, "cds_singler_annotated.rds")
 ```
 
