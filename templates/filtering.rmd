@@ -26,9 +26,6 @@ library(monocle3)
 library(magrittr)
 
 # load params file
-# base_dir=ifelse(Sys.info()["nodename"]=="Alexs-MacBook-Air-2.local","/Volumes/TracerX/","/camp/project/tracerX/");setwd(paste0(base_dir,"working/VHL_GERMLINE/tidda/snRNAseq_workflow/"))
-# cluster: # params <- list(params_file = "output/params.json")
-# local:   # params <- list(params_file = "test/local_params.json")
 curr_params <- 
   rjson::fromJSON(file = params$params_file) %>% 
   type.convert(as.is = T)

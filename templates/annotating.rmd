@@ -757,7 +757,7 @@ cds_singler <- xfun::cache_rds({
     labels = colnames(singler_refs))
   cds_singler
 }, file = "cds_singler.rds")
-saveRDS("cds_singler.rds")
+saveRDS(cds_singler, "cds_singler.rds")
 
 cds <- xfun::cache_rds({
   # add singler annotation

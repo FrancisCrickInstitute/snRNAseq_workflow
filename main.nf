@@ -29,12 +29,6 @@ nextflow run <ARGUMENTS>
   
   --input.manifest_file           directory containing sparse matrix of aligned snRNA-seq data
   --input.sample_metadata_file    file containing sample metadata, must contain a 'sample' column
-  
-  (optional)
-  
-  input:
-  --input.sample_subset           comma-delimited list of samples to use
-  --input.cell_subset             comma-delimited list of cells to use
 
   output:
   --output.dir                    optional. output directory, default is './output/'
@@ -109,8 +103,8 @@ process filtering {
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,nucleus_filtering.rds}"
 
   input:
-    tuple val(id), path(rds_file)
     path rmd_file
+    tuple val(id), path(rds_file)
     path params_file
 
   output: 
@@ -121,7 +115,13 @@ process filtering {
     
   script:
     """
-    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "filtering.html", output_dir = getwd())'
+    #!/usr/bin/env Rscript
+    rmarkdown::render(
+      "${rmd_file}", 
+      params = list(params_file = "${params_file}", rds_file = "${rds_file}"), 
+      output_file = "filtering.html", 
+      output_dir = getwd()
+    )
     """
 }
 
@@ -155,8 +155,8 @@ process clustering {
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
 
   input:
-    tuple val(id), path(rds_file)
     path rmd_file
+    tuple val(id), path(rds_file)
     path params_file
 
   output: 
@@ -166,7 +166,13 @@ process clustering {
     
   script:
     """
-    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "clustering.html", output_dir = getwd())'
+    #!/usr/bin/env Rscript
+    rmarkdown::render(
+      "${rmd_file}", 
+      params = list(params_file = "${params_file}", rds_file = "${rds_file}"), 
+      output_file = "clustering.html",
+      output_dir = getwd()
+    )
     """
 }
 
@@ -179,8 +185,8 @@ process annotating {
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,cell_groupings_summary.tsv,top_3_markers.tsv}"
 
   input:
-    tuple val(id), path(rds_file)
     path rmd_file
+    tuple val(id), path(rds_file)
     path params_file
 
   output: 
@@ -192,7 +198,13 @@ process annotating {
     
   script:
     """
-    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "annotating.html", output_dir = getwd())'
+    #!/usr/bin/env Rscript
+    rmarkdown::render(
+      "${rmd_file}", 
+      params = list(params_file = "${params_file}", rds_file = "${rds_file}"), 
+      output_file = "annotating.html", 
+      output_dir = getwd()
+    )
     """
 }
 
@@ -205,8 +217,8 @@ process infercnv {
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,infercnv/*}"
 
   input:
-    tuple val(id), path(rds_file)
     path rmd_file
+    tuple val(id), path(rds_file)
     path params_file
 
   output: 
@@ -217,9 +229,15 @@ process infercnv {
     
   script:
     """
-    Rscript -e 'rmarkdown::render("${rmd_file}", params = list(params_file = "${params_file}", rds_file = "${rds_file}"), output_file = "infercnv.html", output_dir = getwd())'
+    #!/usr/bin/env Rscript
+    rmarkdown::render(
+      "${rmd_file}", 
+      params = list(params_file = "${params_file}", rds_file = "${rds_file}"), 
+      output_file = "infercnv.html",
+      output_dir = getwd()
+    )
     """
-}
+} 
 
 // pipeline workflow
 workflow snRNAseq_workflow {
@@ -230,15 +248,15 @@ workflow snRNAseq_workflow {
     
     // dimensionality reduction and clustering
     clustering(
+      "${baseDir}/templates/annotating.rmd",
       ch_filtered,
-      "${baseDir}/templates/clustering.rmd", 
       ch_params
     ) 
     
     // cell type annotation
     annotating(
+      "${baseDir}/templates/filtering.rmd",
       clustering.out.ch_clustered,
-      "${baseDir}/templates/annotating.rmd", 
       ch_params
     )
 
@@ -272,8 +290,8 @@ workflow {
   
   // quality control and filtering
   filtering(
+    "${baseDir}/templates/filtering.rmd",
     load_input.out.ch_loaded,
-    "${baseDir}/templates/filtering.rmd", 
     save_params.out.ch_params,
   )
   
