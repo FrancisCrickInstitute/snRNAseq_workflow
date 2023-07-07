@@ -27,8 +27,14 @@ nextflow run <ARGUMENTS>
   
   (required)
   
+  inputs:
   --input.manifest_file           directory containing sparse matrix of aligned snRNA-seq data
   --input.sample_metadata_file    file containing sample metadata, must contain a 'sample' column
+  
+  parallelisation:
+  --input.run_each                run the pipeline on each sample
+  --input.run_all                 run the pipeline on all samples
+  --input.run_by_patient          run the pipeline on each patient (sample IDs must be in the form "patient_*")
 
   output:
   --output.dir                    optional. output directory, default is './output/'
@@ -127,17 +133,17 @@ process filtering {
 
 // merge samples
 process merge_samples {
-  tag "merged"
+  tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/merged/",
+  publishDir "${params.output.dir}/${id}/",
     mode: 'copy',
     pattern: "*.rds"
   
   input:
-    path rds_files, stageAs: "seu??.rds"
+    tuple val(id), path(rds_files, stageAs: "seu??.rds")
     
   output:
-    tuple val("merged"), path('seu.rds'), emit: ch_merged
+    tuple val(id), path('seu.rds'), emit: ch_merged
     
   script:
     """
@@ -244,18 +250,19 @@ workflow snRNAseq_workflow {
   take:
     ch_filtered
     ch_params
+    
   main:
     
     // dimensionality reduction and clustering
     clustering(
-      "${baseDir}/templates/annotating.rmd",
+      "${baseDir}/templates/clustering.rmd",
       ch_filtered,
       ch_params
     ) 
     
     // cell type annotation
     annotating(
-      "${baseDir}/templates/filtering.rmd",
+      "${baseDir}/templates/annotating.rmd",
       clustering.out.ch_clustered,
       ch_params
     )
@@ -295,33 +302,59 @@ workflow {
     save_params.out.ch_params,
   )
   
-  // initiate ch_run
+  // initiate ch_run and ch_merge
   Channel
     .empty()
     .set { ch_run }
+  Channel
+    .empty()
+    .set { ch_merge }  
+  
+  // add all samples to ch_merge
   if ( params.input.run_all ) {
-    // merge all samples
-    merge_samples(
-      filtering.out.ch_filtered
-      .map { id, rds_file -> rds_file }
-      .collect()
-    )
-    // add merged samples to ch_run
-    merge_samples.out.ch_merged
-      .set { ch_run }
+    filtering.out.ch_filtered
+      .map { id, rds_file -> tuple("merged", rds_file) }
+      .groupTuple()
+      .concat(ch_merge)
+      .set { ch_merge }
   }
+  
+  // add samples by patient to ch_merge
+  if ( params.input.run_by_patient ) {
+    filtering.out.ch_filtered
+      .map { id, rds_file -> tuple(id.split("_")[0], rds_file) }
+      .groupTuple()
+      .concat(ch_merge)
+      .set { ch_merge }
+  }
+  
+  // perform merge
+  merge_samples(
+    ch_merge
+  )
+  
+  // add merged samples to ch_run
+  ch_run
+    .concat(merge_samples.out.ch_merged)
+    .set { ch_run }
+  
+  // add each sample to ch_run
   if ( params.input.run_each ) {
-    // add each sample to ch_run
     ch_run
       .concat(filtering.out.ch_filtered)
       .set { ch_run }
   }
   
-  // run on each sample and on all samples
+  // run on each/all samples/patients
   snRNAseq_workflow(
     ch_run,
     save_params.out.ch_params
   )
+  
+}
+
+
+
   
   // infercnv - run if reference celltypes or samples provided, on merged output
   // TODO: make this work on annotated output for infercnv.reference_samples or
@@ -338,8 +371,4 @@ workflow {
   //    ch_params
   //  )
   //}
-  
-}
-
-
 
