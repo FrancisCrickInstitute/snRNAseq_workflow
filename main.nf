@@ -132,7 +132,7 @@ process filtering {
 }
 
 // merge samples
-process merge_samples {
+process merging {
   tag "${id}"
   label 'process_medium'
   publishDir "${params.output.dir}/${id}/",
@@ -147,7 +147,7 @@ process merge_samples {
     
   script:
     """
-    Rscript ${baseDir}/templates/merge_samples.R \
+    Rscript ${baseDir}/templates/merging.R \
       ${rds_files.join(',')}
     """
 }
@@ -329,13 +329,13 @@ workflow {
   }
   
   // perform merge
-  merge_samples(
+  merging(
     ch_merge
   )
   
   // add merged samples to ch_run
   ch_run
-    .concat(merge_samples.out.ch_merged)
+    .concat(merging.out.ch_merged)
     .set { ch_run }
   
   // add each sample to ch_run
