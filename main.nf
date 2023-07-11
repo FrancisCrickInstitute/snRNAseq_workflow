@@ -152,6 +152,27 @@ process merging {
     """
 }
 
+// integrate samples
+process integrating {
+  tag "${id}"
+  label 'process_medium'
+  publishDir "${params.output.dir}/${id}/",
+    mode: 'copy',
+    pattern: "*.rds"
+  
+  input:
+    tuple val(id), path(rds_files, stageAs: "seu??.rds")
+    
+  output:
+    tuple val(id), path('seu_integrated.rds'), emit: ch_integrated
+    
+  script:
+    """
+    Rscript ${baseDir}/templates/integrating.R \
+      ${rds_files.join(',')}
+    """
+}
+
 // clustering
 process clustering {
   tag "${id}"
@@ -328,14 +349,19 @@ workflow {
       .set { ch_merge }
   }
   
-  // perform merge
-  merging(
+  //// perform merge
+  //merging(
+  //  ch_merge
+  //)
+  
+  // perform integration
+  integrating(
     ch_merge
   )
   
-  // add merged samples to ch_run
+  // add integrated samples to ch_run
   ch_run
-    .concat(merging.out.ch_merged)
+    .concat(integrating.out.ch_integrated)
     .set { ch_run }
   
   // add each sample to ch_run
