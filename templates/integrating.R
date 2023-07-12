@@ -33,7 +33,7 @@ if (length(seu_ls) > 1) {
   # create 'integrated' data assay
   seu <- Seurat::IntegrateData(anchorset = seu_anchors)
 } else {
-  seu <- Seurat::NormalizeData(seu_ls)
+  seu <- Seurat::NormalizeData(seu_ls[[1]])
   seu <- Seurat::FindVariableFeatures(seu, selection.method = "vst", nfeatures = 2000)
 }
 

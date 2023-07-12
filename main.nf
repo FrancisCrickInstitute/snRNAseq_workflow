@@ -81,7 +81,7 @@ process save_params {
 process load_input {
   tag "${id}"
   label 'process_low'
-  publishDir "${params.output.dir}/${id}/", 
+  publishDir "${params.output.dir}/by_sample/${id}/", 
     mode: 'copy'
   
   input:
@@ -104,7 +104,7 @@ process load_input {
 process filtering {
   tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/${id}/filtering/", 
+  publishDir "${params.output.dir}/by_sample/${id}/filtering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,nucleus_filtering.rds}"
 
@@ -177,17 +177,17 @@ process integrating {
 process clustering {
   tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/${id}/clustering/", 
+  publishDir "${params.output.dir}/${subdir}/${id}/clustering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
 
   input:
     path rmd_file
-    tuple val(id), path(rds_file)
+    tuple val(id), val(subdir), path(rds_file)
     path params_file
 
   output: 
-    tuple val(id), path('cds_clustered.rds'), emit: ch_clustered
+    tuple val(id), val(subdir), path('cds_clustered.rds'), emit: ch_clustered
     path 'clustering.html' 
     path 'clustering_files/figure-html/*.png'
     
@@ -207,17 +207,17 @@ process clustering {
 process annotating {
   tag "${id}"  
   label 'process_medium'
-  publishDir "${params.output.dir}/${id}/annotating/", 
+  publishDir "${params.output.dir}/${subdir}/${id}/annotating/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,cell_groupings_summary.tsv,top_3_markers.tsv}"
 
   input:
     path rmd_file
-    tuple val(id), path(rds_file)
+    tuple val(id), val(subdir), path(rds_file)
     path params_file
 
   output: 
-    tuple val(id), path('cds_celltype_annotated.rds'), emit: ch_annotated, optional: true
+    tuple val(id), val(subdir), path('cds_celltype_annotated.rds'), emit: ch_annotated, optional: true
     path 'cds_singler_annotated.rds'
     path 'annotating.html' 
     path 'annotating_files/figure-html/*.png'
@@ -323,51 +323,56 @@ workflow {
     save_params.out.ch_params,
   )
   
-  // initiate ch_run and ch_merge
+  // initiate ch_run, ch_integrate and ch_merge
   Channel
     .empty()
     .set { ch_run }
-  Channel
-    .empty()
-    .set { ch_merge }  
   
-  // add all samples to ch_merge
   if ( params.input.run_all ) {
+    // integrate all samples
     filtering.out.ch_filtered
-      .map { id, rds_file -> tuple("merged", rds_file) }
+      .map { id, rds_file -> tuple("integrated", "integrated", rds_file) }
       .groupTuple()
-      .concat(ch_merge)
-      .set { ch_merge }
-  }
-  
-  // add samples by patient to ch_merge
-  if ( params.input.run_by_patient ) {
-    filtering.out.ch_filtered
-      .map { id, rds_file -> tuple(id.split("_")[0], rds_file) }
-      .groupTuple()
-      .concat(ch_merge)
-      .set { ch_merge }
-  }
-  
-  //// perform merge
-  //merging(
-  //  ch_merge
-  //)
-  
-  // perform integration
-  integrating(
-    ch_merge
-  )
-  
-  // add integrated samples to ch_run
-  ch_run
-    .concat(integrating.out.ch_integrated)
-    .set { ch_run }
-  
-  // add each sample to ch_run
-  if ( params.input.run_each ) {
+      .set { ch_run_all }
+      
+    // perform integration
+    integrating(
+      ch_run_all
+    )
+    
+    // add integrated samples to ch_run
     ch_run
-      .concat(filtering.out.ch_filtered)
+      .concat(integrating.out.ch_integrated)
+      .set { ch_run }
+  }
+  
+  if ( params.input.run_by_patient ) {
+    // merge all samples by patient
+    filtering.out.ch_filtered
+      .map { id, rds_file -> tuple(id.split("_")[0], "by_patient", rds_file) }
+      .groupTuple()
+      .set { ch_run_by_patient }
+      
+    // perform merge
+    merging(
+      ch_run_by_patient
+    )
+    
+    // add merged samples to ch_run
+    ch_run
+      .concat(merging.out.ch_merged)
+      .set { ch_run }
+  }
+  
+  if ( params.input.run_each ) {
+    // get each sample
+    filtering.out.ch_filtered
+      .map { id, rds_file -> tuple(id, "by_sample", rds_file) }
+      .set { ch_run_each }
+      
+    // add each sample to ch_run
+    ch_run
+      .concat(ch_run_each)
       .set { ch_run }
   }
   
