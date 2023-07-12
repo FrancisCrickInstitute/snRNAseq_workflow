@@ -38,4 +38,4 @@ if (length(seu_ls) > 1) {
 }
 
 # save
-saveRDS(seu, "seu_integrated.rds")
+saveRDS(seu, "seu.rds")

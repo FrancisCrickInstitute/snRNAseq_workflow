@@ -229,18 +229,18 @@ The dimensionality of the dataset to use for downstream analysis must be decided
 
 The dimensionality can be decided by consulting the elbow plot (see below) and manually picking a value (set by argument `n_dims`) or it can be calculated using the `intrinsicDimension` package. 
 
-```{r usr_n_dims_msg, echo = F, eval = curr_params$n_dims != F, results = 'asis'}
+```{r usr_n_dims_msg, echo = F, eval = curr_params$cluster$n_dims != F, results = 'asis'}
 cat("### Manually\n")
-cat(paste0("Dimensionality of the data is **", curr_params$n_dims, "** (set by argument n_dims).\n"))
+cat(paste0("Dimensionality of the data is **", curr_params$cluster$n_dims, "** (set by argument n_dims).\n"))
 ```
 
-```{r usr_n_dims, include = curr_params$n_dims != F, eval = curr_params$n_dims != F}
-final_n_dims <- curr_params$n_dims
+```{r usr_n_dims, include = curr_params$cluster$n_dims != F, eval = curr_params$cluster$n_dims != F}
+final_n_dims <- curr_params$cluster$n_dims
 ```
 
 #### intrinsicDimension
 
-```{r iD_msg, echo = F, eval = curr_params$n_dims == F, results = 'asis'}
+```{r iD_msg, echo = F, eval = curr_params$cluster$n_dims == F, results = 'asis'}
 cat("No value was provided for `n_dims`, so dimensionality will be calculated using the intrinsicDimensions package.\n")
 ```
 
@@ -256,7 +256,7 @@ iD_n_dims <- xfun::cache_rds({
 generous_n_dims <- round(2 * ifelse(iD_n_dims == 0, 1, iD_n_dims), 0)
 ```
 
-```{r iD_n_dims_set, include = curr_params$n_dims == FALSE, eval = curr_params$n_dims == FALSE}
+```{r iD_n_dims_set, include = curr_params$cluster$n_dims == FALSE, eval = curr_params$cluster$n_dims == FALSE}
 final_n_dims <- generous_n_dims
 ```
 
@@ -267,7 +267,7 @@ p <-
   Seurat::ElbowPlot(seu, ndims = max(50, final_n_dims)) &
   ggplot2::geom_vline(
     ggplot2::aes(xintercept = final_n_dims,
-                 colour = ifelse(curr_params$n_dims == F, "chosen n_dims", "user-provided n_dims")),
+                 colour = ifelse(curr_params$cluster$n_dims == F, "chosen n_dims", "user-provided n_dims")),
                  linewidth = 1) &
   ggplot2::geom_vline(ggplot2::aes(xintercept = iD_n_dims, colour = "intrisicDimensions"),
                       linewidth = 1, linetype = "dashed") &
@@ -472,6 +472,6 @@ p
 ```
 
 ```{r save}
-saveRDS(cds, "cds_clustered.rds")
+saveRDS(cds, "cds.rds")
 saveRDS(final_umap, "final_umap.rds")
 ```

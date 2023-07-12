@@ -77,65 +77,11 @@ process save_params {
       
 }
 
-// load input
-process loading {
-  tag "${id}"
-  label 'process_low'
-  publishDir "${params.output.dir}/by_sample/${id}/loading/", 
-    mode: 'copy'
-  
-  input:
-    tuple val(id), val(id_col), val(dir)
-    
-  output:
-    tuple val(id), path('seu.rds'), emit: ch_loaded
-    
-  script:
-    """
-    Rscript ${baseDir}/templates/loading.R \
-      "${id}" \
-      "${id_col}" \
-      "${dir}" \
-      "${params.input.sample_metadata_file}"
-    """
-}
-
-// filtering
-process filtering {
-  tag "${id}"
-  label 'process_medium'
-  publishDir "${params.output.dir}/by_sample/${id}/filtering/", 
-    mode: 'copy', 
-    pattern: "{*.html,*.rds,*_files/figure-html/*.png,nucleus_filtering.rds}"
-
-  input:
-    path rmd_file
-    tuple val(id), path(rds_file)
-    path params_file
-
-  output: 
-    tuple val(id), path('seu.rds'), emit: ch_filtered
-    path 'filters.rds', emit: ch_qc
-    path 'filtering.html' 
-    path 'filtering_files/figure-html/*.png'
-    
-  script:
-    """
-    #!/usr/bin/env Rscript
-    rmarkdown::render(
-      "${rmd_file}", 
-      params = list(params_file = "${params_file}", rds_file = "${rds_file}"), 
-      output_file = "filtering.html", 
-      output_dir = getwd()
-    )
-    """
-}
-
 // merge samples
 process merging {
   tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/${subdir}/${id}/merging/",
+  publishDir "${params.output.dir}/${subdir}/${id}/",
     mode: 'copy',
     pattern: "*.rds"
   
@@ -156,7 +102,7 @@ process merging {
 process integrating {
   tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/${subdir}/integrating/",
+  publishDir "${params.output.dir}/${subdir}/",
     mode: 'copy',
     pattern: "*.rds"
   
@@ -164,7 +110,7 @@ process integrating {
     tuple val(id), val(subdir), path(rds_files, stageAs: "seu??.rds")
     
   output:
-    tuple val(id), val(subdir), path('seu.rds'), emit: ch_integrated
+    tuple val(id), val(subdir), path('seu_integrated.rds'), emit: ch_integrated
     
   script:
     """
@@ -187,7 +133,7 @@ process clustering {
     path params_file
 
   output: 
-    tuple val(id), val(subdir), path('cds.rds'), emit: ch_clustered
+    tuple val(id), val(subdir), path('cds_clustered.rds'), emit: ch_clustered
     path 'clustering.html' 
     path 'clustering_files/figure-html/*.png'
     
@@ -304,84 +250,28 @@ workflow {
   // save params
   save_params()
     
-  // generate one channel per id
+  // generate channels from output paths
   Channel
-    .fromPath(params.input.manifest_file)
-    .splitCsv(header:true, sep:'\t')
-    .map { row -> tuple( row.id, row.id_col, row.dir ) }
-    .set { ch_ids }
-  
-  // load each id
-  loading(
-    ch_ids
-  )
-  
-  // quality control and filtering
-  filtering(
-    "${baseDir}/templates/filtering.rmd",
-    loading.out.ch_loaded,
-    save_params.out.ch_params,
-  )
-  
-  // initiate ch_run, ch_integrate and ch_merge
-  Channel
-    .empty()
+    .fromPath("${params.output.dir}/by_*/*/{filtering,merging}/seu.rds")
+    .map { file -> tuple(file.toString().tokenize('/')[-3], file.toString().tokenize('/')[-4], file) }
     .set { ch_run }
-  
-  if ( params.input.run_all ) {
-    // integrate all samples
-    filtering.out.ch_filtered
-      .map { id, rds_file -> tuple("integrated", "integrated", rds_file) }
-      .groupTuple()
-      .set { ch_run_all }
-      
-    // perform integration
-    integrating(
-      ch_run_all
-    )
-    
-    // add integrated samples to ch_run
-    ch_run
-      .concat(integrating.out.ch_integrated)
-      .set { ch_run }
-  }
-  
-  if ( params.input.run_by_patient ) {
-    // merge all samples by patient
-    filtering.out.ch_filtered
-      .map { id, rds_file -> tuple(id.split("_")[0], rds_file) }
-      .groupTuple()
-      .map { id, rds_file -> tuple(id, "by_patient", rds_file) }
-      .set { ch_run_by_patient }
-    
-    // perform merge
-    merging(
-      ch_run_by_patient
-    )
-    
-    // add merged samples to ch_run
-    ch_run
-      .concat(merging.out.ch_merged)
-      .set { ch_run }
-  }
-  
-  if ( params.input.run_each ) {
-    // get each sample
-    filtering.out.ch_filtered
-      .map { id, rds_file -> tuple(id, "by_sample", rds_file) }
-      .set { ch_run_each }
-      
-    // add each sample to ch_run
-    ch_run
-      .concat(ch_run_each)
-      .set { ch_run }
-  }
-  
-  // run on each/all samples/patients
+
+   // run on each/all samples/patients
   snRNAseq_workflow(
     ch_run,
     save_params.out.ch_params
   )
+  
+    
+    
+  //// generate one channel per id
+  //Channel
+  //  .fromPath(params.input.manifest_file)
+  //  .splitCsv(header:true, sep:'\t')
+  //  .map { row -> tuple( row.id, row.id_col, row.dir ) }
+  //  .set { ch_ids }
+  
+  
   
 }
 

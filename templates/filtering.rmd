@@ -308,7 +308,7 @@ seu@misc$nucleus_filtering <-
 
 # save
 seu@misc[c("nucleus_filtering", "filters")] %>%
-  saveRDS("seu_filters.rds")
+  saveRDS("filters.rds")
 ```
 
 ### Fail criteria statistics
@@ -428,5 +428,5 @@ seu <-
 ```
 
 ```{r save}
-saveRDS(seu, "seu_filtered.rds")
+saveRDS(seu, "seu.rds")
 ```
