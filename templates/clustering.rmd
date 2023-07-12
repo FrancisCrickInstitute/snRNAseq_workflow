@@ -421,7 +421,14 @@ We can now cluster the cells. Monocle3 does not require a user-defined clusterin
 ```{r cluster_cells}
 lvls <- c("cluster", "partition")
 cds <- xfun::cache_rds({
-  cds <- monocle3::cluster_cells(cds, random_seed = random_seed, cluster_method = "louvain")
+  resolution <- ifelse(curr_params$cluster$resolution == F, 
+                       NULL, 
+                       curr_params$cluster$resolution)
+  cds <- 
+    monocle3::cluster_cells(
+      cds, random_seed = random_seed, cluster_method = "louvain",
+      resolution = resolution
+      )
   # add it to the colData and reorder clusters and partitions numerically
   SummarizedExperiment::colData(cds)$cluster <- 
     factor(

@@ -135,15 +135,15 @@ process filtering {
 process merging {
   tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/${id}/",
+  publishDir "${params.output.dir}/${subdir}/${id}/",
     mode: 'copy',
     pattern: "*.rds"
   
   input:
-    tuple val(id), path(rds_files, stageAs: "seu??.rds")
+    tuple val(id), val(subdir), path(rds_files, stageAs: "seu??.rds")
     
   output:
-    tuple val(id), path('seu.rds'), emit: ch_merged
+    tuple val(id), val(subdir), path('seu.rds'), emit: ch_merged
     
   script:
     """
@@ -156,15 +156,15 @@ process merging {
 process integrating {
   tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/${id}/",
+  publishDir "${params.output.dir}/${subdir}/",
     mode: 'copy',
     pattern: "*.rds"
   
   input:
-    tuple val(id), path(rds_files, stageAs: "seu??.rds")
+    tuple val(id), val(subdir), path(rds_files, stageAs: "seu??.rds")
     
   output:
-    tuple val(id), path('seu_integrated.rds'), emit: ch_integrated
+    tuple val(id), val(subdir), path('seu_integrated.rds'), emit: ch_integrated
     
   script:
     """
@@ -349,10 +349,11 @@ workflow {
   if ( params.input.run_by_patient ) {
     // merge all samples by patient
     filtering.out.ch_filtered
-      .map { id, rds_file -> tuple(id.split("_")[0], "by_patient", rds_file) }
+      .map { id, rds_file -> tuple(id.split("_")[0], rds_file) }
       .groupTuple()
+      .map { id, rds_file -> tuple(id, "by_patient", rds_file) }
       .set { ch_run_by_patient }
-      
+    
     // perform merge
     merging(
       ch_run_by_patient
