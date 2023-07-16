@@ -1,7 +1,7 @@
 // integrate samples
 process integrating {
   tag "${id}"
-  label 'process_medium'
+  label 'process_high_memory'
   publishDir "${params.output.dir}/${subdir}/integrating/",
     mode: 'copy',
     pattern: "*.rds"

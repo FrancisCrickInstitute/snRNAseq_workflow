@@ -72,7 +72,7 @@ include { filtering   } from './modules/filtering'
 include { merging     } from './modules/merging'
 include { integrating } from './modules/integrating'
 include { clustering  } from './modules/clustering'
-include { annotating   } from './modules/annotating'
+include { annotating  } from './modules/annotating'
 include { infercnv    } from './modules/infercnv'
 
 // pipeline workflow
