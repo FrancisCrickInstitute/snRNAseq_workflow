@@ -111,6 +111,11 @@ workflow {
   // save params
   save_params()
   
+  // initiate ch_run
+    Channel
+      .empty()
+      .set { ch_run }
+  
   if ( ! params.preloaded ) {
     
     // generate one channel per id
@@ -132,11 +137,6 @@ workflow {
       save_params.out.ch_params,
     )
     
-    // initiate ch_run, ch_integrate and ch_merge
-    Channel
-      .empty()
-      .set { ch_run }
-    
     if ( params.input.run_all ) {
       // integrate all samples
       filtering.out.ch_filtered
@@ -155,6 +155,7 @@ workflow {
         .set { ch_run }
     }
     
+    
     if ( params.input.run_by_patient ) {
       // merge all samples by patient
       filtering.out.ch_filtered
@@ -162,6 +163,20 @@ workflow {
         .groupTuple()
         .map { id, rds_file -> tuple(id, "by_patient", rds_file) }
         .set { ch_run_by_patient }
+    }
+    
+    if ( params.input.run_by_patient_wo_organoids ) {
+      // merge all samples by patient without organoids
+      filtering.out.ch_filtered
+        .map { id, rds_file -> tuple(id.split("_")[0].findAll { it.first() =~ "organoid" }, rds_file) }
+        .filter { it.first }        
+        .groupTuple()
+        .map { id, rds_file -> tuple(id, "by_patient_wo_organoids", rds_file) }
+        .set { ch_run_by_patient }
+      ch_run_by_patient.view()
+    }
+    
+    if ( params.input.run_by_patient | params.input.run_by_patient_wo_organoids ) {
       
       // perform merge
       merging(
@@ -172,6 +187,7 @@ workflow {
       ch_run
         .concat(merging.out.ch_merged)
         .set { ch_run }
+      
     }
     
     if ( params.input.run_each ) {
@@ -189,10 +205,39 @@ workflow {
   } else {
     
     // generate runs from preloaded paths
-    Channel
-      .fromPath("${params.output.dir}/by_*/*/{filtering,merging}/seu.rds")
+    
+    if ( params.input.run_each ) {
+      Channel
+        .fromPath("${params.output.dir}/by_sample/*/filtering/seu.rds")
+        .concat(ch_run)
+        .set { ch_run }
+    }
+    
+    if ( params.input.run_by_patient ) {
+      Channel
+        .fromPath("${params.output.dir}/by_patient/*/merging/seu.rds")
+        .concat(ch_run)
+        .set { ch_run }
+    }
+    
+    if ( params.input.run_by_patient_wo_organoids) {
+      Channel
+        .fromPath("${params.output.dir}/by_patient/*/merging/seu.rds")
+        .concat(ch_run)
+        .set { ch_run }
+    }
+    
+    if ( params.input.run_all ) {
+      Channel
+        .fromPath("${params.output.dir}/integrated/*/integrating/seu.rds")
+        .concat(ch_run)
+        .set { ch_run }
+    }
+    
+    ch_run
       .map { file -> tuple(file.toString().tokenize('/')[-3], file.toString().tokenize('/')[-4], file) }
       .set { ch_run }
+    ch_run.view()
     
   }
   
