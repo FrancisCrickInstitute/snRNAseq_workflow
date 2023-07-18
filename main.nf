@@ -112,9 +112,9 @@ workflow {
   save_params()
   
   // initiate ch_run
-    Channel
-      .empty()
-      .set { ch_run }
+  Channel
+    .empty()
+    .set { ch_run }
   
   if ( ! params.preloaded ) {
     
@@ -237,7 +237,6 @@ workflow {
     ch_run
       .map { file -> tuple(file.toString().tokenize('/')[-3], file.toString().tokenize('/')[-4], file) }
       .set { ch_run }
-    ch_run.view()
     
   }
   

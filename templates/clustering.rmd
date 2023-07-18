@@ -253,7 +253,7 @@ iD_n_dims <- xfun::cache_rds({
     k = 10
   )$dim.est %>% round(0)
 }, file = "iD_n_dims.rds")
-generous_n_dims <- round(2 * ifelse(iD_n_dims == 0, 1, iD_n_dims), 0)
+generous_n_dims <- round(1.5 * ifelse(iD_n_dims == 0, 1, iD_n_dims), 0)
 ```
 
 ```{r iD_n_dims_set, include = curr_params$cluster$n_dims == FALSE, eval = curr_params$cluster$n_dims == FALSE}
