@@ -2,17 +2,17 @@
 process annotating {
   tag "${id}"  
   label 'process_medium'
-  publishDir "${params.output.dir}/${subdir}/${id}/annotating/", 
+  publishDir "${params.output.dir}/${dir}/${id}/${subdir}/annotating/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png,cell_groupings_summary.tsv,top_3_markers.tsv}"
 
   input:
     path rmd_file
-    tuple val(id), val(subdir), path(rds_file)
+    tuple val(id), val(dir), val(subdir), path(rds_file)
     path params_file
 
   output: 
-    tuple val(id), val(subdir), path('cds_celltype_annotated.rds'), emit: ch_annotated, optional: true
+    tuple val(id), val(dir), val(subdir), path('cds_celltype_annotated.rds'), emit: ch_annotated, optional: true
     path 'cds_singler_annotated.rds'
     path 'annotating.html' 
     path 'annotating_files/figure-html/*.png'

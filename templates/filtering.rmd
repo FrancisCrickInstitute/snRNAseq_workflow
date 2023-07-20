@@ -327,11 +327,11 @@ dplyr::left_join(
     tidyr::pivot_longer(c("min", "max")) %>%
     dplyr::transmute(fail_criteria = paste(name, fail_criteria, sep = "_"), value),
   seu@misc$nucleus_filtering %>%
-  dplyr::filter(!pass) %>%
-  tidyr::separate_longer_delim(fail_criteria, ",") %>%
-  dplyr::count(fail_criteria) %>%
-  dplyr::mutate(`%` = round((n / n_total) * 100, 2)),
-  by = "fail_criteria"
+    dplyr::filter(!pass) %>%
+    tidyr::separate_longer_delim(fail_criteria, ",") %>%
+    dplyr::count(fail_criteria) %>%
+    dplyr::mutate(`%` = round((n / n_total) * 100, 2)),
+    by = "fail_criteria"
 ) %>%
   dplyr::arrange(-n) %>%
   dplyr::bind_rows(dplyr::tibble(fail_criteria = "total:", 

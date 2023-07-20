@@ -2,15 +2,15 @@
 process merging {
   tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/${subdir}/${id}/merging/",
+  publishDir "${params.output.dir}/${dir}/${id}/merging/",
     mode: 'copy',
     pattern: "*.rds"
   
   input:
-    tuple val(id), val(subdir), path(rds_files, stageAs: "seu??.rds")
+    tuple val(id), val(dir), path(rds_files, stageAs: "seu??.rds")
     
   output:
-    tuple val(id), val(subdir), path('seu.rds'), emit: ch_merged
+    tuple val(id), val(dir), val("merging"), path('seu.rds'), emit: ch_merged
     
   script:
     """

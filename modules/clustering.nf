@@ -2,17 +2,17 @@
 process clustering {
   tag "${id}"
   label 'process_medium'
-  publishDir "${params.output.dir}/${subdir}/${id}/clustering/", 
+  publishDir "${params.output.dir}/${dir}/${id}/${subdir}/clustering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
 
   input:
     path rmd_file
-    tuple val(id), val(subdir), path(rds_file)
+    tuple val(id), val(dir), val(subdir), path(rds_file)
     path params_file
 
   output: 
-    tuple val(id), val(subdir), path('cds.rds'), emit: ch_clustered
+    tuple val(id), val(dir), val(subdir), path('cds.rds'), emit: ch_clustered
     path 'clustering.html' 
     path 'clustering_files/figure-html/*.png'
     

@@ -271,7 +271,7 @@ p <-
                  linewidth = 1) &
   ggplot2::geom_vline(ggplot2::aes(xintercept = iD_n_dims, colour = "intrisicDimensions"),
                       linewidth = 1, linetype = "dashed") &
-  ggplot2::geom_vline(ggplot2::aes(xintercept = generous_n_dims, colour = "generous (iD x 2)"),
+  ggplot2::geom_vline(ggplot2::aes(xintercept = generous_n_dims, colour = "generous (iD x 1.5)"),
                       linewidth = 1, linetype = "dashed") &
   ggplot2::scale_colour_manual(
     name = "n_dims cut-off",
