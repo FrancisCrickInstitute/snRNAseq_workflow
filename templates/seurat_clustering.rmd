@@ -55,82 +55,14 @@ knitr::opts_chunk$set(fig.align = "center",
 redus <- c("PCA", "UMAP")
 ```
 
-```{r define_functions, include = F, eval = T}
-# flatten lists
-flatten_list <- function (x, use.names = TRUE, classes = "ANY") 
-{
-    len <- sum(rapply(x, function(x) 1L, classes = classes))
-    y <- vector("list", len)
-    i <- 0L
-    items <- rapply(x, function(x) {
-        i <<- i + 1L
-        y[[i]] <<- x
-        TRUE
-    }, classes = classes)
-    if (use.names && !is.null(nm <- names(items))) 
-        names(y) <- nm
-    y
-}
-
-# calculate plot height for grids
-get_fig_dims <- function(n_plots, n_cols = NULL, grid_width = 10, height_to_width_ratio = 1) {
-  # get dims
-  dims <- ggplot2::wrap_dims(n_plots, n_cols)
-  # get scale
-  scale <- grid_width / dims[1]
-  # get height
-  grid_height <- (dims[2] * scale) * height_to_width_ratio
-  # return dims
-  c(grid_width, grid_height)
-}
-
-# Get cluster centroids from a Seurat or cell_data_set object
-get_centroids <- function(object, reduction, lvl) {
-
-  if (class(object)[1] == "Seurat") {
-    embeddings <- object@reductions[[reduction]]@cell.embeddings
-    metadata <- object@meta.data
-  } else if (class(object)[1] == "cell_data_set") {
-    embeddings <- SingleCellExperiment::reducedDims(object)[[reduction]]
-    metadata <- SummarizedExperiment::colData(object) %>% dplyr::as_tibble()
-  }
-
-  dplyr::tibble(
-    x = embeddings[,1],
-    y = embeddings[,2],
-    metadata
-  ) %>%
-    dplyr::group_by(get(lvl)) %>%
-    dplyr::summarise(x = median(x), y = median(y)) %>%
-    dplyr::rename(!!lvl := `get(lvl)`)
-
-}
-```
-
-# Run info {-}
-
-```{r curr_params, echo = F}
-curr_params %>%
-  flatten_list() %>%
-  {tibble::tibble(
-    param = names(.), 
-    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 250))
-  } %>%
-  knitr::kable()
-```
-
 # Dimensionality reduction and clustering
 
-```{r load_seu}
-seu <- readRDS(params$rds_file)
+```{r dim_red}
+seu <- readRDS(curr_params$rds_file)
 
-seu <- xfun::cache_rds({
-  Seurat::FindVariableFeatures(seu)
-}, file = "seu_hvg.rds")
+seu <- Seurat::FindVariableFeatures(seu)
 
-seu <- xfun::cache_rds({
-  Seurat::SCTransform(seu, vars.to.regress = curr_params$vars_to_regress)
-}, file = "seu_sctransform.rds")
+seu <- Seurat::SCTransform(seu)
 
 seu <- Seurat::CellCycleScoring(
   seu,
@@ -138,20 +70,58 @@ seu <- Seurat::CellCycleScoring(
   g2m.features = Seurat::cc.genes$g2m.genes
 )
 
-seu <- xfun::cache_rds({
-  Seurat::RunPCA(seu)
-}, file = "seu_pca.rds")
+seu <- Seurat::RunPCA(seu)
 
 final_n_dims <- 30
+seu <- Seurat::FindNeighbors(seu, dims = 1:final_n_dims)
 
-seu <- xfun::cache_rds({
-  seu <- Seurat::FindNeighbors(seu, dims = 1:final_n_dims)
-  seu <- Seurat::FindClusters(seu, resolution = 0.5)
-  seu <- Seurat::RunUMAP(seu, dims = 1:final_n_dims)
-  seu
-}, file = "seu_clustered.rds")
-
-Seurat::DimPlot(seu, reduction = "umap")
+# iterate across resolutions
+clustering_resolutions <- seq(0.1, 0.8, by = 0.1)
+seu <- Seurat::FindClusters(seu, resolution = clustering_resolutions)
+  
+seu <- Seurat::RunUMAP(seu, dims = 1:final_n_dims)
 
 saveRDS(seu, "seu_clustered.rds")
+```
+
+```{r resolutions_vs_reductions, echo = F, fig.dim = c(10, 30)}
+resolutions_vs_reductions <- list()
+purrr::walk(clustering_resolutions, function(res) {
+  purrr::walk(Seurat::Reductions(seu), function(redu) {
+      title <- paste0(redu, "_by_cluster_res_", res)
+      resolutions_vs_reductions [[title]] <<-
+        dittoSeq::dittoDimPlot(
+          seu,
+          paste0(Seurat::DefaultAssay(seu), "_snn_res.", res),
+          reduction.use = redu,
+          size = 0.5,
+          raster = F,
+          legend.show = F,
+          show.axes.numbers = F,
+          show.grid.lines = F,
+          main = gsub("_", " ", title)
+        )
+    })
+})
+# create grob layout
+p <-
+  gridExtra::marrangeGrob(
+    grobs = resolutions_vs_reductions ,
+    nrow = length(clustering_resolutions),
+    ncol = length(Seurat::Reductions(seu)),
+    layout_matrix = matrix(1:length(resolutions_vs_reductions ),
+                           length(clustering_resolutions),
+                           length(Seurat::Reductions(seu)),
+                           TRUE),
+    top = NULL
+  )
+p
+```
+
+```{r clustering_tree, echo = F, fig.cap = "Plot of clustering tree"}
+snn_res_prefixes <- paste0(Seurat::DefaultAssay(seu), "_snn_res.")
+p <- 
+  clustree::clustree(seu@meta.data[, grep(snn_res_prefixes, colnames(seu@meta.data))],
+                       prefix = snn_res_prefixes)
+p
 ```

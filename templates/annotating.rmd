@@ -573,7 +573,7 @@ generate_garnett_marker_file <- function(marker_test_res,
 # get singler annot labels for plotting
 get_singler_annot_label <- function(cds, annot, lvl) {
   level = lvl
-  dplyr::as_tibble(SummarizedExperiment::colData(cds)) %>%
+  dplyr::as_tibble(cds@colData) %>%
     dplyr::mutate(lvl = get(lvl), annot = get(annot)) %>%
     dplyr::group_by(lvl, annot) %>%
     dplyr::count() %>%
@@ -584,7 +584,7 @@ get_singler_annot_label <- function(cds, annot, lvl) {
     dplyr::filter(prop == max(prop) & prop > 50 | max(prop) < 50 & rank(-prop, ties.method = "min") <= 2) %>%
     dplyr::arrange(-prop) %>%
     dplyr::summarise(label = paste0(level, " ", unique(lvl), " (n = ", unique(total), ")\n", paste(label, collapse = "\n"))) %>%
-    {dplyr::left_join(dplyr::as_tibble(SummarizedExperiment::colData(cds)) %>% dplyr::transmute(lvl = get(lvl)), multiple = "all", ., by = "lvl")} %>%
+    {dplyr::left_join(dplyr::as_tibble(cds@colData) %>% dplyr::transmute(lvl = get(lvl)), multiple = "all", ., by = "lvl")} %>%
     dplyr::pull(label)
 }
 
@@ -658,6 +658,33 @@ get_fig_dims <- function(n_plots, n_cols = NULL, grid_width = 10, height_to_widt
   grid_height <- (dims[2] * scale) * height_to_width_ratio
   # return dims
   c(grid_width, grid_height)
+}
+
+# get reduced cell types
+get_singler_annot_reduced <-	function(x){
+  x$singler_annot_reduced <- x$singler_annot_main
+  
+  replacements <-
+    list(
+      "Epithelial_cells" = c("Epithelial_cells", "Neuroepithelial_cell"),
+      "T&NK_cells" = c("T_cells", "NK_cell"),
+      "B_cells" = c("B_cell", "Pre-B_cell_CD34-", "Pro-B_cell_CD34+"),
+      "Erythrocytes" = c("Erythroblast", "Platelets", "MEP"),
+      "Myeloid_cells" = c("Pro-Myelocyte",	"Myelocyte", "Neutrophils", "Monocyte", "Macrophage", "DC", "CMP", "GMP"),
+      "Tissue_stem_cells" = c("Tissue_stem_cells", "iPS_cells", "Embryonic_stem_cells", "HSC_CD34+", "MSC", "HSC_-G-CSF"),
+      "Others" = c("Keratinocytes",	"Hepatocytes", "Gametocytes", "BM & Prog.", "BM", "Neurons", "Astrocyte", "Chondrocytes", "Osteoblasts")
+    ) %>%
+    tibble::enframe(name = "singler_annot_reduced", value = "singler_annot_main") %>%
+    tidyr::unnest(cols = "singler_annot_main")
+  
+  x %>%
+    dplyr::left_join(replacements) %>%
+    dplyr::mutate(
+      singler_annot_reduced = dplyr::case_when(
+        is.na(singler_annot_reduced) ~ singler_annot_main,
+        TRUE ~ singler_annot_reduced
+      )
+    )
 }
 ```
 
@@ -754,29 +781,32 @@ cds_singler <- xfun::cache_rds({
   cds_singler <- SingleR::SingleR(
     test = cds@assays@data$counts,
     ref = singler_refs,
-    labels = colnames(singler_refs))
+    labels = singler_refs@colData$label.fine)
   cds_singler
 }, file = "cds_singler.rds")
 saveRDS(cds_singler, "cds_singler.rds")
 
 cds <- xfun::cache_rds({
   # add singler annotation
-  SummarizedExperiment::colData(cds) <- 
-    SummarizedExperiment::colData(cds) %>%
+  cds@colData <- 
+    cds@colData %>%
     cbind(
       cds_singler %>%
         dplyr::as_tibble() %>%
-        dplyr::select(label = labels) %>%
+        dplyr::select(singler_annot_fine = pruned.labels) %>%
         dplyr::left_join(
-          SummarizedExperiment::colData(singler_refs) %>%
-            tibble::as_tibble(rownames = "label") %>%
-            dplyr::select(label, singler_annot_fine = label.fine, singler_annot_main = label.main)) %>%
-        dplyr::select(-label)
-        ) 
+          singler_refs@colData %>%
+            tibble::as_tibble() %>%
+            dplyr::select(singler_annot_main = label.main,
+                          singler_annot_fine = label.fine) %>%
+            dplyr::distinct()
+        ) %>%
+        get_singler_annot_reduced()
+    )
   # add main/fine labels for partitions/clusters
   for (lvl in lvls) {
-    for (annot in c("singler_annot_fine", "singler_annot_main")) {
-      SummarizedExperiment::colData(cds)[, paste(lvl, annot, sep = "_")] <-
+    for (annot in c("singler_annot_fine", "singler_annot_reduced")) {
+      cds@colData[, paste(lvl, annot, sep = "_")] <-
         get_singler_annot_label(cds, annot, lvl)
     }
   }
@@ -788,7 +818,7 @@ saveRDS(cds, "cds_singler_annotated.rds")
 
 ```{r singler_annot_fine_heatmap, class.source = 'fold-hide', fig.width = 10, fig.cap = "Heatmap of fine celltype annotation scores from SingleR"}
 annotation_col <- 
-  SummarizedExperiment::colData(cds)[, c("cluster", "partition", "singler_annot_main")] %>% 
+  cds@colData[, c("cluster", "partition", "singler_annot_reduced")] %>% 
   as.data.frame()
 if (dplyr::n_distinct(SummarizedExperiment::colData(cds)$patient_id, na.rm = T) > 1) {
   annotation_col$patient_id <- SummarizedExperiment::colData(cds)$patient_id
@@ -796,7 +826,7 @@ if (dplyr::n_distinct(SummarizedExperiment::colData(cds)$patient_id, na.rm = T) 
 if (dplyr::n_distinct(SummarizedExperiment::colData(cds)$lesion_type, na.rm = T) > 1) {
   annotation_col$lesion_type <- SummarizedExperiment::colData(cds)$lesion_type
 }
-cds_singler$main_labels <- SummarizedExperiment::colData(cds)$singler_annot_main
+cds_singler$main_labels <- SummarizedExperiment::colData(cds)$singler_annot_reduced
 p <-
   SingleR::plotScoreHeatmap(
     cds_singler, 
@@ -809,7 +839,7 @@ p
 ```{r umap_vs_singler_annots, class.source = 'fold-hide', results = F, fig.width = 10, fig.height = 10, fig.cap = "Plot of UMAP clusters, coloured by SingleR annotation and labelled by the major SingleR annotation(s) per cluster"}
 p <- list()
 purrr::walk(lvls, function(lvl) {
-  purrr::walk(c("singler_annot_fine", "singler_annot_main"), function(annot) {
+  purrr::walk(c("singler_annot_fine", "singler_annot_reduced"), function(annot) {
     label_col <- paste(lvl, annot, sep = "_")
     p_i <-
       dittoSeq::dittoDimPlot(cds, annot, main = gsub("_", " ", label_col), size = 0.7) +
@@ -833,7 +863,7 @@ patchwork::wrap_plots(p)
 p <-
   dittoSeq::dittoBarPlot(
   cds,
-  var = "singler_annot_main",
+  var = "singler_annot_reduced",
   group.by = "sample",
   scale = "count",
   main = "",
@@ -843,7 +873,7 @@ p <-
                  legend.text = ggplot2::element_text(size = 5)) +
   SummarizedExperiment::colData(cds) %>%
   tibble::as_tibble() %>%
-  ggplot2::ggplot(ggplot2::aes(x = cluster, fill = singler_annot_main)) +
+  ggplot2::ggplot(ggplot2::aes(x = cluster, fill = singler_annot_reduced)) +
   ggplot2::geom_bar() + 
   ditto_colours +
   ggplot2::theme_classic() +
@@ -864,16 +894,16 @@ p
 # TODO: # fix this!!!
 p <-
   dplyr::as_tibble(SummarizedExperiment::colData(cds)) %>%
-  dplyr::group_by(sample, partition, cluster, singler_annot_main) %>%
+  dplyr::group_by(sample, partition, cluster, singler_annot_reduced) %>%
   dplyr::count() %>%
   dplyr::ungroup() %>%
   ggforce::gather_set_data(1:4) %>%
   dplyr::mutate(x = dplyr::case_when(x == 1 ~ "sample",
                                      x == 2 ~ "partition",
                                      x == 3 ~ "cluster",
-                                     x == 4 ~ "singler_annot_main") %>%
+                                     x == 4 ~ "singler_annot_reduced") %>%
                   factor(levels = c("sample", "partition", "cluster", 
-                                    "singler_annot_main"))) %>%
+                                    "singler_annot_reduced"))) %>%
   ggplot2::ggplot(ggplot2::aes(
                     x = x,
                     id = id,
@@ -890,7 +920,7 @@ p <-
                                        rep(-0.3, dplyr::n_distinct(SummarizedExperiment::colData(cds)$sample)),
                                        rep(0, dplyr::n_distinct(SummarizedExperiment::colData(cds)$partition)),
                                        rep(0, dplyr::n_distinct(SummarizedExperiment::colData(cds)$cluster)),
-                                       rep(0.4, dplyr::n_distinct(SummarizedExperiment::colData(cds)$singler_annot_main))
+                                       rep(0.4, dplyr::n_distinct(SummarizedExperiment::colData(cds)$singler_annot_reduced))
                                      )) +
   ggplot2::theme_void() +
   ggplot2::theme(legend.position = "none",
