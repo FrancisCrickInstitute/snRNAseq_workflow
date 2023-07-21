@@ -58,7 +58,7 @@ redus <- c("PCA", "UMAP")
 # Dimensionality reduction and clustering
 
 ```{r dim_red}
-seu <- readRDS(curr_params$rds_file)
+seu <- readRDS(params$rds_file)
 
 seu <- Seurat::FindVariableFeatures(seu)
 
