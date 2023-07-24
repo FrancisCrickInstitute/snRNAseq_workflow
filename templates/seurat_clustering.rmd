@@ -53,38 +53,164 @@ knitr::opts_chunk$set(fig.align = "center",
 
 # reductions
 redus <- c("PCA", "UMAP")
+
+# get reduced cell types
+get_singler_annot_reduced <-	function(x){
+  x$singler_annot_reduced <- x$singler_annot_main
+  
+  replacements <-
+    list(
+      "Epithelial_cells" = c("Epithelial_cells", "Neuroepithelial_cell"),
+      "T&NK_cells" = c("T_cells", "NK_cell"),
+      "B_cells" = c("B_cell", "Pre-B_cell_CD34-", "Pro-B_cell_CD34+"),
+      "Erythrocytes" = c("Erythroblast", "Platelets", "MEP"),
+      "Myeloid_cells" = c("Pro-Myelocyte",	"Myelocyte", "Neutrophils", "Monocyte", "Macrophage", "DC", "CMP", "GMP"),
+      "Tissue_stem_cells" = c("Tissue_stem_cells", "iPS_cells", "Embryonic_stem_cells", "HSC_CD34+", "MSC", "HSC_-G-CSF"),
+      "Others" = c("Keratinocytes",	"Hepatocytes", "Gametocytes", "BM & Prog.", "BM", "Neurons", "Astrocyte", "Chondrocytes", "Osteoblasts")
+    ) %>%
+    tibble::enframe(name = "label.reduced", value = "label.main") %>%
+    tidyr::unnest(cols = "label.main")
+  
+  tibble::tibble(singler_annot_fine = x) %>%
+    dplyr::left_join(replacements) %>%
+    dplyr::mutate(
+      singler_annot_reduced = dplyr::case_when(
+        is.na(singler_annot_reduced) ~ singler_annot_main,
+        TRUE ~ singler_annot_reduced
+      )
+    )
+}
 ```
 
 # Dimensionality reduction and clustering
 
-```{r dim_red}
+## Linear dimensionality reduction
+
+```{r lin_dim_red, echo = F}
 seu <- readRDS(params$rds_file)
-
 seu <- Seurat::FindVariableFeatures(seu)
-
 seu <- Seurat::SCTransform(seu)
-
 seu <- Seurat::CellCycleScoring(
   seu,
   s.features = Seurat::cc.genes$s.genes,
   g2m.features = Seurat::cc.genes$g2m.genes
 )
-
 seu <- Seurat::RunPCA(seu)
+```
 
-final_n_dims <- 30
+## Dimensionality of the data
+
+```{r usr_n_dims_msg, echo = F, eval = curr_params$cluster$n_dims != F, results = 'asis'}
+cat("### Manually\n")
+cat(paste0("Dimensionality of the data is **", curr_params$cluster$n_dims, "** (set by argument n_dims).\n"))
+```
+
+```{r usr_n_dims, include = curr_params$cluster$n_dims != F, eval = curr_params$cluster$n_dims != F}
+final_n_dims <- curr_params$cluster$n_dims
+```
+
+### intrinsicDimension
+
+```{r iD_msg, echo = F, eval = curr_params$cluster$n_dims == F, results = 'asis'}
+cat("No value was provided for `n_dims`, so dimensionality will be calculated using the intrinsicDimensions package.\n")
+```
+
+The dimensionality of the dataset can be estimated using the `intrinsicDimension` package. This bypasses the manual approach of reading the elbow plot, but can sometimes be a bit too conservative. Therefore, if `n_dims` is not defined by the user, the dimensionality is set as 1.5 x `intrinsicDimension` estimate. 
+
+```{r iD_n_dims}
+iD_n_dims <- xfun::cache_rds({
+  intrinsicDimension::maxLikGlobalDimEst(
+    seu@reductions$pca@cell.embeddings,
+    k = 10
+  )$dim.est %>% round(0)
+}, file = "iD_n_dims.rds")
+generous_n_dims <- round(1.5 * ifelse(iD_n_dims == 0, 1, iD_n_dims), 0)
+```
+
+```{r iD_n_dims_set, include = curr_params$cluster$n_dims == FALSE, eval = curr_params$cluster$n_dims == FALSE}
+final_n_dims <- generous_n_dims
+```
+
+Dimensionality set to **`r final_n_dims`**.
+
+```{r elbow_plot, class.source = 'fold-hide', fig.cap = "Elbow plot"}
+p <-
+  Seurat::ElbowPlot(seu, ndims = max(50, final_n_dims)) &
+  ggplot2::geom_vline(
+    ggplot2::aes(xintercept = final_n_dims,
+                 colour = ifelse(curr_params$cluster$n_dims == F, "chosen n_dims", "user-provided n_dims")),
+                 linewidth = 1) &
+  ggplot2::geom_vline(ggplot2::aes(xintercept = iD_n_dims, colour = "intrisicDimensions"),
+                      linewidth = 1, linetype = "dashed") &
+  ggplot2::geom_vline(ggplot2::aes(xintercept = generous_n_dims, colour = "generous (iD x 1.5)"),
+                      linewidth = 1, linetype = "dashed") &
+  ggplot2::scale_colour_manual(
+    name = "n_dims cut-off",
+    values = c(`chosen n_dims` = dittoSeq::dittoColors()[[1]],
+               `user-provided n_dims` = dittoSeq::dittoColors()[[1]],
+               intrisicDimensions = dittoSeq::dittoColors()[[2]],
+               `generous (iD x 2)` = dittoSeq::dittoColors()[[3]])) &
+  ggplot2::theme(legend.position = c(0.7, 0.9),
+                 legend.background = ggplot2::element_rect(fill = "white"))
+p
+```
+
+## Non-linear dimensionality reduction and clustering
+
+```{r clustering_and_umap, echo = F}
 seu <- Seurat::FindNeighbors(seu, dims = 1:final_n_dims)
-
-# iterate across resolutions
 clustering_resolutions <- seq(0.1, 0.8, by = 0.1)
 seu <- Seurat::FindClusters(seu, resolution = clustering_resolutions)
-  
 seu <- Seurat::RunUMAP(seu, dims = 1:final_n_dims)
-
+# save clustered
 saveRDS(seu, "seu_clustered.rds")
 ```
 
-```{r resolutions_vs_reductions, echo = F, fig.dim = c(10, 30)}
+### Groupings vs reductions
+
+```{groupings_vs_reductions, echo = F}
+groupings <- colnames(seu@misc$sample_metadata)
+# plot all groupings vs all reductions
+groupings_vs_reductions <- list()
+purrr::walk(groupings, function(grouping) {
+  purrr::walk(redus, function(redu) {
+    if (dplyr::n_distinct(seu@meta.data[, grouping]) > 1) {
+      title <- paste0(redu, "_vs_", grouping)
+      p <- 
+        Seurat::DimPlot(
+          seu, 
+          group.by = grouping, 
+          reduction = tolower(redu),
+          cols = dittoSeq::dittoColors()
+        )
+      groupings_vs_reductions[[paste0(grouping, "_legend")]] <<-
+        lemon::g_legend(p)
+      groupings_vs_reductions[[title]] <<- 
+        p + 
+        ggplot2::theme(legend.position = "none")
+    }
+  })
+})
+# create grob layout
+p <-
+  gridExtra::marrangeGrob(
+    grobs = groupings_vs_reductions,
+    nrow = length(groupings),
+    ncol = length(redus) + 1,
+    layout_matrix = matrix(
+      1:length(groupings_vs_reductions),
+      length(groupings),
+      length(redus) + 1,
+      TRUE
+    ),
+    top = NULL
+  )
+p
+```
+
+### Resolutions vs reductions
+
+```{r resolutions_vs_reductions, echo = F, fig.dim = c(10, 40)}
 resolutions_vs_reductions <- list()
 purrr::walk(clustering_resolutions, function(res) {
   purrr::walk(Seurat::Reductions(seu), function(redu) {
@@ -118,6 +244,8 @@ p <-
 p
 ```
 
+### Clustering tree
+
 ```{r clustering_tree, echo = F, fig.cap = "Plot of clustering tree"}
 snn_res_prefixes <- paste0(Seurat::DefaultAssay(seu), "_snn_res.")
 p <- 
@@ -125,3 +253,115 @@ p <-
                        prefix = snn_res_prefixes)
 p
 ```
+
+# Celltype annotation
+
+```{r singler_annots, message = F, warning = F}
+# get reference from celldex
+singler_refs <- celldex::HumanPrimaryCellAtlasData() 
+
+# get singler annots, reduce main labels  
+cds_singler <- xfun::cache_rds({
+  cds_singler <- 
+    SingleR::SingleR(
+      test = SeuratWrappers::as.cell_data_set(seu, assay = "RNA")@assays@data$counts,
+      ref = singler_refs,
+      labels = singler_refs@colData$label.fine
+    ) %>%
+    tibble::as_tibble() %>%
+    dplyr::select(label.fine = pruned.labels) %>%
+    dplyr::left_join(
+      singler_refs@colData %>%
+        tibble::as_tibble() %>%
+        dplyr::select(label.main, label.fine) %>%
+        dplyr::distinct()
+    ) %>%
+    dplyr::left_join(
+       list(
+            "Epithelial_cells" = c("Epithelial_cells", "Neuroepithelial_cell"),
+            "T&NK_cells" = c("T_cells", "NK_cell"),
+            "B_cells" = c("B_cell", "Pre-B_cell_CD34-", "Pro-B_cell_CD34+"),
+            "Erythrocytes" = c("Erythroblast", "Platelets", "MEP"),
+            "Myeloid_cells" = c("Pro-Myelocyte",	"Myelocyte", "Neutrophils", "Monocyte", "Macrophage", "DC", "CMP", "GMP"),
+            "Tissue_stem_cells" = c("Tissue_stem_cells", "iPS_cells", "Embryonic_stem_cells", "HSC_CD34+", "MSC", "HSC_-G-CSF"),
+            "Others" = c("Keratinocytes",	"Hepatocytes", "Gametocytes", "BM & Prog.", "BM", "Neurons", "Astrocyte", "Chondrocytes", "Osteoblasts")
+          ) %>%
+          tibble::enframe(name = "label.reduced", value = "label.main") %>%
+          tidyr::unnest(cols = "label.main")
+    ) %>%
+    dplyr::mutate(
+      label.reduced = dplyr::case_when(is.na(label.reduced) ~ label.main,
+                                       TRUE ~ label.reduced))
+}, file = "cds_singler.rds")
+saveRDS(cds_singler, "cds_singler.rds")
+
+# add to seurat object
+seu@meta.data <-
+  cbind(seu@meta.data,
+        cds_singler)
+seu <- Seurat::SetIdent(seu, value = "label.reduced")
+saveRDS(seu, "seu_singler_annotated.rds")
+```
+
+```{r plot_main}
+Seurat::DimPlot(seu, label = T , repel = T, label.size = 3) + Seurat::NoLegend()
+```
+
+## Malignancy score (from Zhang et al., 2021)
+
+```{r malignancy_score}
+# switch default assay to RNA
+Seurat::DefaultAssay(seu) <- "RNA"
+malignancy <-
+  readr::read_tsv(params$annotate$malignancy_score_file) %>%
+  dplyr::transmute(gene, 
+                   population = dplyr::case_when(logFC > 0 ~ "malignant",
+                                                 TRUE ~ "nonmalignant")) %>%
+  {split(.$gene, .$population)}
+seu <- Seurat::AddModuleScore(seu, assay = "RNA", features = malignancy, name = names(malignancy))
+
+# malignancy score = malignant score - nonmalignant score
+seu$malignancy <- seu$malignant1 - seu$nonmalignant2
+```
+
+```{r plot_malignancy, echo = F}
+Seurat::FeaturePlot(seu, features = c("malignancy"), reduction = c("pca", "umap")) & 
+  ggplot2::scale_colour_gradientn(colours = rev(RColorBrewer::brewer.pal(n = 11, name = "RdBu")))
+```
+
+```{r plot_malignacy_vs_nonmalignancy, echo  F}
+seu@meta.data %>% 
+  ggplot2::ggplot(ggplot2::aes(x = malignant1, y = nonmalignant2, colour = malignancy)) +
+  ggplot2::geom_point() + 
+  ggplot2::theme_classic()
+```
+
+## Differentiation score (from Zhang et al., 2021)
+
+```{r malignancy_score}
+differentiation <- c("KRT20", "PHGR1", "MDK", "CHDR2", "RARRES3", "GPA33", "SLC5A1", "MUC13")
+seu <- 
+  Seurat::AddModuleScore(
+    seu, 
+    assay = "RNA", 
+    features = differentiation, 
+    name = "differentiation"
+  )
+seu$differentiation <- seu$differentiation1
+seu$differentiation1 <- NULL
+```
+
+```{r plot_malignancy, echo = F}
+Seurat::FeaturePlot(seu, features = c("differentiation"), reduction = c("pca", "umap")) & 
+  ggplot2::scale_colour_gradientn(colours = rev(RColorBrewer::brewer.pal(n = 11, name = "RdBu")))
+```
+
+```{r plot_malignacy_vs_nonmalignancy, echo  F}
+seu@meta.data %>% 
+  ggplot2::ggplot(ggplot2::aes(x = malignancy, y = differentiation)) +
+  ggplot2::geom_point() + 
+  ggplot2::theme_classic()
+```
+
+```{r save_annotated}
+saveRDS(seu, "seu_annotated.rds")
