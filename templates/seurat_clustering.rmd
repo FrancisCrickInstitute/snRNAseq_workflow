@@ -168,7 +168,7 @@ saveRDS(seu, "seu_clustered.rds")
 
 ### Groupings vs reductions
 
-```{groupings_vs_reductions, echo = F}
+```{r groupings_vs_reductions, echo = F}
 groupings <- colnames(seu@misc$sample_metadata)
 # plot all groupings vs all reductions
 groupings_vs_reductions <- list()
