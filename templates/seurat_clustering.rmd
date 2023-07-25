@@ -307,6 +307,8 @@ p
 
 # Celltype annotation
 
+## SingleR
+
 ```{r singler_annots, message = F, warning = F}
 # get reference from celldex
 singler_refs <- celldex::HumanPrimaryCellAtlasData() 
@@ -452,7 +454,7 @@ for(ct in names(avail_markers)) {
 
   knit_module_dimplots <- c(
     '',
-    paste0('```{r ', chunk_name_ct, ', echo = F, warning = F, message = F, fig.dim = get_fig_dims((n_ct_markers) + 1, n_cols = 1, height_to_width_ratio = 1.2)}'),
+    paste0("```{r ', chunk_name_ct, ', echo = F, warning = F, message = F, fig.dim = get_fig_dims(", n_ct_markers + 1, ", n_cols = 1, height_to_width_ratio = 1.2)}"),
     paste0("p <- seu %>% Nebulosa::plot_density(avail_markers[['", ct, "']], joint = T) + patchwork::plot_layout(ncol = 1)"),
     'p',
     '```',
