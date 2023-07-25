@@ -80,6 +80,43 @@ get_singler_annot_reduced <-	function(x){
       )
     )
 }
+
+# calculate plot height for grids
+get_fig_dims <- function(n_plots, n_cols = NULL, grid_width = 10, height_to_width_ratio = 1) {
+  # get dims
+  dims <- ggplot2::wrap_dims(n_plots, n_cols)
+  # get scale
+  scale <- grid_width / dims[1]
+  # get height
+  grid_height <- (dims[2] * scale) * height_to_width_ratio
+  # return dims
+  c(grid_width, grid_height)
+}
+
+# dev.off() if there is a device
+dev_off_if <- function() {if (length(dev.list()) != 0) { dev.off() }}
+
+# Get cluster centroids from a Seurat or cell_data_set object
+get_centroids <- function(object, reduction, lvl) {
+
+  if (class(object)[1] == "Seurat") {
+    embeddings <- object@reductions[[reduction]]@cell.embeddings
+    metadata <- object@meta.data
+  } else if (class(object)[1] == "cell_data_set") {
+    embeddings <- SingleCellExperiment::reducedDims(object)[[reduction]]
+    metadata <- SummarizedExperiment::colData(object) %>% dplyr::as_tibble()
+  }
+
+  dplyr::tibble(
+    x = embeddings[,1],
+    y = embeddings[,2],
+    metadata
+  ) %>%
+    dplyr::group_by(get(lvl)) %>%
+    dplyr::summarise(x = median(x), y = median(y)) %>%
+    dplyr::rename(!!lvl := `get(lvl)`)
+
+}
 ```
 
 # Dimensionality reduction and clustering
@@ -88,14 +125,17 @@ get_singler_annot_reduced <-	function(x){
 
 ```{r lin_dim_red, echo = F}
 seu <- readRDS(params$rds_file)
-seu <- Seurat::FindVariableFeatures(seu)
-seu <- Seurat::SCTransform(seu)
-seu <- Seurat::CellCycleScoring(
-  seu,
-  s.features = Seurat::cc.genes$s.genes,
-  g2m.features = Seurat::cc.genes$g2m.genes
-)
-seu <- Seurat::RunPCA(seu)
+seu <- xfun::cache_rds({
+  seu <- Seurat::FindVariableFeatures(seu)
+  seu <- Seurat::SCTransform(seu)
+  seu <- Seurat::CellCycleScoring(
+    seu,
+    s.features = Seurat::cc.genes$s.genes,
+    g2m.features = Seurat::cc.genes$g2m.genes
+  )
+  seu <- Seurat::RunPCA(seu)
+  seu
+}, file = "seu_pca.rds")
 ```
 
 ## Dimensionality of the data
@@ -158,18 +198,30 @@ p
 ## Non-linear dimensionality reduction and clustering
 
 ```{r clustering_and_umap, echo = F}
-seu <- Seurat::FindNeighbors(seu, dims = 1:final_n_dims)
-clustering_resolutions <- seq(0.1, 0.8, by = 0.1)
-seu <- Seurat::FindClusters(seu, resolution = clustering_resolutions)
-seu <- Seurat::RunUMAP(seu, dims = 1:final_n_dims)
+seu <- xfun::cache_rds({
+  seu <- Seurat::FindNeighbors(seu, dims = 1:final_n_dims)
+  clustering_resolutions <- seq(0.1, 0.8, by = 0.1)
+  seu <- Seurat::FindClusters(seu, resolution = clustering_resolutions)
+  seu <- Seurat::RunUMAP(seu, dims = 1:final_n_dims)
+  seu
+}, file = "seu_clustered.rds")
+
 # save clustered
 saveRDS(seu, "seu_clustered.rds")
 ```
 
 ### Groupings vs reductions
 
-```{r groupings_vs_reductions, echo = F}
-groupings <- colnames(seu@misc$sample_metadata)
+```{r get_groupings, include = F, echo = F}
+# sample_metadata columns with >1 value that are not `dir` or `file_prefix`
+groupings <- 
+  seu@misc$sample_metadata %>%
+  dplyr::select(where(~ dplyr::n_distinct(.x) > 1)) %>%
+  dplyr::select(-tidyr::any_of(c("dir", "file_prefix"))) %>%
+  colnames()
+```
+
+```{r groupings_vs_reductions, echo = F, fig.dim = get_fig_dims(n_plots = 3 * length(groupings), n_cols = 3), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings", eval = (nrow(seu@misc$sample_metadata) > 1) == T}
 # plot all groupings vs all reductions
 groupings_vs_reductions <- list()
 purrr::walk(groupings, function(grouping) {
@@ -186,8 +238,7 @@ purrr::walk(groupings, function(grouping) {
       groupings_vs_reductions[[paste0(grouping, "_legend")]] <<-
         lemon::g_legend(p)
       groupings_vs_reductions[[title]] <<- 
-        p + 
-        ggplot2::theme(legend.position = "none")
+        p & Seurat::NoLegend()
     }
   })
 })
@@ -261,8 +312,8 @@ p
 singler_refs <- celldex::HumanPrimaryCellAtlasData() 
 
 # get singler annots, reduce main labels  
-cds_singler <- xfun::cache_rds({
-  cds_singler <- 
+singler_annots <- xfun::cache_rds({
+  singler_annots <- 
     SingleR::SingleR(
       test = SeuratWrappers::as.cell_data_set(seu, assay = "RNA")@assays@data$counts,
       ref = singler_refs,
@@ -290,42 +341,56 @@ cds_singler <- xfun::cache_rds({
           tidyr::unnest(cols = "label.main")
     ) %>%
     dplyr::mutate(
-      label.reduced = dplyr::case_when(is.na(label.reduced) ~ label.main,
+      label.reduced = dplyr::case_when(is.na(label.reduced) & is.na(label.main) ~ "Other",
+                                       is.na(label.reduced) ~ label.main,
                                        TRUE ~ label.reduced))
-}, file = "cds_singler.rds")
-saveRDS(cds_singler, "cds_singler.rds")
+  singler_annots
+}, file = "singler_annots.rds")
+saveRDS(singler_annots, "singler_annots.rds")
 
 # add to seurat object
 seu@meta.data <-
   cbind(seu@meta.data,
-        cds_singler)
+        singler_annots)
 seu <- Seurat::SetIdent(seu, value = "label.reduced")
 saveRDS(seu, "seu_singler_annotated.rds")
 ```
 
 ```{r plot_main}
-Seurat::DimPlot(seu, label = T , repel = T, label.size = 3) + Seurat::NoLegend()
+Seurat::DimPlot(seu, label = T , repel = T, label.size = 3) &
+  ditto_colours()
 ```
 
-## Malignancy score (from Zhang et al., 2021)
+## Malignancy and differentiation scores (from Zhang et al., 2021)
 
-```{r malignancy_score}
+```{r malig_and_diff_scores}
 # switch default assay to RNA
 Seurat::DefaultAssay(seu) <- "RNA"
-malignancy <-
+malignancy_genes <-
   readr::read_tsv(params$annotate$malignancy_score_file) %>%
   dplyr::transmute(gene, 
                    population = dplyr::case_when(logFC > 0 ~ "malignant",
                                                  TRUE ~ "nonmalignant")) %>%
-  {split(.$gene, .$population)}
-seu <- Seurat::AddModuleScore(seu, assay = "RNA", features = malignancy, name = names(malignancy))
+  {split(.$gene, .$population)} %>%
+  {c(., list("differentiation" = c("KRT20", "PHGR1", "MDK", "CHDR2", "RARRES3", "GPA33", "SLC5A1", "MUC13")))}
+seu <- 
+  Seurat::AddModuleScore(
+    seu, 
+    assay = "RNA", 
+    features = malignancy_genes, 
+    name = names(malignancy_genes)
+  )
 
 # malignancy score = malignant score - nonmalignant score
 seu$malignancy <- seu$malignant1 - seu$nonmalignant2
+
+# differentiation score
+seu$differentiation <- seu$differentiation3
+seu$differentiation3 <- NULL
 ```
 
-```{r plot_malignancy, echo = F}
-Seurat::FeaturePlot(seu, features = c("malignancy"), reduction = c("pca", "umap")) & 
+```{r malig_and_diff_plots, echo = F}
+Seurat::FeaturePlot(seu, features = c("malignancy", "differentiation")) & 
   ggplot2::scale_colour_gradientn(colours = rev(RColorBrewer::brewer.pal(n = 11, name = "RdBu")))
 ```
 
@@ -333,31 +398,8 @@ Seurat::FeaturePlot(seu, features = c("malignancy"), reduction = c("pca", "umap"
 seu@meta.data %>% 
   ggplot2::ggplot(ggplot2::aes(x = malignant1, y = nonmalignant2, colour = malignancy)) +
   ggplot2::geom_point() + 
-  ggplot2::theme_classic()
-```
-
-## Differentiation score (from Zhang et al., 2021)
-
-```{r malignancy_score}
-differentiation <- c("KRT20", "PHGR1", "MDK", "CHDR2", "RARRES3", "GPA33", "SLC5A1", "MUC13")
-seu <- 
-  Seurat::AddModuleScore(
-    seu, 
-    assay = "RNA", 
-    features = differentiation, 
-    name = "differentiation"
-  )
-seu$differentiation <- seu$differentiation1
-seu$differentiation1 <- NULL
-```
-
-```{r plot_malignancy, echo = F}
-Seurat::FeaturePlot(seu, features = c("differentiation"), reduction = c("pca", "umap")) & 
-  ggplot2::scale_colour_gradientn(colours = rev(RColorBrewer::brewer.pal(n = 11, name = "RdBu")))
-```
-
-```{r plot_malignacy_vs_nonmalignancy, echo  F}
-seu@meta.data %>% 
+  ggplot2::theme_classic() +
+seu@meta.data %>%
   ggplot2::ggplot(ggplot2::aes(x = malignancy, y = differentiation)) +
   ggplot2::geom_point() + 
   ggplot2::theme_classic()
@@ -366,3 +408,65 @@ seu@meta.data %>%
 ```{r save_annotated}
 saveRDS(seu, "seu_annotated.rds")
 ```
+
+## Canonical celltype markers
+
+```{r avail_markers}
+# load markers
+markers <-
+  curr_params$annotate$markers_file %>%
+  readr::read_tsv(show_col_types = F) %>%
+  {split(.$gene, .$population)}
+# get markers present in the dataset
+avail_markers <- markers %>% purrr::map(intersect, rownames(seu))
+```
+
+```{r canonical_marker_expr}
+p <-
+  avail_markers %>%
+  names() %>%
+  purrr::map(function(ct) {
+    p <-
+      seu %>%
+      Nebulosa::plot_density(avail_markers[[ct]], joint = T) +
+      patchwork::plot_layout(ncol = 1)
+  }) %>%
+  setNames(names(avail_markers))
+# create grob layout
+p <-
+  gridExtra::marrangeGrob(
+    grobs = p,
+    nrow = length(p),
+    ncol = 1
+  )
+```
+
+```{r knit_density_plots}
+to_knit <- c()
+
+for(ct in names(avail_markers)) {
+  
+  to_knit <- c(to_knit, paste0("\n##### Population: **", ct, "**\n"))
+  chunk_name_ct <- ct %>% janitor::make_clean_names()
+  n_ct_markers <- length(avail_markers[[ct]])
+
+  knit_module_dimplots <- c(
+    '',
+    paste0('```{r ', chunk_name_ct, ', echo = F, warning = F, message = F, fig.dim = get_fig_dims((n_ct_markers) + 1, n_cols = 1, height_to_width_ratio = 1.2)}'),
+    paste0("p <- seu %>% Nebulosa::plot_density(avail_markers[['", ct, "']], joint = T) + patchwork::plot_layout(ncol = 1)"),
+    'p',
+    '```',
+    ''
+    )
+
+  dev_off_if()
+  knitted_module_dimplots <- knitr::knit_child(text = knit_module_dimplots, envir = environment(), quiet = TRUE)
+  dev_off_if()
+  to_knit <- c(to_knit, knitted_module_dimplots)
+
+}
+dev_off_if()
+cat(unlist(to_knit), sep = '\n')
+```
+
+

@@ -2,6 +2,7 @@
 process seurat_clustering {
   tag "${id}"
   label 'process_high'
+  cpus 12
   publishDir "${params.output.dir}/${dir}/${id}/${subdir}/seurat_clustering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
