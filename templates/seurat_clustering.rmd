@@ -7,6 +7,7 @@ fontsize: 11pt
 params:
   params_file: false
   rds_file: false
+  cache_dir: false
 output:
   html_document:
     keep_md: true
@@ -49,7 +50,8 @@ umap_void_theme <-
 
 # chunk setup
 knitr::opts_chunk$set(fig.align = "center",
-                      dpi = 300)
+                      dpi = 300,
+                      cache.path = params$cache_dir)
 
 # reductions
 redus <- c("PCA", "UMAP")
@@ -205,9 +207,6 @@ seu <- xfun::cache_rds({
   seu <- Seurat::RunUMAP(seu, dims = 1:final_n_dims)
   seu
 }, file = "seu_clustered.rds")
-
-# save clustered
-saveRDS(seu, "seu_clustered.rds")
 ```
 
 ### Groupings vs reductions
@@ -350,19 +349,22 @@ singler_annots <- xfun::cache_rds({
                                        TRUE ~ label.reduced))
   singler_annots
 }, file = "singler_annots.rds")
-saveRDS(singler_annots, "singler_annots.rds")
 
 # add to seurat object
-seu@meta.data <-
-  cbind(seu@meta.data,
-        singler_annots)
-seu <- Seurat::SetIdent(seu, value = "label.reduced")
-saveRDS(seu, "seu_singler_annotated.rds")
+seu <- <- xfun::cache_rds({
+  seu@meta.data <-
+    cbind(seu@meta.data,
+          singler_annots)
+  seu <- Seurat::SetIdent(seu, value = "label.reduced")
+  seu
+}, file = "seu_singler_annotated.rds")
 ```
 
 ```{r plot_main}
-Seurat::DimPlot(seu, label = T , repel = T, label.size = 3) &
-  ditto_colours()
+p <-
+  Seurat::DimPlot(seu, label = T , repel = T, label.size = 3) &
+  ditto_colours
+p
 ```
 
 ## Malignancy and differentiation scores (from Zhang et al., 2021)
@@ -393,12 +395,12 @@ seu$differentiation <- seu$differentiation3
 seu$differentiation3 <- NULL
 ```
 
-```{r malig_and_diff_plots, echo = F}
+```{r malig_and_diff_plots, echo = F, fig.dim = c(10, 5)}
 Seurat::FeaturePlot(seu, features = c("malignancy", "differentiation")) & 
   ggplot2::scale_colour_gradientn(colours = rev(RColorBrewer::brewer.pal(n = 11, name = "RdBu")))
 ```
 
-```{r plot_malignacy_vs_nonmalignancy, echo  F}
+```{r plot_malignacy_vs_nonmalignancy, echo = F, fig.dim = c(10, 5)}
 seu@meta.data %>% 
   ggplot2::ggplot(ggplot2::aes(x = malignant1, y = nonmalignant2, colour = malignancy)) +
   ggplot2::geom_point() + 
@@ -425,14 +427,14 @@ markers <-
 avail_markers <- markers %>% purrr::map(intersect, rownames(seu))
 ```
 
-```{r canonical_marker_expr}
+```{r canonical_marker_expr, fig.dim = get_fig_dims(length(avail_markers), n_cols = 1)}
 p <-
   avail_markers %>%
   names() %>%
   purrr::map(function(ct) {
-    p <-
-      seu %>%
+    seu %>%
       Nebulosa::plot_density(avail_markers[[ct]], joint = T) +
+      ggplot2::ggtitle(paste(ct, paste(c(avail_markers[[ct]], ""), collapse = "+ "))) +
       patchwork::plot_layout(ncol = 1)
   }) %>%
   setNames(names(avail_markers))
@@ -443,34 +445,7 @@ p <-
     nrow = length(p),
     ncol = 1
   )
-```
-
-```{r knit_density_plots}
-to_knit <- c()
-
-for(ct in names(avail_markers)) {
-  
-  to_knit <- c(to_knit, paste0("\n##### Population: **", ct, "**\n"))
-  chunk_name_ct <- ct %>% janitor::make_clean_names()
-  n_ct_markers <- length(avail_markers[[ct]])
-
-  knit_module_dimplots <- c(
-    '',
-    paste0("```{r ", chunk_name_ct, ", echo = F, warning = F, message = F, fig.dim = get_fig_dims(", n_ct_markers + 1, ", n_cols = 1, height_to_width_ratio = 1.2)}"),
-    paste0("p <- seu %>% Nebulosa::plot_density(avail_markers[['", ct, "']], joint = T) + patchwork::plot_layout(ncol = 1)"),
-    'p',
-    '```',
-    ''
-    )
-
-  dev_off_if()
-  knitted_module_dimplots <- knitr::knit_child(text = knit_module_dimplots, envir = environment(), quiet = TRUE)
-  dev_off_if()
-  to_knit <- c(to_knit, knitted_module_dimplots)
-
-}
-dev_off_if()
-cat(unlist(to_knit), sep = '\n')
+p
 ```
 
 

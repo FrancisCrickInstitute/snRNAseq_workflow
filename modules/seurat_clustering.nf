@@ -23,7 +23,10 @@ process seurat_clustering {
     #!/usr/bin/env Rscript
     rmarkdown::render(
       "${rmd_file}", 
-      params = list(params_file = "${params_file}", rds_file = "${rds_file}"), 
+      params = list(
+        params_file = "${params_file}", 
+        rds_file = "${rds_file}",
+        cache_dir = "${baseDir}/${params.output.dir}/${dir}/${id}/${subdir}/seurat_clustering/seurat_clustering_cache/"), 
       output_file = "seurat_clustering.html",
       output_dir = getwd()
     )
