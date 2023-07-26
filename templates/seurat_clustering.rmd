@@ -327,7 +327,9 @@ singler_annots <- xfun::cache_rds({
       singler_refs@colData %>%
         tibble::as_tibble() %>%
         dplyr::select(label.main, label.fine) %>%
-        dplyr::distinct()
+        # fix many-to-many BM/BM & Prog. issue
+        dplyr::filter(label.main != "BM & Prog.") %>%
+        dplyr::distinct() 
     ) %>%
     dplyr::left_join(
        list(
@@ -343,7 +345,7 @@ singler_annots <- xfun::cache_rds({
           tidyr::unnest(cols = "label.main")
     ) %>%
     dplyr::mutate(
-      label.reduced = dplyr::case_when(is.na(label.reduced) & is.na(label.main) ~ "Other",
+      label.reduced = dplyr::case_when(is.na(label.reduced) & is.na(label.main) ~ "Others",
                                        is.na(label.reduced) ~ label.main,
                                        TRUE ~ label.reduced))
   singler_annots
@@ -454,7 +456,7 @@ for(ct in names(avail_markers)) {
 
   knit_module_dimplots <- c(
     '',
-    paste0("```{r ', chunk_name_ct, ', echo = F, warning = F, message = F, fig.dim = get_fig_dims(", n_ct_markers + 1, ", n_cols = 1, height_to_width_ratio = 1.2)}"),
+    paste0("```{r ", chunk_name_ct, ", echo = F, warning = F, message = F, fig.dim = get_fig_dims(", n_ct_markers + 1, ", n_cols = 1, height_to_width_ratio = 1.2)}"),
     paste0("p <- seu %>% Nebulosa::plot_density(avail_markers[['", ct, "']], joint = T) + patchwork::plot_layout(ncol = 1)"),
     'p',
     '```',

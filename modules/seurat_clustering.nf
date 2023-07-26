@@ -2,7 +2,7 @@
 process seurat_clustering {
   tag "${id}"
   label 'process_high'
-  cpus 12
+  cpus = { check_max( 12 * task.attempt, 'cpus' ) }
   publishDir "${params.output.dir}/${dir}/${id}/${subdir}/seurat_clustering/", 
     mode: 'copy', 
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
