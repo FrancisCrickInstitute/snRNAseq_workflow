@@ -13,11 +13,10 @@ process seurat_clustering {
     path params_file
 
   output: 
-    tuple val(id), val(dir), val(subdir), path('seu.rds'), emit: ch_clustered
+    tuple val(id), val(dir), val(subdir), path('seu_annotated.rds'), emit: ch_clustered
     path 'seurat_clustering.html' 
     path 'seurat_clustering_files/figure-html/*.png'
-    path 'cds_singler.rds'
-    
+
   script:
     """
     #!/usr/bin/env Rscript
@@ -26,7 +25,7 @@ process seurat_clustering {
       params = list(
         params_file = "${params_file}", 
         rds_file = "${rds_file}",
-        cache_dir = "${baseDir}/${params.output.dir}/${dir}/${id}/${subdir}/seurat_clustering/seurat_clustering_cache/"), 
+        cache_dir = "${params.output.dir}/${dir}/${id}/${subdir}/seurat_clustering/seurat_clustering_cache/"), 
       output_file = "seurat_clustering.html",
       output_dir = getwd()
     )
