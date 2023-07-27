@@ -1,0 +1,102 @@
+---
+title: "snRNAseq workflow: integration"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+params:
+  params_file: false
+  rds_file: false
+  cache_dir: false
+output:
+  html_document:
+  keep_md: true
+code_folding: show
+toc: true
+toc_float: true
+toc_collapsed: true
+toc_depth: 4
+number_sections: true
+theme: lumen
+---
+
+```{r initialise, include = F}
+# pipe
+library(magrittr)
+
+# load params file
+curr_params <-
+  rjson::fromJSON(file = params$params_file) %>%
+  type.convert(as.is = T)
+
+# chunk setup
+knitr::opts_chunk$set(fig.align = "center",
+                      dpi = 300,
+                      cache.path = params$cache_dir)
+```
+
+```{r load}
+# read files
+seu_ls <-
+  strsplit(params$rds_file , ",")[[1]] %>%
+  lapply(readRDS)
+```
+
+```{r integrate, eval = length(seu_ls) > 1}
+# normalize and identify variable features for each dataset independently
+seu_ls <- xfun::cache_rds({
+  lapply(X = seu_ls, FUN = function(x) {
+    x <- Seurat::NormalizeData(x)
+    x <- Seurat::FindVariableFeatures(x, selection.method = "vst", nfeatures = 2000)
+    x
+  })
+}, file = "seu_hvg_ls.rds")
+
+# select features that are repeatedly variable across datasets for integration
+features <- xfun::cache_rds({
+  Seurat::SelectIntegrationFeatures(object.list = seu_ls)
+}, file = "features.rds")
+
+# identify integration anchors
+seu_anchors <- xfun::cache_rds({
+  Seurat::FindIntegrationAnchors(
+    object.list = seu_ls,
+    anchor.features = features
+  )
+}, file = "seu_anchors.rds")
+
+# integrate
+seu <- xfun::cache_rds({
+  if (nrow(seu_anchors@anchors) < 100) {
+    # if n anchor cells < 100, merge
+    seu <- Reduce(merge, seu_ls)
+  } else {
+    # create 'integrated' data assay
+    seu <- Seurat::IntegrateData(anchorset = seu_anchors)
+  }
+
+  # merge metadata
+  seu@misc$sample_metadata <-
+    seu_ls %>%
+    purrr::map(~ .x@misc$sample_metadata) %>%
+    dplyr::bind_rows() %>%
+    dplyr::distinct()
+
+  # return
+  seu
+}, file = "seu_integrated.rds")
+```
+
+```{r merge, eval = length(seu_ls) == 1}
+seu <- xfun::cache_rds({
+  seu <- Seurat::NormalizeData(seu_ls[[1]])
+  seu <- Seurat::FindVariableFeatures(seu, selection.method = "vst", nfeatures = 2000)
+  seu
+}, file = "seu_integrated.rds")
+```
+
+```{r save}
+# save
+saveRDS(seu, "seu.rds")
+```
+
