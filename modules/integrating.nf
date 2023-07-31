@@ -14,7 +14,6 @@ process integrating {
   output:
     tuple val(id), val(dir), val("integrating"), path('seu.rds'), emit: ch_integrated
     path 'integrating.html'
-    path 'integrating_files/figure-html/*.png'
 
   script:
     """

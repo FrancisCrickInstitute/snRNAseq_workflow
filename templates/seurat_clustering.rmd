@@ -211,7 +211,8 @@ purrr::walk(groupings, function(grouping) {
           seu, 
           group.by = grouping, 
           reduction = tolower(redu),
-          cols = dittoSeq::dittoColors()
+          cols = dittoSeq::dittoColors(),
+          raster = F
         )
       groupings_vs_reductions[[paste0(grouping, "_legend")]] <<-
         lemon::g_legend(p)
@@ -414,16 +415,15 @@ markers <-
 avail_markers <- markers %>% purrr::map(intersect, rownames(seu))
 ```
 
-```{r canonical_marker_expr, eval = T, fig.dim = get_fig_dims(length(avail_markers), n_cols = 1)}
-p <-
-  avail_markers %>%
-  names() %>%
-  purrr::map(function(ct) {
-    seu %>%
-      Nebulosa::plot_density(avail_markers[[ct]], joint = T) +
-      ggplot2::ggtitle(paste(ct, paste(c(avail_markers[[ct]], ""), collapse = "+ "))) +
-      patchwork::plot_layout(ncol = 1)
-  }) %>%
+```{r canonical_marker_expr, eval = F, fig.dim = get_fig_dims(length(avail_markers), n_cols = 1)}
+p <- list()
+names(avail_markers) %>%
+purrr::map(function(ct) {
+  seu %>%
+    Nebulosa::plot_density(avail_markers[[ct]], joint = T) +
+    ggplot2::ggtitle(paste(ct, paste(c(avail_markers[[ct]], ""), collapse = "+ "))) +
+    patchwork::plot_layout(ncol = 1)
+}) %>%
   setNames(names(avail_markers))
 # create grob layout
 p <-

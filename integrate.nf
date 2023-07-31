@@ -19,13 +19,7 @@ output dir:           ${params.output.dir}
 
 // import modules
 include { save_params } from './modules/save_params'
-include { loading     } from './modules/loading'
-include { filtering   } from './modules/filtering'
-include { merging     } from './modules/merging'
 include { integrating } from './modules/integrating'
-include { clustering  } from './modules/clustering'
-include { annotating  } from './modules/annotating'
-include { infercnv    } from './modules/infercnv'
 
 
 workflow {
@@ -33,13 +27,42 @@ workflow {
   // save params
   save_params()
 
-  // integrate all preloaded samples
+  // initialise
   Channel
     .fromPath("${params.output.dir}/by_sample/*/filtering/seu.rds")
-    .map { file -> tuple("all", file) }
-    .groupTuple()
-    .map { dir, file -> tuple(dir, "", file)}
+    .map { rds_file -> tuple(rds_file.toString().tokenize('/')[-3], rds_file) }
+    .set { ch_files }
+  Channel
+    .empty()
     .set { ch_run }
+
+  if ( params.input.run_by_patient ) {
+    // by patient
+    ch_files
+      .map { id, rds_file -> tuple(id.split("_")[0], rds_file) }
+      .groupTuple()
+      .map { id, rds_file -> tuple(id, "by_patient", rds_file) }
+      .concat(ch_run)
+      .set { ch_run }
+  }
+
+  if ( params.input.run_by_patient_wo_organoids ) {
+    ch_files
+      .filter { !it[0].contains("organoid") }
+      .map { id, rds_file -> tuple(id.split("_")[0], rds_file) }
+      .groupTuple()
+      .map { id, rds_file -> tuple(id, "by_patient_wo_organoids", rds_file) }
+      .concat(ch_run)
+      .set { ch_run }
+  }
+
+  if ( params.input.run_all ) {
+    ch_files
+      .map { rds_file -> tuple("all", rds_file) }
+      .groupTuple()
+      .map { dir, rds_file -> tuple(dir, "", rds_file)}
+      .set { ch_run }
+  }
 
   // perform integration
   integrating(
