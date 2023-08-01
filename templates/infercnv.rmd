@@ -21,9 +21,6 @@ output:
 ---
 
 ```{r initialise, include = F}
-# magrittr, gridExtra, monocle3 must be loaded in the environment (due to package-specific bugs)
-library(gridExtra)
-library(monocle3)
 library(magrittr)
 
 # load params file
@@ -37,8 +34,7 @@ random_seed = 42
 
 # chunk setup
 knitr::opts_chunk$set(fig.align = "center",
-                      dpi = 300,
-                      cache.path = params$cache_dir)
+                      dpi = 300)
 ```
 
 ```{r define_functions, include = F}
@@ -90,62 +86,92 @@ From [**github.com/broadinstitute/inferCNV/wiki**](https://github.com/broadinsti
 We annotate all matched normal and use this to infer copy number variants in the malignant population. Unlike CNVs called from bulk genotyping data, `inferCNV` can also reveal subclonal events in the tumour that only occur in some cell lineages, but not others. 
 
 ```{r infercnv_annots_celltype}
-# ref_annots <- c("T_cells", "Macrophage", "B_cells", "NK_cells", "Myeloid_cells")
+# ref_annots <- c("T_cells", "Macrophage", "B_cells", "NK_cells", "Myeloid_cells", "Stromal_cells")
 # query_annots <- "Epithelial_cells"
 annots_col <- "label.reduced"
 ref_annots <- stringr::str_split(curr_params$infercnv$reference_celltypes, ",")[[1]]
 query_annots <- stringr::str_split(curr_params$infercnv$query_celltypes, ",")[[1]]
 
-# label query and ref populations
-infercnv_annots <-
-  seu@meta.data %>% 
-  tibble::as_tibble(rownames = "cell") %>% 
-  dplyr::select(sample, cell, annot = dplyr::matches(annots_col)) %>%
-  dplyr::filter(annot %in% c(ref_annots, query_annots)) %>%
-  dplyr::transmute(
-    cell,
-    infercnv_population = dplyr::case_when(
-      annot %in% query_annots ~ paste0("malignant_", sample),
-      annot %in% ref_annots ~ annot
-    )
-  ) %>%
-  # remove annotations containing only 1 cell
-  dplyr::group_by(infercnv_population) %>%
-  dplyr::filter(dplyr::n() > 1)
-
-# save
-infercnv_annots %>%
-  readr::write_tsv("infercnv_annots.tsv", col_names = F)
-```
-
-```{r infercnv_obj}
-# create infercnv object
-infercnv_obj <- xfun::cache_rds({
-  infercnv::CreateInfercnvObject(
-    raw_counts_matrix = Seurat::GetAssayData(seu, slot="counts"),
-    annotations_file = "infercnv_annots.tsv",
-    gene_order_file = curr_params$infercnv$gene_order_file,
-    ref_group_names = ref_val
-  )
-}, file = "infercnv_obj_prelim.rds")
- 
-# perform infercnv operations to reveal cnv signal
-dir.create("infercnv/")
-options(scipen = 100)
-infercnv_obj <- xfun::cache_rds({
- infercnv::run(
-   infercnv_obj,
-   cutoff = 0.1,
-   out_dir = "infercnv/",
-   cluster_by_groups = T,
-   denoise = T,
-   HMM = T, 
-   resume_mode = T,
-   analysis_mode = "subclusters"
- )
-}, file = "infercnv_obj.rds")
-```
-
-```{r save}
-saveRDS(infercnv_obj, "infercnv.rds")
+for (sample in unique(seu@meta.data$sample)) {
+  print(sample)
+  
+  # create output dirs
+  out_dir <- paste0(params$cache_dir, "/", sample, "/")
+  dir.create(out_dir, recursive = T, showWarnings = F)
+  dir.create(sample)
+  
+  # subset seu
+  seu_i <- seu[, seu@meta.data$sample == sample]
+  
+  # label query and ref populations
+  infercnv_annots <- 
+    seu_i@meta.data %>% 
+    tibble::as_tibble(rownames = "cell") %>% 
+    dplyr::select(sample, cell, annot = dplyr::matches(annots_col)) %>%
+    dplyr::filter(annot %in% c(ref_annots, query_annots)) %>%
+    dplyr::transmute(
+      cell,
+      infercnv_population = dplyr::case_when(
+        annot %in% query_annots ~ paste0("malignant_", sample),
+        annot %in% ref_annots ~ annot
+      )
+    ) %>%
+    # remove annotations containing <100 cells
+    dplyr::group_by(infercnv_population) %>%
+    dplyr::filter(dplyr::n() > 100)
+  
+  # save annots file
+  infercnv_annots %>%
+    readr::write_tsv(paste0(sample, "/infercnv_annots.tsv"), col_names = F)
+  
+  # subset seu_i
+  seu_i <- seu_i[, seu_i@meta.data[, annots_col] %in% c(infercnv_annots$infercnv_population, query_annots)]
+  
+  # get filtered reference annots
+  filt_ref_annots <-
+    infercnv_annots %>%
+    dplyr::filter(!grepl("malignant", infercnv_population)) %>%
+    dplyr::pull(infercnv_population) %>%
+    unique()
+  
+  # do not proceed if no query cells left
+  if (!any(grepl("malignant", infercnv_annots$infercnv_population))) {
+    message("<100 query cells. Cannot proceed.")
+  } else {
+    
+    # create infercnv object
+    infercnv_obj <- 
+      infercnv::CreateInfercnvObject(
+        raw_counts_matrix = Seurat::GetAssayData(seu_i, slot="counts"),
+        annotations_file = paste0(sample, "/infercnv_annots.tsv"),
+        gene_order_file = curr_params$infercnv$gene_order_file,
+        ref_group_names = filt_ref_annots
+      )
+    
+    # save
+    saveRDS(infercnv_obj, paste0(sample, "/infercnv_prelim.rds"))
+    
+    # perform infercnv operations to reveal cnv signal
+    options(scipen = 100)
+    infercnv_obj <- 
+     infercnv::run(
+       infercnv_obj,
+       cutoff = 0.1,
+       out_dir = out_dir,
+       cluster_by_groups = T,
+       denoise = T,
+       HMM = T, 
+       HMM_type = "i3",
+       HMM_report_by = "cell",
+       num_threads = 10,
+       no_prelim_plot = T,
+       analysis_mode = "subclusters",
+       resume_mode = T
+     )
+    
+    # save # save 
+    saveRDS(infercnv_obj, paste0(sample, "/infercnv.rds"))
+    
+  }
+}
 ```

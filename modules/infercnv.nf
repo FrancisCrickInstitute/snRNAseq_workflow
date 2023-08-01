@@ -4,7 +4,7 @@ process infercnv {
   label 'process_high_memory'
   publishDir "${params.output.dir}/${dir}/${id}/${subdir}/infercnv/",
     mode: 'copy',
-    pattern: "{*.html,*.tsv,*.rds,*_files/figure-html/*.png,infercnv/*}"
+    pattern: "{*.html,*/*.tsv,*/*.rds}"
 
   input:
     path rmd_file
@@ -14,9 +14,7 @@ process infercnv {
   output:
     path 'infercnv.html'
     path 'infercnv_annots.tsv'
-    path 'infercnv_files/figure-html/*.png', optional: true
-    path 'infercnv.rds', emit: ch_infercnv, optional: true
-    path 'infercnv/*', optional: true
+    path '*/*.rds'
 
   script:
     """
