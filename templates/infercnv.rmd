@@ -89,8 +89,8 @@ We annotate all matched normal and use this to infer copy number variants in the
 # ref_annots <- c("T_cells", "Macrophage", "B_cells", "NK_cells", "Myeloid_cells", "Stromal_cells")
 # query_annots <- "Epithelial_cells"
 annots_col <- "label.reduced"
-ref_annots <- curr_params$infercnv$reference_celltypes %>% stringr::str_split(",") %>% unlist()
-query_annots <- curr_params$infercnv$query_celltypes %>% stringr::str_split(",") %>% unlist()
+ref_annots <- curr_params$infercnv$reference_celltypes 
+query_annots <- curr_params$infercnv$query_celltypes
 
 for (sample in unique(seu@meta.data$sample)) {
   print(sample)
@@ -134,12 +134,15 @@ for (sample in unique(seu@meta.data$sample)) {
     dplyr::pull(infercnv_population) %>%
     unique()
   
-  # do not proceed if no query cells left
-  proceed <- any(grepl("malignant", infercnv_annots$infercnv_population))
+  # do not proceed if no query cells or reference left
+  enough_query <- any(grepl("malignant", infercnv_annots$infercnv_population)) 
+  enough_ref <- length(filt_ref_annots) > 1
   
   # proceed
-  if (proceed == F) {
+  if (enough_query == F) {
     message("<100 query cells. Cannot proceed.")
+  } else if (enough_ref == F) {
+    message("<100 reference cells. Cannot proceed") 
   } else {
     
     # create infercnv object

@@ -12,7 +12,7 @@ process infercnv {
     path params_file
 
   output:
-    path '*/*'
+    path 'infercnv.html'
     path 'seu_infercnv.rds', optional: true
 
   script:
