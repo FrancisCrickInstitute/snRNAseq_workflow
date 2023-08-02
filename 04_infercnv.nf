@@ -21,6 +21,37 @@ output dir:           ${params.output.dir}
 include { save_params } from './modules/save_params'
 include { infercnv    } from './modules/infercnv'
 
+// integrate malignant samples
+process malignant_integrating {
+  tag "${id}"
+  label 'process_medium'
+  publishDir "${params.output.dir}/${dir}/${id}/integrating/infercnv/malignant_integrating/",
+    mode: 'copy',
+    pattern: "*.rds"
+
+  input:
+    path rmd_file
+    tuple val(id), val(dir), val(subdir), path(rds_files, stageAs: "seu??.rds")
+    path params_file
+
+  output:
+    tuple val(id), val(dir), val(subdir), path('seu.rds'), emit: ch_malignant_integrated
+    path 'integrating.html'
+
+  script:
+    """
+    #!/usr/bin/env Rscript
+    rmarkdown::render(
+      "${rmd_file}",
+      params = list(
+        params_file = "${params_file}",
+        rds_file = "${rds_files.join(',')}",
+        cache_dir = "${params.output.dir}/${dir}/${id}/integrating/infercnv/malignant_integrating/malignant_integrating_cache/"),
+      output_file = "integrating.html",
+      output_dir = getwd()
+    )
+    """
+}
 
 workflow {
 
@@ -41,11 +72,18 @@ workflow {
                   file) }
     .set { ch_run }
 
-  // perform integration
+  // perform infercnv
   infercnv(
     "${baseDir}/templates/infercnv.rmd",
     ch_run,
     save_params.out.ch_params
   )
-
+  
+  // perform malignant integration
+  malignant_integrating(
+    "${baseDir}/templates/integrating.rmd",
+    infercnv.out.ch_malignant,
+    save_params.out.ch_params
+  )
+  
 }

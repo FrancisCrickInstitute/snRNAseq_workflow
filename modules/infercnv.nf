@@ -13,8 +13,9 @@ process infercnv {
 
   output:
     path 'infercnv.html'
-    path 'seu_infercnv.rds', optional: true
-
+    path 'infercnv.rds', optional: true
+    tuple val(id), val(dir), val(subdir), path('seu_infercnv_malignant.rds'), emit: ch_malignant, optional: true
+    
   script:
     """
     #!/usr/bin/env Rscript
