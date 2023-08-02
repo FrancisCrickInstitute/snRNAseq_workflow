@@ -89,8 +89,8 @@ We annotate all matched normal and use this to infer copy number variants in the
 # ref_annots <- c("T_cells", "Macrophage", "B_cells", "NK_cells", "Myeloid_cells", "Stromal_cells")
 # query_annots <- "Epithelial_cells"
 annots_col <- "label.reduced"
-ref_annots <- stringr::str_split(curr_params$infercnv$reference_celltypes, ",")[[1]]
-query_annots <- stringr::str_split(curr_params$infercnv$query_celltypes, ",")[[1]]
+ref_annots <- curr_params$infercnv$reference_celltypes %>% stringr::str_split(",") %>% unlist()
+query_annots <- curr_params$infercnv$query_celltypes %>% stringr::str_split(",") %>% unlist()
 
 for (sample in unique(seu@meta.data$sample)) {
   print(sample)
@@ -98,7 +98,7 @@ for (sample in unique(seu@meta.data$sample)) {
   # create output dirs
   out_dir <- paste0(params$cache_dir, "/", sample, "/")
   dir.create(out_dir, recursive = T, showWarnings = F)
-  dir.create(sample)
+  dir.create(sample, showWarnings = F)
   
   # subset seu
   seu_i <- seu[, seu@meta.data$sample == sample]
@@ -135,7 +135,10 @@ for (sample in unique(seu@meta.data$sample)) {
     unique()
   
   # do not proceed if no query cells left
-  if (!any(grepl("malignant", infercnv_annots$infercnv_population))) {
+  proceed <- any(grepl("malignant", infercnv_annots$infercnv_population))
+  
+  # proceed
+  if (proceed == F) {
     message("<100 query cells. Cannot proceed.")
   } else {
     
@@ -172,7 +175,7 @@ for (sample in unique(seu@meta.data$sample)) {
 
 Malignant vs non-malignant cell types are then assigned.
 
-```{r malig_classification}
+```{r malig_classification, eval = proceed == T}
 aneuploid_cells <-
   list.files(
     params$cache_dir, 

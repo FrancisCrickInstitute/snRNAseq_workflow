@@ -12,10 +12,10 @@ process infercnv {
     path params_file
 
   output:
-    path 'infercnv.html'
-    path 'infercnv_annots.tsv'
+    path '*/infercnv.html'
+    path '*/infercnv_annots.tsv'
     path '*/*.rds'
-    path 'seu_infercnv.rds'
+    path 'seu_infercnv.rds', optional: true
 
   script:
     """
