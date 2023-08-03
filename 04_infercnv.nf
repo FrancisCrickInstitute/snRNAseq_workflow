@@ -35,7 +35,7 @@ process malignant_integrating {
     path params_file
 
   output:
-    tuple val(id), val(dir), val(subdir), path('seu.rds'), emit: ch_malignant_integrated
+    tuple val(id), val(dir), val(subdir), path('seu.rds'), emit: ch_integrated
     path 'integrating.html'
 
   script:
@@ -48,6 +48,40 @@ process malignant_integrating {
         rds_file = "${rds_files.join(',')}",
         cache_dir = "${params.output.dir}/${dir}/${id}/integrating/infercnv/malignant_integrating/malignant_integrating_cache/"),
       output_file = "integrating.html",
+      output_dir = getwd()
+    )
+    """
+}
+
+// cluster malignant samples
+process malignant_clustering {
+  tag "${id}"
+  label 'process_medium'
+  cpus = { check_max( 12 * task.attempt, 'cpus' ) }
+  publishDir "${params.output.dir}/${dir}/${id}/integrating/infercnv/malignant_clustering/",
+    mode: 'copy',
+    pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
+
+  input:
+    path rmd_file
+    tuple val(id), val(dir), val(subdir), path(rds_files, stageAs: "seu??.rds")
+    path params_file
+
+  output:
+    tuple val(id), val(dir), val(subdir), path('seu_annotated.rds'), emit: ch_clustered
+    path 'malignant_clustering.html'
+    path 'malignant_clustering_files/figure-html/*.png'
+
+  script:
+    """
+    #!/usr/bin/env Rscript
+    rmarkdown::render(
+      "${rmd_file}",
+      params = list(
+        params_file = "${params_file}",
+        rds_file = "${rds_file}",
+        cache_dir = "${params.output.dir}/${dir}/${id}/integrating/infercnv/malignant_clustering/malignant_clustering_cache/"),
+      output_file = "malignant_clustering.html",
       output_dir = getwd()
     )
     """
@@ -83,6 +117,13 @@ workflow {
   malignant_integrating(
     "${baseDir}/templates/integrating.rmd",
     infercnv.out.ch_malignant,
+    save_params.out.ch_params
+  )
+  
+  // perform malignant clustering
+  malignant_clustering(
+    "${baseDir}/templates/integrating.rmd",
+    malignant_integrating.out.ch_integrated,
     save_params.out.ch_params
   )
   

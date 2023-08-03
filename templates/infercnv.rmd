@@ -170,7 +170,7 @@ for (sample_i in unique(seu@meta.data$sample)) {
     
     # save annots file
     infercnv_annots %>%
-      readr::write_tsv(paste0(sample_i, "/infercnv_annots.tsv"), col_names = F)
+      readr::write_tsv(paste0(out_dir, "/infercnv_annots.tsv"), col_names = F)
     
     # subset seu_i
     seu_i <- seu[, infercnv_annots$cell]
@@ -179,7 +179,7 @@ for (sample_i in unique(seu@meta.data$sample)) {
     infercnv_obj <- 
       infercnv::CreateInfercnvObject(
         raw_counts_matrix = Seurat::GetAssayData(seu_i, slot = "counts"),
-        annotations_file = paste0(sample_i, "/infercnv_annots.tsv"),
+        annotations_file = paste0(out_dir, "/infercnv_annots.tsv"),
         gene_order_file = curr_params$infercnv$gene_order_file,
         ref_group_names = unique(reference_cells$infercnv_population)
       )
@@ -201,6 +201,10 @@ for (sample_i in unique(seu@meta.data$sample)) {
        analysis_mode = "subclusters",
        resume_mode = F
      )
+    
+    # add infercnv metadata to seu, save
+    seu_i <- infercnv::add_to_seurat(seu_i, infercnv_output_path = out_dir)
+    saveRDS(seu_i, paste0(out_dir, "/seu_infercnv.rds"))
   }
 }
 ```
@@ -217,12 +221,13 @@ aneuploid_cells <-
   ) %>%
   purrr::map(function(file) {
     readr::read_tsv(file) %>%
-      dplyr::mutate(sample = stringr::str_split(file, "/")[[1]][15])
+      dplyr::mutate(sample = file %>% gsub("/HMM.*", "", .) %>% gsub(".*infercnv_cache//", "", .))
   }) %>%
   dplyr::bind_rows() %>%
   dplyr::group_by(sample, cell_group_name) %>%
   dplyr::summarise(aneuploid = any(c(1, 3) %in% state)) %>%
-  dplyr::filter(aneuploid) %>%
+  dplyr::filter(
+    aneuploid & cell_group_name %in% colnames(seu[, seu$label.reduced == "Epithelial_cells"])) %>%
   dplyr::pull(cell_group_name)
 
 # add malignant label to aneuploid cells
@@ -233,5 +238,6 @@ seu@meta.data[aneuploid_cells, "label.infercnv"] <- "Malignant_cells"
 saveRDS(seu, "seu_infercnv.rds")
 
 # save malignant cells only
-saveRDS(seu[, seu@meta.data$label.infercnv == "Malignant_cells"], "seu_infercnv_malignant.rds")
+seu_malig <- seu[, seu@meta.data$label.infercnv == "Malignant_cells"]
+saveRDS(seu_malig, "seu_infercnv_malignant.rds")
 ```
