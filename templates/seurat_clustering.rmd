@@ -415,7 +415,8 @@ markers <-
 avail_markers <- markers %>% purrr::map(intersect, rownames(seu))
 ```
 
-```{r canonical_marker_expr, eval = F, fig.dim = get_fig_dims(length(avail_markers), n_cols = 1)}
+```{r canonical_marker_expr, eval = F}
+# fig.dim = get_fig_dims(length(avail_markers), n_cols = 1)
 p <- list()
 names(avail_markers) %>%
 purrr::map(function(ct) {

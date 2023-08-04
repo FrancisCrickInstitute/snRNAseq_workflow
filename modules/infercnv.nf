@@ -2,6 +2,7 @@
 process infercnv {
   tag "${id}"
   label 'process_high_memory'
+  time   = { check_max( 20.h  * task.attempt, 'time' ) }
   publishDir "${params.output.dir}/${dir}/${id}/${subdir}/infercnv/",
     mode: 'copy',
     pattern: "{*.rds,*.html,*/*}"
@@ -15,6 +16,7 @@ process infercnv {
     path 'infercnv.html'
     path 'infercnv.rds', optional: true
     tuple val(id), val(dir), val(subdir), path('seu_infercnv_malignant.rds'), emit: ch_malignant, optional: true
+    path 'seu_infercnv.rds', optional: true
     
   script:
     """

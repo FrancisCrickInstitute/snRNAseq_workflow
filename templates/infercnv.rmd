@@ -89,7 +89,7 @@ We annotate all matched normal and use this to infer copy number variants in the
 ref_celltypes <- c("T_cells", "Macrophage", "B_cells", "NK_cells", "Myeloid_cells", "Stromal_cells")
 
 for (sample_i in unique(seu@meta.data$sample)) {
-  print(sample_i)
+  print(sample_i) ; message(sample_i)
   
   # different reference groupings
   # -> sample_celltype - each reference celltype is a different reference group
@@ -130,20 +130,18 @@ for (sample_i in unique(seu@meta.data$sample)) {
       message("sufficient reference cells from individual celltypes")
       final_name <- "sample_celltype" 
     } else if ("sample_pool" %in% reference_cells$name) {
-      message("sufficient query cells")
-      message("insufficient reference cells from individual celltypes")
-      message("sufficient reference cells across all celltypes of the sample")
+      message("insufficient cells from individual reference celltypes")
+      message("sufficient cells across all reference celltypes in the sample")
       message("must pool reference celltypes from the sample together")
       final_name <- "sample_pool"
     } else if ("patient_celltype" %in% reference_cells$name) {
-      message("sufficient query cells")
       message("insufficient cells from individual reference celltypes")
       message("insufficient cells across all reference celltypes in the sample")
       message("must pool each reference celltype from the patient together")
       final_name <- "patient_celltype"
     } else if ("patient_pool" %in% reference_cells$name) {
-      message("sufficient query cells")
       message("insufficient cells from individual reference celltypes")
+      message("insufficient cells across all reference celltypes in the sample")
       message("insufficient cells from individual reference celltypes pooled across the patient")
       message("must pool all reference celltypes from the patient together")
       final_name <- "patient_pool"
@@ -199,7 +197,7 @@ for (sample_i in unique(seu@meta.data$sample)) {
        num_threads = 10,
        no_prelim_plot = T,
        analysis_mode = "subclusters",
-       resume_mode = F
+       resume_mode = T
      )
     
     # add infercnv metadata to seu, save
