@@ -5,8 +5,9 @@ geometry: margin=1in
 fontfamily: mathpazo
 fontsize: 11pt
 params:
-  params_file: false
+  sample: false
   rds_file: false
+  gene_order_file: false
   cache_dir: false
 output:
   html_document:
@@ -85,157 +86,151 @@ From [**github.com/broadinstitute/inferCNV/wiki**](https://github.com/broadinsti
 
 We annotate all matched normal and use this to infer copy number variants in the malignant population. Unlike CNVs called from bulk genotyping data, `inferCNV` can also reveal subclonal events in the tumour that only occur in some cell lineages, but not others. 
 
-```{r run_infercnv}
+```{r get_ref_cells}
 ref_celltypes <- c("T_cells", "Macrophage", "B_cells", "NK_cells", "Myeloid_cells", "Stromal_cells")
 
-for (sample_i in unique(seu@meta.data$sample)) {
-  print(sample_i) ; message(sample_i)
-  
-  # different reference groupings
-  # -> sample_celltype - each reference celltype is a different reference group
-  # -> sample_pool - all reference celltypes are pooled as a reference group
-  # -> patient_celltype - each reference celltype is pooled from all T0/T1/T2 samples of the patient
-  # -> patient_pool - all reference celltypes from all T0/T1/T2 samples of the patient are pooled 
-  
-  cells <-
-    seu@meta.data %>%
-    tibble::as_tibble(rownames = "cell") %>%
-    dplyr::select(sample, cell, celltype = label.reduced) 
-  
-  query_cells <-
-    cells %>%
-    dplyr::filter(celltype == "Epithelial_cells" & sample == sample_i) %>%
-    dplyr::select(cell, infercnv_population = celltype)
-  
-  reference_cells <-
-    cells %>%
-    dplyr::filter(celltype %in% ref_celltypes) %>%
-    dplyr::mutate(sample_celltype = dplyr::case_when(sample == sample_i ~ celltype, .default = NA),
-                  sample_pool = dplyr::case_when(sample == sample_i ~ "Sample_reference_cells", .default = NA),
-                  patient_celltype = paste0("Patient_", celltype),
-                  patient_pool = "Patient_reference_cells") %>%
-    tidyr::pivot_longer(cols = c("sample_celltype", "sample_pool", "patient_celltype", "patient_pool"),
-                        values_drop_na = T) %>%
-    dplyr::group_by(name, value) %>%
-    dplyr::filter(dplyr::n() > 100) %>%
-    dplyr::ungroup() 
-  
-  # decide reference pooling behaviour
-  if (nrow(query_cells) < 100) {
-    message("insufficient query cells")
-    final_name <- NULL
+# different reference groupings
+# -> sample_celltype - each reference celltype is a different reference group
+# -> sample_pool - all reference celltypes are pooled as a reference group
+# -> patient_celltype - each reference celltype is pooled from all T0/T1/T2 samples of the patient
+# -> patient_pool - all reference celltypes from all T0/T1/T2 samples of the patient are pooled 
+
+cells <-
+  seu@meta.data %>%
+  tibble::as_tibble(rownames = "cell") %>%
+  dplyr::select(sample, cell, celltype = label.reduced) 
+
+query_cells <-
+  cells %>%
+  dplyr::filter(celltype == "Epithelial_cells" & sample == params$sample) %>%
+  dplyr::select(cell, infercnv_population = celltype)
+
+reference_cells <-
+  cells %>%
+  dplyr::filter(celltype %in% ref_celltypes) %>%
+  dplyr::mutate(sample_celltype = dplyr::case_when(sample == params$sample ~ celltype, .default = NA),
+                sample_pool = dplyr::case_when(sample == params$sample ~ "Sample_reference_cells", .default = NA),
+                patient_celltype = paste0("Patient_", celltype),
+                patient_pool = "Patient_reference_cells") %>%
+  tidyr::pivot_longer(cols = c("sample_celltype", "sample_pool", "patient_celltype", "patient_pool"),
+                      values_drop_na = T) %>%
+  dplyr::group_by(name, value) %>%
+  dplyr::filter(dplyr::n() > 100) %>%
+  dplyr::ungroup() 
+
+# decide reference pooling behaviour
+if (nrow(query_cells) < 100) {
+  message("insufficient query cells")
+  final_name <- NULL
+} else {
+  message("sufficient query cells")
+  if ("sample_celltype" %in% reference_cells$name) {
+    message("sufficient reference cells from individual celltypes")
+    final_name <- "sample_celltype" 
+  } else if ("sample_pool" %in% reference_cells$name) {
+    message("insufficient cells from individual reference celltypes")
+    message("sufficient cells across all reference celltypes in the sample")
+    message("must pool reference celltypes from the sample together")
+    final_name <- "sample_pool"
+  } else if ("patient_celltype" %in% reference_cells$name) {
+    message("insufficient cells from individual reference celltypes")
+    message("insufficient cells across all reference celltypes in the sample")
+    message("must pool each reference celltype from the patient together")
+    final_name <- "patient_celltype"
+  } else if ("patient_pool" %in% reference_cells$name) {
+    message("insufficient cells from individual reference celltypes")
+    message("insufficient cells across all reference celltypes in the sample")
+    message("insufficient cells from individual reference celltypes pooled across the patient")
+    message("must pool all reference celltypes from the patient together")
+    final_name <- "patient_pool"
   } else {
-    message("sufficient query cells")
-    if ("sample_celltype" %in% reference_cells$name) {
-      message("sufficient reference cells from individual celltypes")
-      final_name <- "sample_celltype" 
-    } else if ("sample_pool" %in% reference_cells$name) {
-      message("insufficient cells from individual reference celltypes")
-      message("sufficient cells across all reference celltypes in the sample")
-      message("must pool reference celltypes from the sample together")
-      final_name <- "sample_pool"
-    } else if ("patient_celltype" %in% reference_cells$name) {
-      message("insufficient cells from individual reference celltypes")
-      message("insufficient cells across all reference celltypes in the sample")
-      message("must pool each reference celltype from the patient together")
-      final_name <- "patient_celltype"
-    } else if ("patient_pool" %in% reference_cells$name) {
-      message("insufficient cells from individual reference celltypes")
-      message("insufficient cells across all reference celltypes in the sample")
-      message("insufficient cells from individual reference celltypes pooled across the patient")
-      message("must pool all reference celltypes from the patient together")
-      final_name <- "patient_pool"
-    } else {
-      message("insufficient reference cells across the patient")
-      final_name <- NULL
-    }
-  }
-  
-  if (!is.null(final_name)) {
-    # get annots
-    reference_cells <- 
-      reference_cells %>% 
-      dplyr::filter(name == final_name) %>%
-      dplyr::select(cell, infercnv_population = value)
-    infercnv_annots <-
-      reference_cells %>%
-      dplyr::bind_rows(query_cells)
-    
-    # create output dirs
-    out_dir <- paste0(params$cache_dir, "/", sample_i, "/")
-    dir.create(out_dir, recursive = T, showWarnings = F)
-    dir.create(sample_i, showWarnings = F)
-    
-    # save annots file
-    infercnv_annots %>%
-      readr::write_tsv(paste0(out_dir, "/infercnv_annots.tsv"), col_names = F)
-    
-    # subset seu_i
-    seu_i <- seu[, infercnv_annots$cell]
-    
-    # create infercnv object
-    infercnv_obj <- 
-      infercnv::CreateInfercnvObject(
-        raw_counts_matrix = Seurat::GetAssayData(seu_i, slot = "counts"),
-        annotations_file = paste0(out_dir, "/infercnv_annots.tsv"),
-        gene_order_file = curr_params$infercnv$gene_order_file,
-        ref_group_names = unique(reference_cells$infercnv_population)
-      )
-    
-    # perform infercnv operations to reveal cnv signal
-    options(scipen = 100)
-    infercnv_obj <- 
-     infercnv::run(
-       infercnv_obj,
-       cutoff = 0.1,
-       out_dir = out_dir,
-       cluster_by_groups = T,
-       denoise = T,
-       HMM = T, 
-       HMM_type = "i3",
-       HMM_report_by = "cell",
-       num_threads = 10,
-       no_prelim_plot = T,
-       analysis_mode = "subclusters",
-       resume_mode = T
-     )
-    
-    # add infercnv metadata to seu, save
-    seu_i <- infercnv::add_to_seurat(seu_i, infercnv_output_path = out_dir)
-    saveRDS(seu_i, paste0(out_dir, "/seu_infercnv.rds"))
+    message("insufficient reference cells across the patient")
+    final_name <- NULL
   }
 }
 ```
 
+```{r run_infercnv, eval = !is.null(final_name) == T}
+# get annots
+reference_cells <- 
+  reference_cells %>% 
+  dplyr::filter(name == final_name) %>%
+  dplyr::select(cell, infercnv_population = value)
+infercnv_annots <-
+  reference_cells %>%
+  dplyr::bind_rows(query_cells)
+
+# create output dirs
+dir.create(params$cache_dir, recursive = T, showWarnings = F)
+
+# save annots file
+infercnv_annots %>%
+  readr::write_tsv(paste0(out_dir, "/infercnv_annots.tsv"), col_names = F)
+
+# subset seu_i
+seu_i <- seu[, infercnv_annots$cell]
+
+# create infercnv object
+infercnv_obj <- 
+  infercnv::CreateInfercnvObject(
+    raw_counts_matrix = Seurat::GetAssayData(seu_i, slot = "counts"),
+    annotations_file = paste0(params$cache_dir, "/infercnv_annots.tsv"),
+    gene_order_file = params$gene_order_file,
+    ref_group_names = unique(reference_cells$infercnv_population)
+  )
+
+# perform infercnv operations to reveal cnv signal
+options(scipen = 100)
+infercnv_obj <- 
+ infercnv::run(
+   infercnv_obj,
+   cutoff = 0.1,
+   out_dir = params$cache_dir,
+   cluster_by_groups = T,
+   denoise = T,
+   HMM = T, 
+   HMM_type = "i3",
+   HMM_report_by = "cell",
+   num_threads = 10,
+   no_prelim_plot = T,
+   analysis_mode = "subclusters",
+   resume_mode = T
+ )
+
+# add infercnv metadata to seu, save
+seu_i <- infercnv::add_to_seurat(seu_i, infercnv_output_path = params$cache_dir)
+saveRDS(seu_i, paste0(params$cache_dir, "/seu_infercnv.rds"))
+```
+
 Malignant vs non-malignant cell types are then assigned.
 
-```{r malig_classification, eval = !is.null(final_name)}
-aneuploid_cells <-
-  list.files(
-    params$cache_dir, 
-    recursive = T, 
-    pattern = "Pnorm_0.5.pred_cnv_regions.dat", 
-    full.names = T
-  ) %>%
-  purrr::map(function(file) {
-    readr::read_tsv(file) %>%
-      dplyr::mutate(sample = file %>% gsub("/HMM.*", "", .) %>% gsub(".*infercnv_cache//", "", .))
-  }) %>%
-  dplyr::bind_rows() %>%
-  dplyr::group_by(sample, cell_group_name) %>%
-  dplyr::summarise(aneuploid = any(c(1, 3) %in% state)) %>%
-  dplyr::filter(
-    aneuploid & cell_group_name %in% colnames(seu[, seu$label.reduced == "Epithelial_cells"])) %>%
-  dplyr::pull(cell_group_name)
-
-# add malignant label to aneuploid cells
-seu@meta.data$label.infercnv <- seu@meta.data$label.reduced
-seu@meta.data[aneuploid_cells, "label.infercnv"] <- "Malignant_cells"
-
-# save
-saveRDS(seu, "seu_infercnv.rds")
-
-# save malignant cells only
-seu_malig <- seu[, seu@meta.data$label.infercnv == "Malignant_cells"]
-saveRDS(seu_malig, "seu_infercnv_malignant.rds")
+```{r malig_classification, eval = !is.null(final_name) == T}
+# aneuploid_cells <-
+#   list.files(
+#     params$cache_dir, 
+#     recursive = T, 
+#     pattern = "Pnorm_0.5.pred_cnv_regions.dat", 
+#     full.names = T
+#   ) %>%
+#   purrr::map(function(file) {
+#     readr::read_tsv(file) %>%
+#       dplyr::mutate(sample = file %>% gsub("/HMM.*", "", .) %>% gsub(".*infercnv_cache//", "", .))
+#   }) %>%
+#   dplyr::bind_rows() %>%
+#   dplyr::group_by(sample, cell_group_name) %>%
+#   dplyr::summarise(aneuploid = any(c(1, 3) %in% state)) %>%
+#   dplyr::filter(
+#     aneuploid & cell_group_name %in% colnames(seu[, seu$label.reduced == "Epithelial_cells"])) %>%
+#   dplyr::pull(cell_group_name)
+# 
+# # add malignant label to aneuploid cells
+# seu@meta.data$label.infercnv <- seu@meta.data$label.reduced
+# seu@meta.data[aneuploid_cells, "label.infercnv"] <- "Malignant_cells"
+# 
+# # save
+# saveRDS(seu, "seu_infercnv.rds")
+# 
+# # save malignant cells only
+# seu_malig <- seu[, seu@meta.data$label.infercnv == "Malignant_cells"]
+# saveRDS(seu_malig, "seu_infercnv_malignant.rds")
 ```

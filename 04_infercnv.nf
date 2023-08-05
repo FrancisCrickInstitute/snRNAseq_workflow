@@ -19,7 +19,38 @@ output dir:           ${params.output.dir}
 
 // import modules
 include { save_params } from './modules/save_params'
-include { infercnv    } from './modules/infercnv'
+
+// perform infercnv on each sample
+process infercnv {
+  tag "${sample}"
+  label 'process_medium'
+  publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/infercnv_cache/${sample}/",
+    mode: 'copy',
+    pattern: "*.rds"
+
+  input:
+    path rmd_file
+    tuple val(sample), val(patient), val(rds_file)
+
+  output:
+    tuple val(sample), val(patient), path('seu_infercnv.rds'), emit: ch_infercnv, optional: true
+    path 'infercnv.html'
+
+  script:
+    """
+    #!/usr/bin/env Rscript
+    rmarkdown::render(
+      "${rmd_file}",
+      params = list(
+        sample = "${sample}",
+        rds_file = "${rds_file}",
+        gene_order_file = "${params.infercnv.gene_order_file}",
+        cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/infercnv_cache/${sample}/"),
+      output_file = "infercnv.html",
+      output_dir = getwd()
+    )
+    """
+}
 
 // integrate malignant samples
 process malignant_integrating {
@@ -92,44 +123,57 @@ process malignant_clustering {
 
 workflow {
 
-  // save params
-  save_params()
-
-  // integrate all preloaded samples
+  // generate one channel per id
   Channel
-    .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/seurat_clustering/seu_annotated.rds")
+    .fromPath(params.input.manifest_file)
+    .splitCsv(header:true, sep:'\t')
+    .map { row -> tuple(
+              row.id, 
+              row.id.split("_")[0], 
+              "${params.output.dir}/by_patient_wo_organoids/"+row.id.split("_")[0]+"/integrating/seurat_clustering/seu_annotated.rds") }
     .set { ch_run }
 
-  // get id, dir, subdir and filepath
-  ch_run
-    .map { file ->
-            tuple(file.toString().tokenize('/')[-4],
-                  file.toString().tokenize('/')[-5],
-                  file.toString().tokenize('/')[-3],
-                  file) }
-    .set { ch_run }
-
-  // perform infercnv
+  // run infercnv
   infercnv(
     "${baseDir}/templates/infercnv.rmd",
-    ch_run,
-    save_params.out.ch_params
+    ch_run
   )
+
+  //// integrate all preloaded samples
+  //Channel
+  //  .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/seurat_clustering/seu_annotated.rds")
+  //  .set { ch_run }
+
+  //// get id, dir, subdir and filepath
+  //ch_run
+  //  .map { file ->
+  //          tuple(file.toString().tokenize('/')[-4],
+  //                file.toString().tokenize('/')[-5],
+  //                file.toString().tokenize('/')[-3],
+  //                file) }
+  //  .set { ch_run }
+
+  //// perform infercnv
+  //infercnv(
+  //  "${baseDir}/templates/infercnv.rmd",
+  //  ch_run,
+  //  save_params.out.ch_params
+  //)
   
-  // perform malignant integration
-  malignant_integrating(
-    "${baseDir}/templates/integrating.rmd",
-    infercnv.out.ch_malignant,
-    save_params.out.ch_params,
-    "${params.output.dir}/${dir}/${id}/integrating/infercnv/malignant_integrating/"
-  )
+  //// perform malignant integration
+  //malignant_integrating(
+  //  "${baseDir}/templates/integrating.rmd",
+  //  infercnv.out.ch_malignant,
+  //  save_params.out.ch_params,
+  //  "${params.output.dir}/${dir}/${id}/integrating/infercnv/malignant_integrating/"
+  //)
   
-  // perform malignant clustering
-  malignant_clustering(
-    "${baseDir}/templates/seurat_clustering.rmd",
-    malignant_integrating.out.ch_integrated,
-    save_params.out.ch_params,
-    "${params.output.dir}/${dir}/${id}/integrating/infercnv/malignant_clustering/"
-  )
+  //// perform malignant clustering
+  //malignant_clustering(
+  //  "${baseDir}/templates/seurat_clustering.rmd",
+  //  malignant_integrating.out.ch_integrated,
+  //  save_params.out.ch_params,
+  //  "${params.output.dir}/${dir}/${id}/integrating/infercnv/malignant_clustering/"
+  //)
   
 }

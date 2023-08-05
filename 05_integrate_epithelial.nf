@@ -23,7 +23,7 @@ include { save_params } from './modules/save_params'
 // integrating
 // integrate malignant samples
 process malignant_integrating {
-  tag "${id}"
+  tag "malignant"
   label 'process_high_memory'
   publishDir "${output_dir}",
     mode: 'copy',
@@ -56,7 +56,7 @@ process malignant_integrating {
 
 // cluster malignant samples
 process malignant_clustering {
-  tag "${id}"
+  tag "malignant"
   label 'process_high_memory'
   cpus = { check_max( 12 * task.attempt, 'cpus' ) }
   publishDir "${output_dir}",
@@ -96,8 +96,9 @@ workflow {
   // integrate all preloaded samples
   Channel
     .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/infercnv/seu_infercnv_malignant.rds")
+    .collect()
     .set { ch_run }
-
+  
   // integrate all malignant cells
   malignant_integrating(
     "${baseDir}/templates/integrating.rmd",
@@ -109,7 +110,7 @@ workflow {
   // cluster all malignant cells
   malignant_clustering(
     "${baseDir}/templates/seurat_clustering.rmd",
-    malignant_integrating.out.ch_integrated
+    malignant_integrating.out.ch_integrated,
     save_params.out.ch_params,
     "${params.output.dir}/malignant/integrating/clustering/"    
   )
