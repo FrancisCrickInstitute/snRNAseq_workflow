@@ -1,0 +1,120 @@
+---
+title: "snRNAseq workflow: dimensionality reduction and clustering"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+params:
+  rds_file: false
+  cache_dir: false
+output:
+  html_document:
+    keep_md: true
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: true
+    theme: lumen
+---
+
+```{r initialise, include = F}
+# load packages
+library(SCPA)
+library(msigdbr)
+library(magrittr)
+library(dplyr)
+library(ComplexHeatmap)
+library(SummarizedExperiment)
+library(circlize)
+library(tidyverse)
+library(monocle3)
+
+# set ggplot presets
+ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_update(legend.text = ggplot2::element_text(size = 7))
+ditto_colours <- list(ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "white"),
+                      ggplot2::scale_colour_manual(values = dittoSeq::dittoColors(), na.value = "white"))
+umap_void_theme <-
+  ggplot2::theme(axis.text = ggplot2::element_blank(),
+                 axis.title = ggplot2::element_blank(),
+                 axis.ticks = ggplot2::element_blank(),
+                 legend.position = "none",
+                 plot.margin = ggplot2::unit(c(2,2,2,2), "pt"))
+
+# chunk setup
+knitr::opts_chunk$set(fig.align = "center",
+                      dpi = 300,
+                      cache.path = params$cache_dir)
+
+# functions
+fix_pathway_names <- function(pathway_names) {
+  pathway_names %>% tolower() %>% gsub("\\_", " ", .) %>% gsub("hallmark ", "", .)
+}
+plot_my_heatmap <- function(p_dat_in, col, stat = "qval") {
+  p_dat_in %>%
+    select(Pathway, name = matches(col), value = matches(stat)) %>%
+    mutate(Pathway = fix_pathway_names(Pathway)) %>%
+    pivot_wider() %>%
+    column_to_rownames("Pathway") %>%
+    as.matrix() %>%
+    Heatmap(name = stat,
+            border = T,
+            show_row_dend = F,
+            show_column_dend = T,
+            row_names_gp = grid::gpar(fontsize = 8))
+}
+plot_my_enrichment <- function(p_dat_in, top_n = 5) {
+  p_dat <-
+    p_dat_in %>%
+    mutate(Pathway = Pathway %>% fix_pathway_names(),
+           color = case_when(FC > 5 & adjPval < 0.01 ~ '#6dbf88',
+                             FC < 5 & FC > -5 & adjPval < 0.01 ~ '#84b0f0',
+                             FC < -5 & adjPval < 0.01 ~ 'mediumseagreen',
+                             FC < 5 & FC > -5 & adjPval > 0.01 ~ 'black'))
+
+  ggplot(p_dat, aes(-FC, qval)) +
+    geom_vline(xintercept = c(-5, 5), linetype = "dashed", col = 'black', lwd = 0.3) +
+    geom_point(cex = 2.6, shape = 21, fill = p_dat$color, stroke = 0.3) +
+    ggrepel::geom_text_repel(data = p_dat %>% slice_max(abs(FC), n = top_n), aes(label = Pathway),
+                             size = 7, min.segment.length = 0, nudge_x = 10) +
+    xlab("Enrichment") +
+    ylab("Qval") +
+    theme(panel.background = element_blank(),
+          panel.border = element_rect(fill = NA),
+          aspect.ratio = 1) +
+    ggplot2::theme(text = ggplot2::element_text(size = 20))
+}
+```
+
+# Pathway analysis
+
+```{r pathway_analysis, echo = F}
+# load seu and convert to cds
+seu <- readRDS(params$rds_file)
+cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
+SummarizedExperiment::rowData(cds)$gene_short_name <- 
+  row.names(SummarizedExperiment::rowData(cds))
+
+# preprocess
+cds <- preprocess_cds(cds, num_dim = 30)
+cds <- reduce_dimension(cds)
+
+# get hallmark pathways
+pathways <-
+  msigdbr(species = "Homo sapiens", category = "H") %>%
+  format_pathways()
+
+# initiate list
+scpa_out <- list()
+
+# compare pathways between tumour vs normal
+scpa_out[["normal_vs_malignant"]] <-
+  compare_sce(cds,
+              group1 = "label.infercnv",
+              group1_population = c("Malignant_cells", "Epithelial_cells"),
+              pathways = pathways)
+plot_my_enrichment(scpa_out$normal_vs_malignant)
+```
+
