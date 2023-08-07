@@ -24,11 +24,6 @@ output:
 ```{r initialise, include = F}
 library(magrittr)
 
-# load params file
-curr_params <- 
-  rjson::fromJSON(file = params$params_file) %>% 
-  type.convert(as.is = T)
-
 # set seed for repeatability
 set.seed(42)
 random_seed = 42
@@ -36,36 +31,6 @@ random_seed = 42
 # chunk setup
 knitr::opts_chunk$set(fig.align = "center",
                       dpi = 300)
-```
-
-```{r define_functions, include = F}
-# flatten lists
-flatten_list <- function (x, use.names = TRUE, classes = "ANY") 
-{
-    len <- sum(rapply(x, function(x) 1L, classes = classes))
-    y <- vector("list", len)
-    i <- 0L
-    items <- rapply(x, function(x) {
-        i <<- i + 1L
-        y[[i]] <<- x
-        TRUE
-    }, classes = classes)
-    if (use.names && !is.null(nm <- names(items))) 
-        names(y) <- nm
-    y
-}
-```
-
-# Run info {-}
-
-```{r curr_params, echo = F}
-curr_params %>%
-  flatten_list() %>%
-  {tibble::tibble(
-    param = names(.), 
-    value = purrr::map(., paste, collapse = ", ") %>% unlist() %>% substr(1, 250))
-  } %>%
-  knitr::kable()
 ```
 
 # Load object
@@ -126,6 +91,7 @@ if (nrow(query_cells) < 100) {
   message("sufficient query cells")
   if ("sample_celltype" %in% reference_cells$name) {
     message("sufficient reference cells from individual celltypes")
+    message()
     final_name <- "sample_celltype" 
   } else if ("sample_pool" %in% reference_cells$name) {
     message("insufficient cells from individual reference celltypes")
@@ -150,7 +116,7 @@ if (nrow(query_cells) < 100) {
 }
 ```
 
-```{r run_infercnv, eval = !is.null(final_name) == T}
+```{r final_ref_cells, eval = !is.null(final_name) == T}
 # get annots
 reference_cells <- 
   reference_cells %>% 
@@ -160,12 +126,19 @@ infercnv_annots <-
   reference_cells %>%
   dplyr::bind_rows(query_cells)
 
-# create output dirs
+# view refs
+infercnv_annots %>% 
+  dplyr::count(infercnv_population) %>%
+  knitr::kable()
+```
+
+```{r run_infercnv, eval = !is.null(final_name) == T}
+# create output dir
 dir.create(params$cache_dir, recursive = T, showWarnings = F)
 
 # save annots file
 infercnv_annots %>%
-  readr::write_tsv(paste0(out_dir, "/infercnv_annots.tsv"), col_names = F)
+  readr::write_tsv(paste0(params$cache_dir, "/infercnv_annots.tsv"), col_names = F)
 
 # subset seu_i
 seu_i <- seu[, infercnv_annots$cell]
@@ -196,41 +169,32 @@ infercnv_obj <-
    analysis_mode = "subclusters",
    resume_mode = T
  )
-
-# add infercnv metadata to seu, save
-seu_i <- infercnv::add_to_seurat(seu_i, infercnv_output_path = params$cache_dir)
-saveRDS(seu_i, paste0(params$cache_dir, "/seu_infercnv.rds"))
 ```
 
 Malignant vs non-malignant cell types are then assigned.
 
 ```{r malig_classification, eval = !is.null(final_name) == T}
-# aneuploid_cells <-
-#   list.files(
-#     params$cache_dir, 
-#     recursive = T, 
-#     pattern = "Pnorm_0.5.pred_cnv_regions.dat", 
-#     full.names = T
-#   ) %>%
-#   purrr::map(function(file) {
-#     readr::read_tsv(file) %>%
-#       dplyr::mutate(sample = file %>% gsub("/HMM.*", "", .) %>% gsub(".*infercnv_cache//", "", .))
-#   }) %>%
-#   dplyr::bind_rows() %>%
-#   dplyr::group_by(sample, cell_group_name) %>%
-#   dplyr::summarise(aneuploid = any(c(1, 3) %in% state)) %>%
-#   dplyr::filter(
-#     aneuploid & cell_group_name %in% colnames(seu[, seu$label.reduced == "Epithelial_cells"])) %>%
-#   dplyr::pull(cell_group_name)
-# 
-# # add malignant label to aneuploid cells
-# seu@meta.data$label.infercnv <- seu@meta.data$label.reduced
-# seu@meta.data[aneuploid_cells, "label.infercnv"] <- "Malignant_cells"
-# 
-# # save
-# saveRDS(seu, "seu_infercnv.rds")
-# 
-# # save malignant cells only
-# seu_malig <- seu[, seu@meta.data$label.infercnv == "Malignant_cells"]
-# saveRDS(seu_malig, "seu_infercnv_malignant.rds")
+# add infercnv metadata to seu, save
+seu_i <- infercnv::add_to_seurat(seu_i, infercnv_output_path = params$cache_dir)
+
+# define malignancy by aneuploidy status
+cnv_file <- "HMM_CNV_predictions.HMMi3.leiden.hmm_mode-subclusters.Pnorm_0.5.pred_cnv_regions.dat"
+aneuploid_cells <-
+  readr::read_tsv(paste0(params$cache_dir, cnv_file)) %>%
+  dplyr::group_by(cell_group_name) %>%
+  dplyr::summarise(aneuploid = any(c(1, 3) %in% state)) %>%
+  dplyr::filter(
+    aneuploid & cell_group_name %in% colnames(seu_i[, seu_i$label.reduced == "Epithelial_cells"])) %>%
+  dplyr::pull(cell_group_name)
+
+# add malignant label to aneuploid cells
+seu_i@meta.data$label.infercnv <- seu_i@meta.data$label.reduced
+seu_i@meta.data[aneuploid_cells, "label.infercnv"] <- "Malignant_cells"
+
+# save
+saveRDS(seu_i, "seu_infercnv.rds")
+
+# save malignant cells only
+seu_i_malig <- seu_i[, seu_i@meta.data$label.infercnv == "Malignant_cells"]
+saveRDS(seu_i_malig, "seu_infercnv_malignant.rds")
 ```
