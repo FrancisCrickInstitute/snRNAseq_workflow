@@ -125,7 +125,7 @@ workflow {
   // save params
   save_params()
 
-  // generate one channel per id
+  // generate one channel per id (exclude J_post_T1_biopsy, throwing unknown error)
   Channel
     .fromPath(params.input.manifest_file)
     .splitCsv(header:true, sep:'\t')
@@ -133,6 +133,7 @@ workflow {
               row.id, 
               row.id.split("_")[0], 
               "${params.output.dir}/by_patient_wo_organoids/"+row.id.split("_")[0]+"/integrating/seurat_clustering/seu_annotated.rds") }
+    .filter { !it[0].contains("J_post_T1_biopsy") } 
     .set { ch_run }
 
   // run infercnv
