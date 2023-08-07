@@ -194,7 +194,9 @@ seu_i@meta.data[aneuploid_cells, "label.infercnv"] <- "Malignant_cells"
 # save
 saveRDS(seu_i, "seu_infercnv.rds")
 
-# save malignant cells only
-seu_i_malig <- seu_i[, seu_i@meta.data$label.infercnv == "Malignant_cells"]
-saveRDS(seu_i_malig, "seu_infercnv_malignant.rds")
+if (length(aneuploid_cells) > 0) {
+  # save malignant cells only
+  seu_i_malig <- seu_i[, seu_i@meta.data$label.infercnv == "Malignant_cells"]
+  saveRDS(seu_i_malig, "seu_infercnv_malignant.rds")
+}
 ```

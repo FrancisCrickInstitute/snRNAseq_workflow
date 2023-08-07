@@ -54,7 +54,7 @@ process infercnv {
 }
 
 // integrate malignant samples
-process integrating {
+process malignant_integrating {
   tag "${patient}"
   label 'process_medium'
   publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/malignant/integrating/",
@@ -86,8 +86,8 @@ process integrating {
 }
 
 // cluster malignant samples
-process clustering {
-  tag "${id}"
+process malignant_clustering {
+  tag "${patient}"
   label 'process_medium'
   container '/rds/general/user/art4017/home/snRNAseq_analysis/singularity/snRNAseq_workflow.img'
   cpus = { check_max( 12 * task.attempt, 'cpus' ) }
@@ -144,19 +144,19 @@ workflow {
   // group patients
   infercnv.out.ch_infercnv_malig
     .groupTuple()
-    .set { ch_patients }
+    .set { ch_malig }
 
   // integrate samples
-  integrating(
-    "${baseDir}/templates/integrating.rmd"
-    ch_patients,
+  malignant_integrating(
+    "${baseDir}/templates/integrating.rmd",
+    ch_malig,
     save_params.out.ch_params
   )
   
   // cluster samples
-  clustering(
+  malignant_clustering(
     "${baseDir}/templates/seurat_clustering.rmd",
-    integrating.out.ch_integrated,
+    malignant_integrating.out.ch_integrated,
     save_params.out.ch_params
   )
   
