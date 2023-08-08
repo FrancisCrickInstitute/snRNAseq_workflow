@@ -63,6 +63,8 @@ ref_celltypes <- c("T_cells", "Macrophage", "B_cells", "NK_cells", "Myeloid_cell
 cells <-
   seu@meta.data %>%
   tibble::as_tibble(rownames = "cell") %>%
+  dplyr::filter(label.reduced %in% c("Epithelial_cells", ref_celltypes), 
+                (sample == params$sample | sample_site == "tumour")) %>%
   dplyr::select(sample, cell, celltype = label.reduced) 
 
 query_cells <-
@@ -101,16 +103,16 @@ if (nrow(query_cells) < 100) {
   } else if ("patient_celltype" %in% reference_cells$name) {
     message("insufficient cells from individual reference celltypes")
     message("insufficient cells across all reference celltypes in the sample")
-    message("must pool each reference celltype from the patient together")
+    message("must pool each reference celltype from the patient tumour sites together")
     final_name <- "patient_celltype"
   } else if ("patient_pool" %in% reference_cells$name) {
     message("insufficient cells from individual reference celltypes")
     message("insufficient cells across all reference celltypes in the sample")
     message("insufficient cells from individual reference celltypes pooled across the patient")
-    message("must pool all reference celltypes from the patient together")
+    message("must pool all reference celltypes from the patient tumour sites together")
     final_name <- "patient_pool"
   } else {
-    message("insufficient reference cells across the patient")
+    message("insufficient reference cells across the patient tumour sites")
     final_name <- NULL
   }
 }
@@ -167,7 +169,7 @@ infercnv_obj <-
    num_threads = 10,
    no_prelim_plot = T,
    analysis_mode = "subclusters",
-   resume_mode = T
+   resume_mode = F
  )
 ```
 
