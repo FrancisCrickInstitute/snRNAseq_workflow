@@ -91,8 +91,51 @@ plot_my_enrichment <- function(p_dat_in, top_n = 5) {
 # Pathway analysis
 
 ```{r pathway_analysis, echo = F}
-# load seu and convert to cds
+# load seu 
 seu <- readRDS(params$rds_file)
+
+# find markers of pre- vs post-treatment
+tests <- list(timepoint = "post", sample_site = "lymph_node")
+markers <-
+  tests %>%
+  names() %>%
+  purrr::map(
+    function(test) {
+      print(test)
+      seu %>%
+        Seurat::FindMarkers(
+          ident.1 = colnames(seu[, seu@meta.data[, test] == tests[[test]]]), 
+          test.use = "MAST"
+        ) %>%
+        tibble::as_tibble(rownames = "gene")
+    }
+  ) %>%
+  setNames(unlist(tests)) %>%
+  dplyr::bind_rows(.id = "test")
+
+markers %>%
+  dplyr::mutate(
+    abs_avg_log2FC = abs(avg_log2FC),
+    direction = ifelse(avg_log2FC > 0, "upregulated", "downregulated"),
+    label = gene,
+    gene = tidytext::reorder_within(x = gene, within = test, by = abs_avg_log2FC)
+  ) %>%
+  dplyr::group_by(test, direction) %>%
+  dplyr::filter(p_val_adj < 0.05) %>%
+  dplyr::top_n(10, avg_log2FC) %>%
+  ggplot2::ggplot(ggplot2::aes(
+    x = gene, y = abs_avg_log2FC, fill = p_val_adj, label = label)) +
+  ggplot2::geom_col() +
+  ggplot2::geom_text(ggplot2::aes(hjust = -0.1)) +
+  ggplot2::facet_wrap(test ~ direction, scales = "free") +
+  ggplot2::scale_fill_continuous("gradient") +
+  ggplot2::coord_flip() +
+  ggplot2::theme_classic() +
+  ggplot2::theme(axis.text.y = ggplot2::element_blank(),
+                 axis.ticks.y = ggplot2::element_blank()) + 
+  ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0.4)))
+
+# convert to cds
 cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
 SummarizedExperiment::rowData(cds)$gene_short_name <- 
   row.names(SummarizedExperiment::rowData(cds))

@@ -33,8 +33,8 @@ process infercnv {
     tuple val(sample), val(patient), val(rds_file)
 
   output:
-    tuple val(sample), val(patient), path('seu_infercnv.rds'), emit: ch_infercnv, optional: true
-    tuple val(patient), path('seu_infercnv_malignant.rds'), emit: ch_infercnv_malig, optional:true
+    tuple val(patient), path('seu_infercnv.rds'), val(''), emit: ch_infercnv, optional: true
+    tuple val(patient), path('seu_infercnv_malignant.rds'), val('malignant') emit: ch_infercnv_malig, optional:true
     path 'infercnv.html'
 
   script:
@@ -54,20 +54,20 @@ process infercnv {
 }
 
 // integrate malignant samples
-process malignant_integrating {
-  tag "${patient}"
+process integrating {
+  tag "${patient}_${subdir}"
   label 'process_medium'
-  publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/malignant/integrating/",
+  publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/${subdir}/integrating/",
     mode: 'copy',
     pattern: "*.rds"
 
   input:
     path rmd_file
-    tuple val(patient), path(rds_files, stageAs: "seu??.rds")
+    tuple val(patient), path(rds_files, stageAs: "seu??.rds"), val(subdir)
     path params_file
 
   output:
-    tuple val(patient), path('seu.rds'), emit: ch_integrated
+    tuple val(patient), path('seu.rds'), val(subdir), emit: ch_integrated
     path 'integrating.html'
 
   script:
@@ -78,7 +78,7 @@ process malignant_integrating {
       params = list(
         params_file = "${params_file}",
         rds_file = "${rds_files.join(',')}",
-        cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/malignant/integrating/integrating_cache/"),
+        cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/${subdir}/integrating/integrating_cache/"),
       output_file = "integrating.html",
       output_dir = getwd()
     )
@@ -86,7 +86,7 @@ process malignant_integrating {
 }
 
 // cluster malignant samples
-process malignant_clustering {
+process clustering {
   tag "${patient}"
   label 'process_medium'
   container '/rds/general/user/art4017/home/snRNAseq_analysis/singularity/snRNAseq_workflow.img'
@@ -144,20 +144,21 @@ workflow {
   
   // group patients
   infercnv.out.ch_infercnv_malig
+    .concat(infercnv.out.ch_infercnv)
     .groupTuple()
-    .set { ch_malig }
+    .set { ch_infercnv }
 
   // integrate samples
-  malignant_integrating(
+  integrating(
     "${baseDir}/templates/integrating.rmd",
-    ch_malig,
+    ch_infercnv,
     save_params.out.ch_params
   )
   
   // cluster samples
-  malignant_clustering(
+  clustering(
     "${baseDir}/templates/seurat_clustering.rmd",
-    malignant_integrating.out.ch_integrated,
+    integrating.out.ch_integrated,
     save_params.out.ch_params
   )
   
