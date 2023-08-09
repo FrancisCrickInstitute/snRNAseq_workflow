@@ -95,7 +95,7 @@ workflow {
 
   // integrate all preloaded samples
   Channel
-    .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/infercnv/seu_infercnv_malignant.rds")
+    .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/infercnv/seu_infercnv.rds")
     .collect()
     .set { ch_run }
   

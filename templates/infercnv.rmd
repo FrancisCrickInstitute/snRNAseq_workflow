@@ -168,8 +168,8 @@ infercnv_obj <-
    HMM_report_by = "cell",
    num_threads = 10,
    no_prelim_plot = T,
-   analysis_mode = "subclusters",
-   resume_mode = F
+   #analysis_mode = "subclusters",
+   resume_mode = T
  )
 ```
 

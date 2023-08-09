@@ -40,12 +40,16 @@ knitr::opts_chunk$set(fig.align = "center",
 seu_ls <-
   strsplit(params$rds_file , ",")[[1]] %>%
   lapply(readRDS)
+
+# remove objects containing <= 5 cells
+seu_ls <- seu_ls[unlist(lapply(seu_ls, ncol)) > 5]
 ```
 
 ```{r integrate, eval = length(seu_ls) > 1}
 # normalize and identify variable features for each dataset independently
 seu_ls <- xfun::cache_rds({
   lapply(X = seu_ls, FUN = function(x) {
+    Seurat::DefaultAssay(object = x) <- "RNA"
     x <- Seurat::NormalizeData(x)
     x <- Seurat::FindVariableFeatures(x, selection.method = "vst", nfeatures = 2000)
     x
@@ -71,8 +75,11 @@ seu <- xfun::cache_rds({
     # if n anchor cells < 100, merge
     seu <- Reduce(merge, seu_ls)
   } else {
+    # adjust k weight if small datasets present
+    min_n_cells <- min(seu_ls %>% lapply(ncol) %>% unlist())
+    k_weight <- ifelse(min_n_cells <= 100, min_n_cells - 1, 100)
     # create 'integrated' data assay
-    seu <- Seurat::IntegrateData(anchorset = seu_anchors)
+    seu <- Seurat::IntegrateData(anchorset = seu_anchors, k.weight = k_weight)
   }
 
   # merge metadata

@@ -118,22 +118,23 @@ markers %>%
     abs_avg_log2FC = abs(avg_log2FC),
     direction = ifelse(avg_log2FC > 0, "upregulated", "downregulated"),
     label = gene,
-    gene = tidytext::reorder_within(x = gene, within = test, by = abs_avg_log2FC)
+    gene = tidytext::reorder_within(x = gene, within = test, by = abs_avg_log2FC),
+    neglog10_p_val_adj = -log10(p_val_adj)
   ) %>%
   dplyr::group_by(test, direction) %>%
   dplyr::filter(p_val_adj < 0.05) %>%
   dplyr::top_n(10, avg_log2FC) %>%
   ggplot2::ggplot(ggplot2::aes(
-    x = gene, y = abs_avg_log2FC, fill = p_val_adj, label = label)) +
+    x = gene, y = abs_avg_log2FC, fill = neglog10_p_val_adj, label = label)) +
   ggplot2::geom_col() +
   ggplot2::geom_text(ggplot2::aes(hjust = -0.1)) +
   ggplot2::facet_wrap(test ~ direction, scales = "free") +
-  ggplot2::scale_fill_continuous("gradient") +
+  ggplot2::scale_fill_continuous() +
   ggplot2::coord_flip() +
   ggplot2::theme_classic() +
   ggplot2::theme(axis.text.y = ggplot2::element_blank(),
                  axis.ticks.y = ggplot2::element_blank()) + 
-  ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0.4)))
+  ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0.5)))
 
 # convert to cds
 cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
@@ -156,8 +157,21 @@ scpa_out <- list()
 scpa_out[["normal_vs_malignant"]] <-
   compare_sce(cds,
               group1 = "label.infercnv",
-              group1_population = c("Malignant_cells", "Epithelial_cells"),
+              group1_population = c("Epithelial_cells", "Malignant_cells"),
+              pathways = pathways)
+scpa_out[["pre_vs_post"]] <-
+  compare_sce(cds,
+              group1 = "timepoint",
+              group1_population = c("pre", "post"),
+              pathways = pathways)
+scpa_out[["both"]] <-
+  compare_sce(cds,
+              group1 = "label.infercnv",
+              group1_population = c("Epithelial_cells", "Malignant_cells"),
+              group2 = "timepoint",
+              group2_population = c("post", "pre"),
               pathways = pathways)
 plot_my_enrichment(scpa_out$normal_vs_malignant)
+plot_my_enrichment(scpa_out$pre_vs_post)
 ```
 

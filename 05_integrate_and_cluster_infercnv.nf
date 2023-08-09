@@ -94,7 +94,7 @@ workflow {
 
   // get malignant files
   Channel
-    .fromPath("${params.output.dir}/by_patient_wo_organoids/A/integrating/infercnv/infercnv_cache/*/seu_infercnv_malignant.rds")
+    .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/infercnv/infercnv_cache/*/seu_infercnv_malignant.rds")
     .set { ch_malignant_files }
   
   // one channel of all patients

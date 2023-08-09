@@ -34,7 +34,7 @@ process infercnv {
 
   output:
     tuple val(patient), path('seu_infercnv.rds'), val(''), emit: ch_infercnv, optional: true
-    tuple val(patient), path('seu_infercnv_malignant.rds'), val('malignant') emit: ch_infercnv_malig, optional:true
+    tuple val(patient), path('seu_infercnv_malignant.rds'), val('malignant'), emit: ch_infercnv_malig, optional:true
     path 'infercnv.html'
 
   script:
@@ -125,7 +125,7 @@ workflow {
   // save params
   save_params()
 
-  // generate one channel per id (exclude J_post_T1_biopsy, throwing unknown error)
+  // generate one channel per id (exclude organoids + J_post_T1_biopsy, throwing unknown error)
   Channel
     .fromPath(params.input.manifest_file)
     .splitCsv(header:true, sep:'\t')
@@ -134,32 +134,13 @@ workflow {
               row.id.split("_")[0], 
               "${params.output.dir}/by_patient_wo_organoids/"+row.id.split("_")[0]+"/integrating/seurat_clustering/seu_annotated.rds") }
     .filter { !it[0].contains("J_post_T1_biopsy") } 
+    .filter { !it[0].contains("organoid") } 
     .set { ch_run }
 
   // run infercnv
   infercnv(
     "${baseDir}/templates/infercnv.rmd",
     ch_run
-  )
-  
-  // group patients
-  infercnv.out.ch_infercnv_malig
-    .concat(infercnv.out.ch_infercnv)
-    .groupTuple()
-    .set { ch_infercnv }
-
-  // integrate samples
-  integrating(
-    "${baseDir}/templates/integrating.rmd",
-    ch_infercnv,
-    save_params.out.ch_params
-  )
-  
-  // cluster samples
-  clustering(
-    "${baseDir}/templates/seurat_clustering.rmd",
-    integrating.out.ch_integrated,
-    save_params.out.ch_params
   )
   
 }
