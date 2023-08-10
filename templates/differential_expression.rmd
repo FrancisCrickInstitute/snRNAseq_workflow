@@ -239,7 +239,12 @@ celltype_markers <-
 seu <- Seurat::ScaleData(seu)
 Seurat::Idents(seu) <- seu$label.infercnv
 celltype_markers <- 
-  Seurat::FindAllMarkers(seu, test.use = "MAST")
+  Seurat::FindAllMarkers(seu, test.use = "MAST") %>% 
+  tibble::as_tibble()
+celltype_markers %>%
+  dplyr::filter(avg_log2FC > 0, p_val < 0.05) %>%
+  dplyr::group_by(cluster) %>%
+  dplyr::slice_max(order_by = avg_log2FC, n = 5)
 
 # do heatmap
 seu$label_n <-
