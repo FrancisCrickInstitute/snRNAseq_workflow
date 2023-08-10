@@ -97,12 +97,15 @@ get_centroids <- function(object, reduction, lvl) {
 }
 ```
 
+```{r load_seu}
+seu <- readRDS(params$rds_file)
+```
+
 # Dimensionality reduction and clustering
 
 ## Linear dimensionality reduction
 
 ```{r lin_dim_red, echo = F}
-seu <- readRDS(params$rds_file)
 seu <- xfun::cache_rds({
   seu <- Seurat::FindVariableFeatures(seu)
   seu <- Seurat::SCTransform(seu)
@@ -114,7 +117,7 @@ seu <- xfun::cache_rds({
   seu
 }, file = "seu_sct.rds")
 seu <- xfun::cache_rds({
-  seu <- Seurat::RunPCA(seu)
+  seu <- Seurat::RunPCA(seu, npcs = ifelse(ncol(seu) <= 50, ncol(seu) - 1, 50))
   seu
 }, file = "seu_pca.rds", rerun = T)
 ```
@@ -146,6 +149,7 @@ iD_n_dims <- xfun::cache_rds({
   )$dim.est %>% round(0)
 }, file = "iD_n_dims.rds")
 generous_n_dims <- round(1.5 * ifelse(iD_n_dims == 0, 1, iD_n_dims), 0)
+if (generous_n_dims > ncol(seu)) { generous_n_dims <- ncol(seu) / 2 }
 ```
 
 ```{r iD_n_dims_set, include = curr_params$cluster$n_dims == FALSE, eval = curr_params$cluster$n_dims == FALSE}

@@ -96,7 +96,7 @@ seu <- readRDS(params$rds_file)
 
 # find markers of pre- vs post-treatment
 tests <- list(timepoint = "post", sample_site = "lymph_node")
-markers <-
+degs <-
   tests %>%
   names() %>%
   purrr::map(
@@ -113,7 +113,7 @@ markers <-
   setNames(unlist(tests)) %>%
   dplyr::bind_rows(.id = "test")
 
-markers %>%
+degs %>%
   dplyr::mutate(
     abs_avg_log2FC = abs(avg_log2FC),
     direction = ifelse(avg_log2FC > 0, "upregulated", "downregulated"),
@@ -175,3 +175,88 @@ plot_my_enrichment(scpa_out$normal_vs_malignant)
 plot_my_enrichment(scpa_out$pre_vs_post)
 ```
 
+```{r dea_norm_vs_malig}
+find_markers <- function(seu, col, group.1, group.2) {
+  seu %>% 
+    Seurat::FindMarkers(
+      ident.1 = colnames(seu[, seu@meta.data[, col] == group.1]),
+      ident.2 = colnames(seu[, seu@meta.data[, col] == group.2]),
+      test.use = "MAST"
+    ) %>%
+    tibble::as_tibble(rownames = "gene") %>%
+    dplyr::filter(p_val_adj < 0.05) %>%
+    dplyr::mutate(direction = ifelse(avg_log2FC > 0, group.1, group.2),
+                  group = ifelse(avg_log2FC > 0, 1, 2)) %>%
+    dplyr::group_by(direction) %>%
+    dplyr::mutate(rank = rank(-abs(avg_log2FC))) 
+}
+plot_markers <- function(markers, top_n = 10) {
+  p_dat <-
+    markers %>%
+    dplyr::filter(rank <= top_n) %>%
+    dplyr::group_by(direction) %>%
+    dplyr::mutate(rank = rank(-abs(avg_log2FC))) %>%
+    dplyr::filter(rank <= top_n)
+  p_dat %>%
+    ggplot(aes(x = -rank, y = avg_log2FC, 
+               fill = direction, alpha = -log10(p_val_adj),
+               label = gene)) +
+    geom_bar(stat = "identity") +
+    geom_text(hjust = ifelse(p_dat$group == 2, 1.1, -0.1),
+              alpha = 1,
+              size = 6) +
+    scale_y_continuous(labels = abs, limits = max(abs(p_dat$avg_log2FC)) * c(-1,1) * 1.3) +
+    scale_fill_manual(values=as.vector(c("#d23f67","#3179de"))) +
+    labs(x = "", y = "", fill="") +
+    theme_minimal() +   
+    coord_flip() +
+    theme( 
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(),
+      axis.text.x = element_text(size=20), 
+      axis.text.y = element_blank(),
+      strip.text.x=element_text(size=24),
+      legend.position="bottom",
+      legend.text=element_text(size=20)
+    )
+}
+
+markers <- list()
+markers[["malignant_vs_epithelial"]] <-
+  find_markers(seu, "label.infercnv", "Malignant_cells", "Epithelial_cells")
+markers[["lymph_node_vs_tumour"]] <-
+  find_markers(seu, "sample_site", "lymph_node", "tumour")
+markers[["lymph_node_malignant_vs_tumour_malignant"]] <-
+  find_markers(seu[, seu$label.infercnv == "Malignant_cells"],
+               "sample_site", "lymph_node", "tumour")
+markers[["post_malignant_vs_pre_malignant"]] <-
+  find_markers(seu[, seu$label.infercnv == "Malignant_cells"],
+               "timepoint", "post", "pre")
+celltype_markers <-
+  Seurat::FindMarkers(seu, group.by = "label.infercnv")
+
+# find markers for every celltype
+seu <- Seurat::ScaleData(seu)
+Seurat::Idents(seu) <- seu$label.infercnv
+celltype_markers <- 
+  Seurat::FindAllMarkers(seu, test.use = "MAST")
+
+# do heatmap
+seu$label_n <-
+  tibble::tibble(label = seu$label.infercnv) %>% 
+  dplyr::group_by(label) %>%
+  dplyr::mutate(n = dplyr::n()) %>% 
+  dplyr::pull(n)
+top_celltype_markers <-
+  celltype_markers %>%
+  dplyr::group_by(cluster) %>%
+  dplyr::top_n(n = 3, wt = avg_log2FC) 
+dittoSeq::dittoHeatmap(
+  seu, genes = unique(top_celltype_markers$gene),
+  annot.by = "label.infercnv", order.by = "label_n")
+
+# cluster markers
+Seurat::Idents(seu) <- seu$SCT_snn_res.0.1 
+cluster_markers <-
+  Seurat::FindAllMarkers(seu, test.use = "MAST")
+```
