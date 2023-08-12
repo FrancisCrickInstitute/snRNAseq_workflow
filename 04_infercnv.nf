@@ -23,7 +23,10 @@ include { save_params } from './modules/save_params'
 // perform infercnv on each sample
 process infercnv {
   tag "${sample}"
-  label 'process_medium'
+  memory { 200.GB * task.attempt }
+  cpus { 12 * task.attempt }
+  time { 24.hour * task.attempt }
+
   publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/infercnv_cache/${sample}/",
     mode: 'copy',
     pattern: "{*.rds,*.html}"
@@ -90,7 +93,7 @@ process clustering {
   tag "${patient}"
   label 'process_medium'
   container '/rds/general/user/art4017/home/snRNAseq_analysis/singularity/snRNAseq_workflow.img'
-  cpus = { check_max( 12 * task.attempt, 'cpus' ) }
+  cpus { check_max( 12 * task.attempt, 'cpus' ) }
   publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/malignant/clustering/",
     mode: 'copy',
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
@@ -126,15 +129,21 @@ workflow {
   save_params()
 
   // generate one channel per id (exclude organoids + J_post_T1_biopsy, throwing unknown error)
+  //Channel
+    //.fromPath(params.input.manifest_file)
+    //.splitCsv(header:true, sep:'\t')
+    //.map { row -> tuple(
+    //        row.id, row.id.split("_")[0],
+    //         "${params.output.dir}/by_patient_wo_organoids/"+row.id.split("_")[0]+"/integrating/seurat_clustering/seu_annotated.rds") } 
+    //.filter { !it[0].contains("J_post_T1_biopsy") }    
+    //.filter { !it[0].contains("organoid") } 
+    //.set { ch_run }
+
   Channel
-    .fromPath(params.input.manifest_file)
-    .splitCsv(header:true, sep:'\t')
-    .map { row -> tuple(
-              row.id, 
-              row.id.split("_")[0], 
-              "${params.output.dir}/by_patient_wo_organoids/"+row.id.split("_")[0]+"/integrating/seurat_clustering/seu_annotated.rds") }
-    .filter { !it[0].contains("J_post_T1_biopsy") } 
-    .filter { !it[0].contains("organoid") } 
+    .fromList(['F_post_N2_biopsy', 'H_post_T1_biopsy', 'I_pre_T0_biopsy', 'N_post_T1_biopsy'])
+    .map { id -> tuple(
+	    id, id.split("_")[0],
+	     "${params.output.dir}/by_patient_wo_organoids/"+id.split("_")[0]+"/integrating/seurat_clustering/seu_annotated.rds") }     
     .set { ch_run }
 
   // run infercnv

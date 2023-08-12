@@ -166,11 +166,11 @@ infercnv_obj <-
    HMM = T, 
    HMM_type = "i3",
    HMM_report_by = "cell",
-   num_threads = 10,
+   num_threads = 12,
    no_prelim_plot = T,
    #analysis_mode = "subclusters",
-   resume_mode = T
- )
+   resume_mode = T 
+  )
 ```
 
 Malignant vs non-malignant cell types are then assigned.

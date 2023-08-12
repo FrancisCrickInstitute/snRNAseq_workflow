@@ -5,8 +5,8 @@ geometry: margin=1in
 fontfamily: mathpazo
 fontsize: 11pt
 params:
-  rds_file: false
   cache_dir: false
+  infercnv_cache_dir: false
 output:
   html_document:
     keep_md: true
@@ -25,9 +25,7 @@ library(SCPA)
 library(msigdbr)
 library(magrittr)
 library(dplyr)
-library(ComplexHeatmap)
 library(SummarizedExperiment)
-library(circlize)
 library(tidyverse)
 library(monocle3)
 
@@ -77,8 +75,8 @@ plot_my_enrichment <- function(p_dat_in, top_n = 5) {
   ggplot(p_dat, aes(-FC, qval)) +
     geom_vline(xintercept = c(-5, 5), linetype = "dashed", col = 'black', lwd = 0.3) +
     geom_point(cex = 2.6, shape = 21, fill = p_dat$color, stroke = 0.3) +
-    ggrepel::geom_text_repel(data = p_dat %>% slice_max(abs(FC), n = top_n), aes(label = Pathway),
-                             size = 7, min.segment.length = 0, nudge_x = 10) +
+    ggrepel::geom_text_repel(data = p_dat %>% filter(rank(FC, ties.method = "min") <= 5 | rank(-qval, ties.method = "min") <= 5), aes(label = Pathway),
+                             size = 4, min.segment.length = 0, nudge_x = 10) +
     xlab("Enrichment") +
     ylab("Qval") +
     theme(panel.background = element_blank(),
@@ -86,109 +84,29 @@ plot_my_enrichment <- function(p_dat_in, top_n = 5) {
           aspect.ratio = 1) +
     ggplot2::theme(text = ggplot2::element_text(size = 20))
 }
-```
-
-# Pathway analysis
-
-```{r pathway_analysis, echo = F}
-# load seu 
-seu <- readRDS(params$rds_file)
-
-# find markers of pre- vs post-treatment
-tests <- list(timepoint = "post", sample_site = "lymph_node")
-degs <-
-  tests %>%
-  names() %>%
-  purrr::map(
-    function(test) {
-      print(test)
-      seu %>%
-        Seurat::FindMarkers(
-          ident.1 = colnames(seu[, seu@meta.data[, test] == tests[[test]]]), 
-          test.use = "MAST"
-        ) %>%
-        tibble::as_tibble(rownames = "gene")
-    }
-  ) %>%
-  setNames(unlist(tests)) %>%
-  dplyr::bind_rows(.id = "test")
-
-degs %>%
-  dplyr::mutate(
-    abs_avg_log2FC = abs(avg_log2FC),
-    direction = ifelse(avg_log2FC > 0, "upregulated", "downregulated"),
-    label = gene,
-    gene = tidytext::reorder_within(x = gene, within = test, by = abs_avg_log2FC),
-    neglog10_p_val_adj = -log10(p_val_adj)
-  ) %>%
-  dplyr::group_by(test, direction) %>%
-  dplyr::filter(p_val_adj < 0.05) %>%
-  dplyr::top_n(10, avg_log2FC) %>%
-  ggplot2::ggplot(ggplot2::aes(
-    x = gene, y = abs_avg_log2FC, fill = neglog10_p_val_adj, label = label)) +
-  ggplot2::geom_col() +
-  ggplot2::geom_text(ggplot2::aes(hjust = -0.1)) +
-  ggplot2::facet_wrap(test ~ direction, scales = "free") +
-  ggplot2::scale_fill_continuous() +
-  ggplot2::coord_flip() +
-  ggplot2::theme_classic() +
-  ggplot2::theme(axis.text.y = ggplot2::element_blank(),
-                 axis.ticks.y = ggplot2::element_blank()) + 
-  ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0.5)))
-
-# convert to cds
-cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
-SummarizedExperiment::rowData(cds)$gene_short_name <- 
-  row.names(SummarizedExperiment::rowData(cds))
-
-# preprocess
-cds <- preprocess_cds(cds, num_dim = 30)
-cds <- reduce_dimension(cds)
-
-# get hallmark pathways
-pathways <-
-  msigdbr(species = "Homo sapiens", category = "H") %>%
-  format_pathways()
-
-# initiate list
-scpa_out <- list()
-
-# compare pathways between tumour vs normal
-scpa_out[["normal_vs_malignant"]] <-
-  compare_sce(cds,
-              group1 = "label.infercnv",
-              group1_population = c("Epithelial_cells", "Malignant_cells"),
-              pathways = pathways)
-scpa_out[["pre_vs_post"]] <-
-  compare_sce(cds,
-              group1 = "timepoint",
-              group1_population = c("pre", "post"),
-              pathways = pathways)
-scpa_out[["both"]] <-
-  compare_sce(cds,
-              group1 = "label.infercnv",
-              group1_population = c("Epithelial_cells", "Malignant_cells"),
-              group2 = "timepoint",
-              group2_population = c("post", "pre"),
-              pathways = pathways)
-plot_my_enrichment(scpa_out$normal_vs_malignant)
-plot_my_enrichment(scpa_out$pre_vs_post)
-```
-
-```{r dea_norm_vs_malig}
 find_markers <- function(seu, col, group.1, group.2) {
-  seu %>% 
+  markers <-
+    seu %>% 
     Seurat::FindMarkers(
       ident.1 = colnames(seu[, seu@meta.data[, col] == group.1]),
       ident.2 = colnames(seu[, seu@meta.data[, col] == group.2]),
       test.use = "MAST"
     ) %>%
-    tibble::as_tibble(rownames = "gene") %>%
-    dplyr::filter(p_val_adj < 0.05) %>%
-    dplyr::mutate(direction = ifelse(avg_log2FC > 0, group.1, group.2),
-                  group = ifelse(avg_log2FC > 0, 1, 2)) %>%
-    dplyr::group_by(direction) %>%
-    dplyr::mutate(rank = rank(-abs(avg_log2FC))) 
+    tibble::as_tibble(rownames = "gene") 
+  
+  if (nrow(markers) > 0 & "p_val_adj" %in% colnames(markers)) {
+    markers %>%
+      dplyr::mutate(direction = ifelse(avg_log2FC > 0, group.1, group.2),
+                    group = ifelse(avg_log2FC > 0, 1, 2)) %>%
+      dplyr::group_by(direction) %>%
+      dplyr::mutate(rank = rank(-abs(avg_log2FC)),
+                    p_val_adj_no_0 = dplyr::case_when(p_val_adj == 0 ~ min(p_val_adj),
+                                                     TRUE ~ p_val_adj))
+  } else {
+    message("No differentially expressed genes!")
+    tibble::tibble()
+  }
+  
 }
 plot_markers <- function(markers, top_n = 10) {
   p_dat <-
@@ -199,7 +117,7 @@ plot_markers <- function(markers, top_n = 10) {
     dplyr::filter(rank <= top_n)
   p_dat %>%
     ggplot(aes(x = -rank, y = avg_log2FC, 
-               fill = direction, alpha = -log10(p_val_adj),
+               fill = direction, alpha = -log10(p_val_adj_no_0),
                label = gene)) +
     geom_bar(stat = "identity") +
     geom_text(hjust = ifelse(p_dat$group == 2, 1.1, -0.1),
@@ -207,6 +125,7 @@ plot_markers <- function(markers, top_n = 10) {
               size = 6) +
     scale_y_continuous(labels = abs, limits = max(abs(p_dat$avg_log2FC)) * c(-1,1) * 1.3) +
     scale_fill_manual(values=as.vector(c("#d23f67","#3179de"))) +
+    scale_alpha(range = c(0.5, 1)) +
     labs(x = "", y = "", fill="") +
     theme_minimal() +   
     coord_flip() +
@@ -220,48 +139,140 @@ plot_markers <- function(markers, top_n = 10) {
       legend.text=element_text(size=20)
     )
 }
-
-markers <- list()
-markers[["malignant_vs_epithelial"]] <-
-  find_markers(seu, "label.infercnv", "Malignant_cells", "Epithelial_cells")
-markers[["lymph_node_vs_tumour"]] <-
-  find_markers(seu, "sample_site", "lymph_node", "tumour")
-markers[["lymph_node_malignant_vs_tumour_malignant"]] <-
-  find_markers(seu[, seu$label.infercnv == "Malignant_cells"],
-               "sample_site", "lymph_node", "tumour")
-markers[["post_malignant_vs_pre_malignant"]] <-
-  find_markers(seu[, seu$label.infercnv == "Malignant_cells"],
-               "timepoint", "post", "pre")
-celltype_markers <-
-  Seurat::FindMarkers(seu, group.by = "label.infercnv")
-
-# find markers for every celltype
-seu <- Seurat::ScaleData(seu)
-Seurat::Idents(seu) <- seu$label.infercnv
-celltype_markers <- 
-  Seurat::FindAllMarkers(seu, test.use = "MAST") %>% 
-  tibble::as_tibble()
-celltype_markers %>%
-  dplyr::filter(avg_log2FC > 0, p_val < 0.05) %>%
-  dplyr::group_by(cluster) %>%
-  dplyr::slice_max(order_by = avg_log2FC, n = 5)
-
-# do heatmap
-seu$label_n <-
-  tibble::tibble(label = seu$label.infercnv) %>% 
-  dplyr::group_by(label) %>%
-  dplyr::mutate(n = dplyr::n()) %>% 
-  dplyr::pull(n)
-top_celltype_markers <-
-  celltype_markers %>%
-  dplyr::group_by(cluster) %>%
-  dplyr::top_n(n = 3, wt = avg_log2FC) 
-dittoSeq::dittoHeatmap(
-  seu, genes = unique(top_celltype_markers$gene),
-  annot.by = "label.infercnv", order.by = "label_n")
-
-# cluster markers
-Seurat::Idents(seu) <- seu$SCT_snn_res.0.1 
-cluster_markers <-
-  Seurat::FindAllMarkers(seu, test.use = "MAST")
 ```
+
+# Differential expression analysis
+
+```{r get_cnv_files}
+# load seu 
+seu <- readRDS("seu_annotated.rds")
+
+# get cnv files
+cnv_files <- 
+  list.files(
+    params$infercnv_cache_dir,
+    pattern = "HMM_CNV_predictions.HMMi3.leiden.hmm_mode-subclusters.Pnorm_0.5.pred_cnv_regions.dat",
+    recursive = T
+  )
+```
+
+```{r abort_if_no_infercnv, eval = length(cnv_files) == 0, include = length(cnv_files) == 0}
+# stop if none
+knitr::knit_exit()
+```
+
+```{r annotate_malig}
+# define malignancy by aneuploidy status
+aneuploid_cells <- 
+  cnv_files %>%
+  purrr::map(function(cnv_file_i) {
+    sample_i <- gsub("/.*", "", cnv_file_i)
+    readr::read_tsv(paste0(params$infercnv_cache_dir, cnv_file_i)) %>%
+      dplyr::mutate(sample = sample_i)
+  }) %>%
+  dplyr::bind_rows() %>%
+  dplyr::group_by(sample, cell_group_name) %>%
+  dplyr::summarise(aneuploid = any(c(1, 3) %in% state)) %>%
+  dplyr::filter(aneuploid)
+malignant_cells <-
+  aneuploid_cells %>%
+  dplyr::filter(cell_group_name %in% colnames(seu[, seu$label.reduced == "Epithelial_cells"]))
+
+# save
+saveRDS(aneuploid_cells, "aneuploid_cells.rds")
+saveRDS(malignant_cells, "malignant_cells.rds")
+
+# add aneuploid and malignant labels 
+seu$aneuploid <- 0
+seu@meta.data[aneuploid_cells$cell_group_name, "aneuploid"] <- 1
+seu$label.infercnv <- seu$label.reduced
+seu@meta.data[malignant_cells$cell_group_name, "label.infercnv"] <- "Malignant_cells"
+```
+
+```{r find_markers}
+degs <- xfun::cache_rds({
+  degs <- list()
+
+  if (all(c("Malignant_cells", "Epithelial_cells") %in% seu$label.infercnv)) {
+    # find markers of malignant vs epithelial
+    degs[["malignant_vs_epithelial"]] <-
+       find_markers(seu, "label.infercnv", "Malignant_cells", "Epithelial_cells")
+  }
+  
+  if (all(c("post", "pre") %in% seu$timepoint)) {
+    if (ncol(seu[, seu$label.infercnv == "Malignant_cells"]) > 0) {
+      # find markers of malignant post vs malignant pre
+      degs[["malignant_post_vs_malignant_pre"]] <-
+        find_markers(seu[, seu$label.infercnv == "Malignant_cells"], 
+                     "timepoint", "post", "pre")
+    }
+    
+    # find markers of post vs pre
+    degs[["post_vs_pre"]] <-
+      find_markers(seu, "timepoint", "post", "pre")
+  }
+  
+  # return
+  degs
+  
+}, file = "degs.rds")
+
+# save
+saveRDS(degs, "degs.rds")
+
+# # plot
+# plot_markers(degs$malignant_vs_epithelial, 20)
+# plot_markers(degs$malignant_post_vs_malignant_pre, 20)
+# plot_markers(degs$post_vs_pre, 20)
+```
+
+# Pathway analysis
+
+```{r pathway_analysis, eval = F}
+# convert to cds
+cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
+SummarizedExperiment::rowData(cds)$gene_short_name <- 
+  row.names(SummarizedExperiment::rowData(cds))
+
+# preprocess
+cds <- preprocess_cds(cds, num_dim = 30)
+cds <- reduce_dimension(cds)
+
+# get hallmark pathways
+pathways <- xfun::cache_rds({
+  pathways <-
+    msigdbr(species = "Homo sapiens", category = "H") %>%
+    format_pathways()
+  pathways
+}, file = "pathways.rds")
+
+# compare pathways between tumour vs normal
+scpa_out <- xfun::cache_rds({
+  scpa_out <- list()
+  scpa_out[["malignant_vs_epithelial"]] <-
+    compare_sce(cds,
+                group1 = "label.infercnv",
+                group1_population = c("Epithelial_cells", "Malignant_cells"),
+                pathways = pathways)
+  scpa_out[["malignant_post_vs_malignant_pre"]] <-
+    compare_sce(cds[, cds@colData$label.infercnv == "Malignant_cells"],
+                group1 = "timepoint",
+                group1_population = c("pre", "post"),
+                pathways = pathways)
+  scpa_out[["post_vs_pre"]] <-
+    compare_sce(cds,
+                group1 = "timepoint",
+                group1_population = c("pre", "post"),
+                pathways = pathways)
+  scpa_out
+}, file = "scpa.rds")
+
+# save 
+saveRDS(scpa_out, "scpa.rds")
+
+# # plot
+# plot_my_enrichment(scpa_out$malignant_vs_epithelial)
+# plot_my_enrichment(scpa_out$malignant_post_vs_malignant_pre)
+# plot_my_enrichment(scpa_out$post_vs_pre)
+```
+

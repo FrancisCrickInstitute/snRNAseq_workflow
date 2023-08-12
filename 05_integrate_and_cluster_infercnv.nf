@@ -55,9 +55,9 @@ process integrating {
 // cluster malignant samples
 process clustering {
   tag "${patient}"
-  label 'process_medium'
+  label 'process_high'
+  
   container '/rds/general/user/art4017/home/snRNAseq_analysis/singularity/snRNAseq_workflow.img'
-  cpus = { check_max( 12 * task.attempt, 'cpus' ) }
   publishDir "${output_dir}/clustering/",
     mode: 'copy',
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
@@ -103,19 +103,17 @@ workflow {
     .map { file -> tuple('malignant', file, "${params.output.dir}/by_patient_wo_organoids/malignant/") }
     .set { ch_run }
   
-  // one channel per patient 
-  ch_malignant_files
-    .map { file -> 
-            tuple(file.toString().tokenize('/')[-6], file) }
-    .groupTuple()
-    .map { patient, file -> tuple(
-            patient, 
-            file, 
-            "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/malignant/")}
-    .concat(ch_run)
-    .set { ch_run }
-  
-  ch_run.view()
+  //// one channel per patient 
+  //ch_malignant_files
+  //  .map { file -> 
+  //          tuple(file.toString().tokenize('/')[-6], file) }
+  //  .groupTuple()
+  //  .map { patient, file -> tuple(
+  //          patient, 
+  //          file, 
+  //          "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/malignant/")}
+  //  .concat(ch_run)
+  //  .set { ch_run }
   
   // integrate
   integrating(
