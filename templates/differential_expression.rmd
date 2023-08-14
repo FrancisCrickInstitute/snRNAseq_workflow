@@ -95,7 +95,8 @@ find_markers <- function(seu, col, group.1, group.2) {
     tibble::as_tibble(rownames = "gene") 
   
   if (nrow(markers) > 0 & "p_val_adj" %in% colnames(markers)) {
-    markers %>%
+    markers <-
+      markers %>%
       dplyr::mutate(direction = ifelse(avg_log2FC > 0, group.1, group.2),
                     group = ifelse(avg_log2FC > 0, 1, 2)) %>%
       dplyr::group_by(direction) %>%
@@ -104,9 +105,9 @@ find_markers <- function(seu, col, group.1, group.2) {
                                                      TRUE ~ p_val_adj))
   } else {
     message("No differentially expressed genes!")
-    tibble::tibble()
+    markers <- tibble::tibble()
   }
-  
+  markers
 }
 plot_markers <- function(markers, top_n = 10) {
   p_dat <-
@@ -124,7 +125,7 @@ plot_markers <- function(markers, top_n = 10) {
               alpha = 1,
               size = 6) +
     scale_y_continuous(labels = abs, limits = max(abs(p_dat$avg_log2FC)) * c(-1,1) * 1.3) +
-    scale_fill_manual(values=as.vector(c("#d23f67","#3179de"))) +
+    scale_fill_manual(values=as.vector(c("#3179de", "#d23f67"))) +
     scale_alpha(range = c(0.5, 1)) +
     labs(x = "", y = "", fill="") +
     theme_minimal() +   
@@ -182,6 +183,9 @@ malignant_cells <-
 saveRDS(aneuploid_cells, "aneuploid_cells.rds")
 saveRDS(malignant_cells, "malignant_cells.rds")
 
+# exclude samples for which infercnv run was unsuccessful
+seu <- seu[, seu$sample %in% gsub("/.*", "", cnv_files)]
+
 # add aneuploid and malignant labels 
 seu$aneuploid <- 0
 seu@meta.data[aneuploid_cells$cell_group_name, "aneuploid"] <- 1
@@ -199,23 +203,23 @@ degs <- xfun::cache_rds({
        find_markers(seu, "label.infercnv", "Malignant_cells", "Epithelial_cells")
   }
   
-  if (all(c("post", "pre") %in% seu$timepoint)) {
-    if (ncol(seu[, seu$label.infercnv == "Malignant_cells"]) > 0) {
-      # find markers of malignant post vs malignant pre
-      degs[["malignant_post_vs_malignant_pre"]] <-
-        find_markers(seu[, seu$label.infercnv == "Malignant_cells"], 
-                     "timepoint", "post", "pre")
-    }
-    
-    # find markers of post vs pre
-    degs[["post_vs_pre"]] <-
-      find_markers(seu, "timepoint", "post", "pre")
-  }
+  # if (all(c("post", "pre") %in% seu$timepoint)) {
+  #   if (ncol(seu[, seu$label.infercnv == "Malignant_cells"]) > 0) {
+  #     # find markers of malignant post vs malignant pre
+  #     degs[["malignant_post_vs_malignant_pre"]] <-
+  #       find_markers(seu[, seu$label.infercnv == "Malignant_cells"], 
+  #                    "timepoint", "post", "pre")
+  #   }
+  #   
+  #   # find markers of post vs pre
+  #   degs[["post_vs_pre"]] <-
+  #     find_markers(seu, "timepoint", "post", "pre")
+  # }
   
   # return
   degs
   
-}, file = "degs.rds")
+}, file = "degs.rds", rerun = T)
 
 # save
 saveRDS(degs, "degs.rds")
@@ -252,18 +256,18 @@ scpa_out <- xfun::cache_rds({
   scpa_out[["malignant_vs_epithelial"]] <-
     compare_sce(cds,
                 group1 = "label.infercnv",
-                group1_population = c("Epithelial_cells", "Malignant_cells"),
+                group1_population = c("Malignant_cells", "Epithelial_cells"),
                 pathways = pathways)
-  scpa_out[["malignant_post_vs_malignant_pre"]] <-
-    compare_sce(cds[, cds@colData$label.infercnv == "Malignant_cells"],
-                group1 = "timepoint",
-                group1_population = c("pre", "post"),
-                pathways = pathways)
-  scpa_out[["post_vs_pre"]] <-
-    compare_sce(cds,
-                group1 = "timepoint",
-                group1_population = c("pre", "post"),
-                pathways = pathways)
+  # scpa_out[["malignant_post_vs_malignant_pre"]] <-
+  #   compare_sce(cds[, cds@colData$label.infercnv == "Malignant_cells"],
+  #               group1 = "timepoint",
+  #               group1_population = c("pre", "post"),
+  #               pathways = pathways)
+  # scpa_out[["post_vs_pre"]] <-
+  #   compare_sce(cds,
+  #               group1 = "timepoint",
+  #               group1_population = c("pre", "post"),
+  #               pathways = pathways)
   scpa_out
 }, file = "scpa.rds")
 

@@ -26,6 +26,7 @@ process infercnv {
   memory { 200.GB * task.attempt }
   cpus { 12 * task.attempt }
   time { 24.hour * task.attempt }
+  queue { 200 * task.attempt < 921 ? 'v1_medium72' : 'v1_largemem72' }
 
   publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/infercnv_cache/${sample}/",
     mode: 'copy',
