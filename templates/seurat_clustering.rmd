@@ -288,11 +288,25 @@ p <-
 p
 ```
 
+### Cluster markers
+
+```{r cluster_markers, eval = curr_params$clustering_resolution != F}
+cluster_markers <- xfun::cache_rds({
+  seu$cluster <- seu@meta.data[, paste0("SCT_snn_res.", curr_params$clustering_resolution)]
+  seu$cluster <- factor(seu$cluster, levels = paste(sort(as.integer(levels(seu$cluster)))))
+  Seurat::Idents(seu) <- seu$cluster
+  cluster_markers <-
+    Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+  cluster_markers
+}, file = "cluster_markers.rds")
+readr::write_tsv(cluster_markers, "cluster_markers.tsv")
+```
+
 # Celltype annotation
 
 ## SingleR
 
-```{r singler_annots, message = F, warning = F}
+```{r singler_annots, eval = F, message = F, warning = F}
 # get reference from celldex
 singler_refs <- celldex::HumanPrimaryCellAtlasData() 
 

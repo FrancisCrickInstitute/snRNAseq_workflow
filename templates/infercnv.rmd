@@ -169,7 +169,8 @@ infercnv_obj <-
    num_threads = 12,
    no_prelim_plot = T,
    #analysis_mode = "subclusters",
-   resume_mode = T 
+   analysis_mode = "samples",
+   resume_mode = F 
   )
 ```
 

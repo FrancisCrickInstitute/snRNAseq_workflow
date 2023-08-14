@@ -6,7 +6,6 @@ fontfamily: mathpazo
 fontsize: 11pt
 params:
   cache_dir: false
-  infercnv_cache_dir: false
 output:
   html_document:
     keep_md: true
