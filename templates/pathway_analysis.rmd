@@ -83,82 +83,13 @@ plot_my_enrichment <- function(p_dat_in, top_n = 5) {
           aspect.ratio = 1) +
     ggplot2::theme(text = ggplot2::element_text(size = 20))
 }
-find_markers <- function(seu, col, group.1, group.2) {
-  markers <-
-    seu %>% 
-    Seurat::FindMarkers(
-      ident.1 = colnames(seu[, seu@meta.data[, col] == group.1]),
-      ident.2 = colnames(seu[, seu@meta.data[, col] == group.2]),
-      test.use = "MAST"
-    ) %>%
-    tibble::as_tibble(rownames = "gene") 
-  
-  if (nrow(markers) > 0 & "p_val_adj" %in% colnames(markers)) {
-    markers <-
-      markers %>%
-      dplyr::mutate(direction = ifelse(avg_log2FC > 0, group.1, group.2),
-                    group = ifelse(avg_log2FC > 0, 1, 2)) %>%
-      dplyr::group_by(direction) %>%
-      dplyr::mutate(rank = rank(-abs(avg_log2FC)),
-                    p_val_adj_no_0 = dplyr::case_when(p_val_adj == 0 ~ min(p_val_adj),
-                                                     TRUE ~ p_val_adj))
-  } else {
-    message("No differentially expressed genes!")
-    markers <- tibble::tibble()
-  }
-  markers
-}
-plot_markers <- function(markers, top_n = 10) {
-  p_dat <-
-    markers %>%
-    dplyr::filter(rank <= top_n) %>%
-    dplyr::group_by(direction) %>%
-    dplyr::mutate(rank = rank(-abs(avg_log2FC))) %>%
-    dplyr::filter(rank <= top_n)
-  p_dat %>%
-    ggplot(aes(x = -rank, y = avg_log2FC, 
-               fill = direction, alpha = -log10(p_val_adj_no_0),
-               label = gene)) +
-    geom_bar(stat = "identity") +
-    geom_text(hjust = ifelse(p_dat$group == 2, 1.1, -0.1),
-              alpha = 1,
-              size = 6) +
-    scale_y_continuous(labels = abs, limits = max(abs(p_dat$avg_log2FC)) * c(-1,1) * 1.3) +
-    scale_fill_manual(values=as.vector(c("#3179de", "#d23f67"))) +
-    scale_alpha(range = c(0.5, 1)) +
-    labs(x = "", y = "", fill="") +
-    theme_minimal() +   
-    coord_flip() +
-    theme( 
-      panel.grid.major = element_blank(), 
-      panel.grid.minor = element_blank(),
-      axis.text.x = element_text(size=20), 
-      axis.text.y = element_blank(),
-      strip.text.x=element_text(size=24),
-      legend.position="bottom",
-      legend.text=element_text(size=20)
-    )
-}
 ```
 
-# Differential expression analysis
+# Pathway analysis
 
-```{r get_cnv_files}
+```{r load_seu}
 # load seu 
-seu <- readRDS("seu_annotated.rds")
-
-# get cnv files
-cnv_files <- 
-  list.files(
-    params$infercnv_cache_dir,
-    pattern = "HMM_CNV_predictions.HMMi3.leiden.hmm_mode-subclusters.Pnorm_0.5.pred_cnv_regions.dat",
-    recursive = T
-  )
-```
-
-```{r abort_if_no_infercnv, eval = length(cnv_files) == 0, include = length(cnv_files) == 0}
-# stop if none
-knitr::knit_exit()
+seu <- readRDS("seu.rds")
 ```
 
 ```{r annotate_malig}

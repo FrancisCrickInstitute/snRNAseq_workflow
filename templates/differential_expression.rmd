@@ -144,55 +144,9 @@ plot_markers <- function(markers, top_n = 10) {
 
 # Differential expression analysis
 
-```{r get_cnv_files}
+```{r load_seu}
 # load seu 
-seu <- readRDS("seu_annotated.rds")
-
-# get cnv files
-cnv_files <- 
-  list.files(
-    params$infercnv_cache_dir,
-    pattern = "HMM_CNV_predictions.HMMi3.leiden.hmm_mode-subclusters.Pnorm_0.5.pred_cnv_regions.dat",
-    recursive = T
-  )
-```
-
-```{r abort_if_no_infercnv, eval = length(cnv_files) == 0, include = length(cnv_files) == 0}
-# stop if none
-knitr::knit_exit()
-```
-
-```{r annotate_malig}
-# define malignancy by aneuploidy status
-aneuploid_cells <- 
-  cnv_files %>%
-  purrr::map(function(cnv_file_i) {
-    sample_i <- gsub("/.*", "", cnv_file_i)
-    readr::read_tsv(paste0(params$infercnv_cache_dir, cnv_file_i)) %>%
-      dplyr::mutate(sample = sample_i)
-  }) %>%
-  dplyr::bind_rows() %>%
-  dplyr::group_by(sample, cell_group_name) %>%
-  dplyr::summarise(aneuploid = any(c(1, 3) %in% state)) %>%
-  dplyr::filter(aneuploid)
-malignant_cells <-
-  aneuploid_cells %>%
-  dplyr::filter(cell_group_name %in% colnames(seu[, seu$label.reduced == "Epithelial_cells"]))
-
-# save
-saveRDS(aneuploid_cells, "aneuploid_cells.rds")
-saveRDS(malignant_cells, "malignant_cells.rds")
-
-# exclude epithelial samples in samples for which infercnv run was unsuccessful 
-# (malignant annotations not present)
-seu <- seu[, (seu$sample %in% gsub("/.*", "", cnv_files) |
-             seu$label.reduced != "Epithelial_cells")]
-
-# add aneuploid and malignant labels 
-seu$aneuploid <- 0
-seu@meta.data[aneuploid_cells$cell_group_name, "aneuploid"] <- 1
-seu$label.infercnv <- seu$label.reduced
-seu@meta.data[malignant_cells$cell_group_name, "label.infercnv"] <- "Malignant_cells"
+seu <- readRDS("seu.rds")
 ```
 
 ```{r find_markers}

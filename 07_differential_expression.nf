@@ -10,13 +10,13 @@ process diffexp {
   memory { 50.GB * task.attempt }
   cpus { 6 * task.attempt }
   time { 24.hour * task.attempt }
-  publishDir "${output_dir}",
+  publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/differential_expression/",
     mode: 'copy',
     pattern: "{*.rds,*.html}"
     
   input:
     path(rmd_file)
-    tuple val(patient), path(rds_file), val(infercnv_cache_dir), val(output_dir)
+    tuple val(patient), path(rds_file)
     
   output:
     path 'differential_expression.html'
@@ -31,8 +31,7 @@ process diffexp {
     rmarkdown::render(
       "${rmd_file}",
       params = list(
-        cache_dir = "${output_dir}/differential_expression_cache/",
-        infercnv_cache_dir = "${infercnv_cache_dir}"),
+        cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/differential_expression/differential_expression_cache/"),
       output_file = "differential_expression.html",
       output_dir = getwd()
     )
@@ -43,12 +42,8 @@ workflow {
   
   // get seu_annotated files
   Channel
-    .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/seurat_clustering/seu_annotated.rds")
-    .map { rds_file -> tuple(rds_file.toString().tokenize('/')[-4], rds_file)}
-    .map { patient, rds_file -> tuple(
-      patient, rds_file, 
-      "${params.output.dir}/by_patient_wo_organoids/"+patient+"/integrating/infercnv/infercnv_cache/",
-      "${params.output.dir}/by_patient_wo_organoids/"+patient+"/integrating/differential_expression/")}
+    .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/infercnv/seu.rds")
+    .map { rds_file -> tuple(rds_file.toString().tokenize('/')[-4], rds_file) }
     .set { ch_run }
   
   // differential expression

@@ -288,13 +288,25 @@ p <-
 p
 ```
 
-### Cluster markers
+### Final clustering resolution
+
+```{r final_clusters, eval = curr_params$clustering_resolution != F}
+seu$cluster <- seu@meta.data[, paste0("SCT_snn_res.", curr_params$clustering_resolution)]
+seu$cluster <- factor(seu$cluster, levels = paste(sort(as.integer(levels(seu$cluster)))))
+Seurat::Idents(seu) <- seu$cluster
+cluster_metadata <- xfun::cache_rds({
+  seu@meta.data
+}, file = "cluster_metadata.rds")
+
+p <- Seurat::DimPlot(seu)
+p
+```
+
+#### Final clustering resolution markers
 
 ```{r cluster_markers, eval = curr_params$clustering_resolution != F}
 cluster_markers <- xfun::cache_rds({
-  seu$cluster <- seu@meta.data[, paste0("SCT_snn_res.", curr_params$clustering_resolution)]
-  seu$cluster <- factor(seu$cluster, levels = paste(sort(as.integer(levels(seu$cluster)))))
-  Seurat::Idents(seu) <- seu$cluster
+  
   cluster_markers <-
     Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
   cluster_markers
@@ -368,7 +380,7 @@ seu <- xfun::cache_rds({
 
 ```{r singler_reduced_plot}
 p <-
-  Seurat::DimPlot(seu, label = T , repel = T, label.size = 3) &
+  Seurat::DimPlot(seu, label = T , repel = T, label.size = 3, raster = F) &
   ditto_colours
 p
 ```

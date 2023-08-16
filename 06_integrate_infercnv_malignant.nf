@@ -118,8 +118,7 @@ workflow {
   // integrate
   integrating(
     "${baseDir}/templates/integrating.rmd",
-    ch_run,
-    save_params.out.ch_params
+    ch_run
   )
   
   // cluster

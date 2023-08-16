@@ -17,7 +17,7 @@ sample metadata file: ${params.input.sample_metadata_file}
 output dir:           ${params.output.dir}
 """
 
-// get infercnv annots
+// merge infercnv samples
 process merge_infercnv {
   tag "${patient}"
   label 'process_medium'
@@ -29,7 +29,7 @@ process merge_infercnv {
     tuple val(patient), path(rds_file)
 
   output:
-    tuple val(patient), path('seu.rds')
+    tuple val(patient), path('seu.rds'), optional: true
 
   script:
     """

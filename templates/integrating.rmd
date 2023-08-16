@@ -5,7 +5,6 @@ geometry: margin=1in
 fontfamily: mathpazo
 fontsize: 11pt
 params:
-  params_file: false
   rds_file: false
   cache_dir: false
 output:
@@ -23,11 +22,6 @@ theme: lumen
 ```{r initialise, include = F}
 # pipe
 library(magrittr)
-
-# load params file
-curr_params <-
-  rjson::fromJSON(file = params$params_file) %>%
-  type.convert(as.is = T)
 
 # chunk setup
 knitr::opts_chunk$set(fig.align = "center",
