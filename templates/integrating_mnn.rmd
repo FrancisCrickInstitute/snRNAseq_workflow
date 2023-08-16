@@ -1,0 +1,122 @@
+---
+title: "snRNAseq workflow: integration"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+params:
+  rds_files: false
+  cache_dir: false
+output:
+  html_document:
+  keep_md: true
+code_folding: show
+toc: true
+toc_float: true
+toc_collapsed: true
+toc_depth: 4
+number_sections: true
+theme: lumen
+---
+
+```{r initialise, include = F}
+# pipe
+library(magrittr)
+
+# ggplot presets
+ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_update(legend.text = ggplot2::element_text(size = 7))
+ditto_colours <- list(ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "white"),
+                      ggplot2::scale_colour_manual(values = dittoSeq::dittoColors(), na.value = "white"))
+
+# chunk setup
+knitr::opts_chunk$set(fig.align = "center",
+                      dpi = 300,
+                      cache.path = params$cache_dir)
+```
+
+```{r load}
+# read files
+seu_ls <-
+  strsplit(params$rds_files , ",")[[1]] %>%
+  lapply(readRDS)
+
+# remove objects containing <= 5 cells
+seu_ls <- seu_ls[unlist(lapply(seu_ls, ncol)) > 5]
+```
+
+```{r combine}
+if (length(seu_ls) > 1) { 
+  seu <- Reduce(merge, seu_ls) 
+  redu <- "mnn"
+} else { 
+  seu <- seu_ls[[1]] 
+  redu <- "pca"
+} 
+```
+
+```{r hvgs}
+seu <- xfun::cache_rds({
+  seu <- Seurat::NormalizeData(seu)
+  seu <- Seurat::FindVariableFeatures(seu, selection.method = "vst", nfeatures = 2000)
+  seu
+}, file = "seu_hvgs.rds")
+```
+
+```{r integrate}
+seu <- xfun::cache_rds({
+  if (dplyr::n_distinct(seu$sample) > 1) {
+    seu <- SeuratWrappers::RunFastMNN(object.list = Seurat::SplitObject(seu, split.by = "sample"))
+  } else {
+    seu <- Seurat::SCTransform(seu)
+    seu <- Seurat::RunPCA(seu, npcs = ifelse(ncol(seu) <= 50, ncol(seu) - 1, 50))
+  }
+  seu
+}, file = "seu_mnn.rds")
+```
+
+```{r cluster}
+seu <- xfun::cache_rds({
+  seu <- Seurat::RunUMAP(seu, reduction = redu, dims = 1:30)
+  seu <- Seurat::FindNeighbors(seu, reduction = redu, dims = 1:30)
+  seu <- Seurat::FindClusters(seu, reduction = redu, resolution = 0.3)
+  seu
+}, file = "seu_clustered.rds")
+```
+
+```{r cluster_markers}
+markers <- xfun::cache_rds({
+  markers <- Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+  markers
+}, file = "markers.rds") 
+```
+
+```{r save}
+# save
+saveRDS(seu, "seu.rds")
+```
+
+```{r sample_umap}
+p <- Seurat::DimPlot(seu, group.by = "sample", raster = F) +
+  ditto_colours +
+  ggplot2::coord_fixed()
+p
+```
+
+```{r cluster_umap}
+p <- Seurat::DimPlot(seu, raster = F) +
+  ditto_colours +
+  ggplot2::coord_fixed()
+p
+```
+
+```{r plot_cluster_markers}
+top10 <-
+  markers %>%
+  dplyr::group_by(cluster) %>%
+  dplyr::top_n(n = 10, wt = avg_log2FC) 
+p <- 
+  Seurat::DoHeatmap(seu, features = top10$gene) +
+  Seurat::NoLegend()
+p
+```
