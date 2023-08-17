@@ -42,7 +42,8 @@ process integrating_mnn {
       "${rmd_file}",
       params = list(
         rds_files = "${rds_files.join(',')}",
-        cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating_mnn/integrating_mnn_cache/"),
+        cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating_mnn/integrating_mnn_cache/",
+        malignancy_score_file = "${params.annotate.malignancy_score_file}"),
       output_file = "integrating_mnn.html",
       output_dir = getwd()
     )
