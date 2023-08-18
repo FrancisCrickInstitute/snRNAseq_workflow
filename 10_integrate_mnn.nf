@@ -20,7 +20,7 @@ output dir:           ${params.output.dir}
 // integrate with mnn
 process integrating_mnn {
   tag "${patient}"
-  label 'process_high'
+  label 'process_medium'
   
   publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating_mnn/",
     mode: 'copy',
@@ -28,7 +28,7 @@ process integrating_mnn {
 
   input:
     path rmd_file
-    tuple val(patient), path(rds_files, stageAs: "seu??.rds")
+    tuple val(patient), path(rds_file)
 
   output:
     path 'seu.rds'
@@ -41,7 +41,6 @@ process integrating_mnn {
     rmarkdown::render(
       "${rmd_file}",
       params = list(
-        rds_files = "${rds_files.join(',')}",
         cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating_mnn/integrating_mnn_cache/",
         infercnv_cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/infercnv_cache/",
         singler_file = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/seurat_clustering/seu_annotated.rds",
@@ -54,18 +53,15 @@ process integrating_mnn {
 
 workflow {
 
-  // by patient
+  // by patient, wo organoids
   Channel
-    .fromPath("${params.output.dir}/by_sample/*/filtering/seu.rds")
-    .filter{ !(it =~ /organoid/) }
-    .map { rds_file -> tuple(rds_file.toString().tokenize('/')[-3].split("_")[0], rds_file) }
-    .groupTuple()    
+    .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/seurat_clustering/seu_annotated.rds")
+    .map { rds_file -> tuple(rds_file.toString().tokenize('/')[-4].split("_")[0], rds_file) }
     .set { ch_run }
     
-  // all malignant cells
+  // all malignant cells, wo organoids
   Channel
-    .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/infercnv/infercnv_cache/*/seu_infercnv_malignant.rds")
-    .collect()
+    .fromPath("${params.output.dir}/by_patient_wo_organoids/malignant/clustering/seu_annotated.rds")
     .map { rds_file -> tuple('malignant', rds_file) }
     .concat(ch_run)
     .set { ch_run }
