@@ -43,6 +43,8 @@ process integrating_mnn {
       params = list(
         rds_files = "${rds_files.join(',')}",
         cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating_mnn/integrating_mnn_cache/",
+        infercnv_cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/infercnv_cache/",
+        singler_file = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/seurat_clustering/seu_annotated.rds",
         malignancy_score_file = "${params.annotate.malignancy_score_file}"),
       output_file = "integrating_mnn.html",
       output_dir = getwd()
