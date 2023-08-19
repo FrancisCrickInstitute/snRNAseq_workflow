@@ -108,57 +108,13 @@ seu <- xfun::cache_rds({
   seu <- Seurat::RunUMAP(seu, reduction = reduction, dims = 1:30)
   seu <- Seurat::FindNeighbors(seu, reduction = reduction, dims = 1:30)
   seu <- Seurat::FindClusters(seu, reduction = reduction, resolution = 0.3)
-}, file = "seu_clustered.rds")
-```
-
-```{r hvgs}
-seu <- xfun::cache_rds({
-  seu <- Seurat::NormalizeData(seu)
-  seu <- Seurat::FindVariableFeatures(seu, selection.method = "vst", nfeatures = 2000)
-  seu
-}, file = "seu_hvgs.rds")
-```
-
-```{r hvgs_plot}
-p <- Seurat::VariableFeaturePlot(seu)
-p <- Seurat::LabelPoints(plot = p, points = head(Seurat::VariableFeatures(seu), 10), repel = TRUE)
-p
-```
-
-```{r integrate}
-seu <- xfun::cache_rds({
-  if (dplyr::n_distinct(seu$sample) > 1) {
-    SeuratWrappers::RunFastMNN(object.list = Seurat::SplitObject(seu, split.by = "sample"))
-  } else {
-    Seurat::ScaleData(seu)
-  }
-}, file = "seu_mnn.rds")
-
-if (dplyr::n_distinct(seu$sample) > 1) {
-  redu <- "mnn"
-} else {
-  redu <- "pca"
-}
-```
-
-## UMAP and clustering
-
-```{r cluster}
-seu <- xfun::cache_rds({
-  seu <- Seurat::RunPCA(seu, npcs = ifelse(ncol(seu) <= 50, ncol(seu) - 1, 50))
-  seu <- Seurat::RunUMAP(seu, reduction = redu, dims = 1:30)
-  seu <- Seurat::FindNeighbors(seu, reduction = redu, dims = 1:30)
-  seu <- Seurat::FindClusters(seu, reduction = redu, resolution = 0.3)
   seu
 }, file = "seu_clustered.rds")
+
 cluster_col <- paste0(Seurat::DefaultAssay(seu), "_snn_res.0.3")
 seu@meta.data[, cluster_col] <-
   factor(seu@meta.data[, cluster_col], 
          levels = as.character(sort(unique(as.numeric(seu@meta.data[, cluster_col]) - 1))))
-```
-
-```{r dimheatmap}
-Seurat::DimHeatmap(seu, dims = 1, cells = 500, balanced = TRUE)
 ```
 
 ```{r cluster_markers}
@@ -169,6 +125,26 @@ markers <- xfun::cache_rds({
 }, file = "markers.rds") 
 ```
 
+```{r top_cluster_markers}
+top5 <-
+  markers %>%
+  dplyr::group_by(cluster) %>%
+  dplyr::top_n(n = 5, wt = avg_log2FC) 
+knitr::kable(top5, align = "c")
+```
+
+## Plots
+
+```{r hvgs_plot, eval = F}
+p <- Seurat::VariableFeaturePlot(seu, assay = "RNA")
+p <- Seurat::LabelPoints(plot = p, points = head(Seurat::VariableFeatures(seu), 10), repel = TRUE)
+p
+```
+
+```{r dimheatmap}
+Seurat::DimHeatmap(seu, dims = 1, cells = 500, balanced = TRUE)
+```
+
 ```{r sample_umap}
 dittoSeq::dittoDimPlot(seu, "sample") +
   ggplot2::coord_fixed()
@@ -177,14 +153,6 @@ dittoSeq::dittoDimPlot(seu, "sample") +
 ```{r cluster_umap}
 dittoSeq::dittoDimPlot(seu, cluster_col) +
   ggplot2::coord_fixed()
-```
-
-```{r top_cluster_markers}
-top5 <-
-  markers %>%
-  dplyr::group_by(cluster) %>%
-  dplyr::top_n(n = 5, wt = avg_log2FC) 
-knitr::kable(top5, align = "c")
 ```
 
 ```{r marker_heatmap, fig.height = 10}
