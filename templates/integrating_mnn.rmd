@@ -53,16 +53,66 @@ knitr::opts_chunk$set(fig.align = "center",
                       cache.path = params$cache_dir)
 ```
 
+## Load file
+
+Load Seurat object and clean out all non-RNA assays from previous analyses.
+
 ```{r load}
-# read files
 seu <- readRDS("seu_annotated.rds")
+seu <- Seurat::DietSeurat(seu, assays = "RNA")
+```
+
+```{r get_groupings, include = F, echo = F}
+# sample_metadata columns with >1 value 
+groupings <- 
+  seu@meta.data %>%
+  dplyr::select(
+    dplyr::any_of(c(
+      "sample", "patient_id", "timepoint", "sample_site",
+      "response", "gender", "treatment",
+      "label.reduced"))) %>%
+  dplyr::select(sample, where(~ dplyr::n_distinct(.x) > 1)) %>%
+  colnames()
 ```
 
 ## Integration
 
+```{r pipeline}
+seu <- xfun::cache_rds({
+  seu <- Seurat::NormalizeData(seu)
+  seu <- Seurat::FindVariableFeatures(seu, selection.method = "vst", nfeatures = 2000)
+  seu
+}, file = "seu_hvgs.rds")
+
+seu <- xfun::cache_rds({
+  seu <- Seurat::ScaleData(seu)
+  seu <- Seurat::RunPCA(seu, npcs = ifelse(ncol(seu) <= 50, ncol(seu) - 1, 50))
+  seu
+}, file = "seu_pca.rds")
+
+if (dplyr::n_distinct(seu$sample) > 1) {
+  reduction <- "pca" 
+} else {
+  reduction <- "mnn"
+}
+
+seu <- xfun::cache_rds({
+  if (reduction == "mnn") {
+    seu <- SeuratWrappers::RunFastMNN(object.list = Seurat::SplitObject(seu, split.by = "sample"))
+    Seurat::DefaultAssay(seu) <- "mnn.reconstructed"
+  } 
+  seu
+}, file = "seu_mnn.rds")
+
+seu <- xfun::cache_rds({
+  seu <- Seurat::RunUMAP(seu, reduction = reduction, dims = 1:30)
+  seu <- Seurat::FindNeighbors(seu, reduction = reduction, dims = 1:30)
+  seu <- Seurat::FindClusters(seu, reduction = reduction, resolution = 0.3)
+}, file = "seu_clustered.rds")
+```
+
 ```{r hvgs}
 seu <- xfun::cache_rds({
-  Seurat::DefaultAssay(seu) <- "RNA"
   seu <- Seurat::NormalizeData(seu)
   seu <- Seurat::FindVariableFeatures(seu, selection.method = "vst", nfeatures = 2000)
   seu
@@ -83,46 +133,50 @@ seu <- xfun::cache_rds({
     Seurat::ScaleData(seu)
   }
 }, file = "seu_mnn.rds")
+
+if (dplyr::n_distinct(seu$sample) > 1) {
+  redu <- "mnn"
+} else {
+  redu <- "pca"
+}
 ```
 
 ## UMAP and clustering
 
 ```{r cluster}
 seu <- xfun::cache_rds({
-  seu <- Seurat::RunPCA(seu, features = Seurat::VariableFeatures(seu))
-  seu <- Seurat::RunUMAP(seu, dims = 1:30)
-  seu <- Seurat::FindNeighbors(seu, dims = 1:30)
-  seu <- Seurat::FindClusters(seu, resolution = 0.3)
+  seu <- Seurat::RunPCA(seu, npcs = ifelse(ncol(seu) <= 50, ncol(seu) - 1, 50))
+  seu <- Seurat::RunUMAP(seu, reduction = redu, dims = 1:30)
+  seu <- Seurat::FindNeighbors(seu, reduction = redu, dims = 1:30)
+  seu <- Seurat::FindClusters(seu, reduction = redu, resolution = 0.3)
   seu
 }, file = "seu_clustered.rds")
-cluster_col <- colnames(seu@meta.data)[grepl("snn_res.0.3", colnames(seu@meta.data))]
+cluster_col <- paste0(Seurat::DefaultAssay(seu), "_snn_res.0.3")
+seu@meta.data[, cluster_col] <-
+  factor(seu@meta.data[, cluster_col], 
+         levels = as.character(sort(unique(as.numeric(seu@meta.data[, cluster_col]) - 1))))
 ```
 
-```{f dimheatmap}
+```{r dimheatmap}
 Seurat::DimHeatmap(seu, dims = 1, cells = 500, balanced = TRUE)
 ```
 
 ```{r cluster_markers}
 markers <- xfun::cache_rds({
-  markers <- Seurat::FindAllMarkers(seu, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+  markers <- 
+    Seurat::FindAllMarkers(seu, assay = "RNA", only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
   markers
 }, file = "markers.rds") 
 ```
 
 ```{r sample_umap}
-p <- 
-  Seurat::DimPlot(seu, group.by = "sample", raster = F) +
-  ditto_colours +
+dittoSeq::dittoDimPlot(seu, "sample") +
   ggplot2::coord_fixed()
-p
 ```
 
 ```{r cluster_umap}
-p <- 
-  Seurat::DimPlot(seu, raster = F) +
-  ditto_colours +
+dittoSeq::dittoDimPlot(seu, cluster_col) +
   ggplot2::coord_fixed()
-p
 ```
 
 ```{r top_cluster_markers}
@@ -133,146 +187,121 @@ top5 <-
 knitr::kable(top5, align = "c")
 ```
 
-```{r marker_heatmap}
+```{r marker_heatmap, fig.height = 10}
 dittoSeq::dittoHeatmap(
-  seu, top5$gene, order.by = cluster_col, annot.by = c(cluster_col, "sample")
+  seu, top5$gene, assay = "RNA",
+  order.by = cluster_col, 
+  annot.by = unique(c(cluster_col, "sample", groupings)),
+  cluster_rows = F
 )
 ```
 
-## SingleR annotations
+## UMAP vs groupings
 
-```{r get_infercnv_annots, eval = F}
-#eval = file.exists(params$infercnv_annots_file) == T
-infercnv_meta <- 
-  readRDS(params$infercnv_annots_file)@meta.data 
-seu$label.infercnv <- infercnv_meta$label.infercnv
-```
-
-```{r celltype_annots_plot, eval = T}
-Seurat::DimPlot(seu, group.by = "label.reduced", raster = F)
-```
-
-```{r celltype_annots_split_plot, eval = F}
-Seurat::DimPlot(seu, split.by = "label.infercnv", raster = F)
-```
-
-## Groupings vs reductions
-
-```{r get_groupings, include = F, echo = F}
-# sample_metadata columns with >1 value 
-groupings <- 
-  seu@meta.data %>%
-  dplyr::select(
-    dplyr::any_of(c(
-      "sample", "patient_id", "timepoint", "sample_site",
-      "response", "gender", "treatment", "label.infercnv"))) %>%
-  dplyr::select(where(~ dplyr::n_distinct(.x) > 1)) %>%
-  colnames()
-redus <- c("UMAP")
-```
-
-```{r groupings_vs_reductions_plot, echo = F, fig.dim = get_fig_dims(n_plots = 2 * length(groupings), n_cols = 2), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings", eval = (nrow(seu@misc$sample_metadata) > 1) == T}
-# plot all groupings vs all reductions
-groupings_vs_reductions <- list()
-purrr::walk(groupings, function(grouping) {
-  purrr::walk(redus, function(redu) {
-    if (dplyr::n_distinct(seu@meta.data[, grouping]) > 1) {
-      title <- paste0(redu, "_vs_", grouping)
-      p <- 
-        Seurat::DimPlot(
-          seu, 
-          group.by = grouping, 
-          reduction = tolower(redu),
-          cols = dittoSeq::dittoColors(),
-          raster = F
-        )
-      groupings_vs_reductions[[paste0(grouping, "_legend")]] <<-
-        lemon::g_legend(p)
-      groupings_vs_reductions[[title]] <<- 
-        p & Seurat::NoLegend()
-    }
-  })
-})
-# create grob layout
-p <-
-  gridExtra::marrangeGrob(
-    grobs = groupings_vs_reductions,
-    nrow = length(groupings),
-    ncol = length(redus) + 1,
-    layout_matrix = matrix(
-      1:length(groupings_vs_reductions),
-      length(groupings),
-      length(redus) + 1,
-      TRUE
-    ),
-    top = NULL
+```{r groupings_vs_umap_plot, echo = F, fig.dim = get_fig_dims(n_plots = 1.5 * length(groupings), n_cols = 1.5), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings", eval = length(groupings) > 0}
+# plot all groupings 
+purrr::map(groupings, function(grouping) {
+  Seurat::DimPlot(
+    seu, 
+    group.by = grouping, 
+    reduction = "umap",
+    cols = dittoSeq::dittoColors(),
+    raster = F
   )
-p
+}) %>%
+  patchwork::wrap_plots(ncol = 1)
 ```
 
 ## Groupings vs clusters
 
 ```{r clusters_vs_groupings, eval = length(groupings) > 0, fig.height = (3 * length(groupings) + 1) }
-p_dat <-
-  seu@meta.data %>%
-  dplyr::select(cluster = dplyr::all_of(cluster_col), dplyr::any_of(groupings)) %>%
+p_dat <- seu@meta.data %>%
+  dplyr::select(cluster = dplyr::matches(cluster_col), dplyr::any_of(groupings)) %>%
   tidyr::pivot_longer(-cluster)
 p <-
   by(data = p_dat, INDICES = p_dat$name, FUN = function(m) {
     m <- droplevels(m)
-    m <- ggplot2::ggplot(m, ggplot2::aes(x = cluster, fill = value)) + 
+    m <- 
+      ggplot2::ggplot(m, ggplot2::aes(x = cluster, fill = value)) + 
       ggplot2::geom_bar(position = "fill") +
       ggplot2::theme_classic() +
-      ggplot2::scale_fill_manual(values = dittoSeq::dittoColors()) 
+      ggplot2::scale_fill_manual(name = unique(m$name), values = dittoSeq::dittoColors())
     m
   })
 do.call(gridExtra::grid.arrange, c(p, ncol = 1))
 ```
 
-```{r samples_vs_clusters, eval = F, fig.height = 10}
-p_dat <-
-  seu@meta.data %>%
-  dplyr::select(cluster = dplyr::all_of(cluster_col), patient_id, sample) %>%
-  tidyr::pivot_longer(-cluster)
-p <-
-  by(data = p_dat, INDICES = p_dat$name, FUN = function(m) {
-    m <- droplevels(m)
-    m <- ggplot2::ggplot(m, ggplot2::aes(x = cluster, fill = value)) + 
-      ggplot2::geom_bar(position = "fill") +
-      ggplot2::theme_classic() +
-      ggplot2::scale_fill_manual(values = dittoSeq::dittoColors()) 
-    m
-  })
-do.call(gridExtra::grid.arrange, p)
+```{r samples_vs_clusters, eval = T}
+seu@meta.data %>%
+  dplyr::select(cluster = dplyr::matches(cluster_col), sample) %>%
+  ggplot2::ggplot(ggplot2::aes(x = sample, fill = cluster)) +
+  ggplot2::geom_bar(position = "fill") +
+  ggplot2::theme_classic() +
+  ggplot2::scale_fill_manual(values = dittoSeq::dittoColors()) 
+```
+
+## SingleR annotations
+
+```{r celltype_annots_plot}
+dittoSeq::dittoDimPlot(seu, "label.reduced") +
+  ggplot2::coord_fixed()
+```
+
+## inferCNV annotations
+
+```{r infercnv_annots}
+seu <- xfun::cache_rds({
+  # get cnv files
+  cnv_files <- 
+    list.files(
+      params$infercnv_cache_dir,
+      pattern = "HMM_CNV_predictions.HMMi3.leiden.hmm_mode-subclusters.Pnorm_0.5.pred_cnv_regions.dat",
+      recursive = T
+    ) %>%
+    setNames(gsub("/.*", "", .))
+  
+  # continue if cnv files
+  if (length(cnv_files) > 0) {
+    aneuploid_cells <- 
+      cnv_files %>%
+      names() %>% 
+      purrr::map(function(sample_i) {
+        readr::read_tsv(paste0(params$infercnv_cache_dir, cnv_files[[sample_i]])) %>%
+          dplyr::mutate(sample = sample_i)
+      }) %>%
+      dplyr::bind_rows() %>%
+      dplyr::group_by(sample, cell_group_name) %>%
+      dplyr::summarise(aneuploid = any(c(1, 3) %in% state)) %>%
+      dplyr::filter(aneuploid)
+    malignant_cells <-
+      aneuploid_cells %>%
+      dplyr::filter(cell_group_name %in% colnames(seu[, seu$label.reduced == "Epithelial_cells"]))
+    
+    # set infercnv labels
+    # exclude epithelial samples in samples for which infercnv run was unsuccessful 
+    seu$label.infercnv <- seu$label.reduced
+    seu@meta.data[malignant_cells$cell_group_name, "label.infercnv"] <- "Malignant_cells"
+    seu@meta.data[seu$label.reduced == "Epithelial_cells" & !(seu$sample %in% names(cnv_files)), "label.infercnv"] <- NA
+    seu$malignant <- 
+      ifelse(seu$label.infercnv == "Malignant_cells", "malignant", "nonmalignant")
+  } else {
+    seu$label.infercnv <- NA
+  }
+  seu
+}, file = "seu_infercnv.rds")
+```
+
+```{r infercnv_annots_plot}
+dittoSeq::dittoDimPlot(seu, "label.infercnv", size = 0.5) +
+  ggplot2::coord_fixed()
+```
+
+```{r malignant_vs_nonmalignant_plot}
+dittoSeq::dittoDimPlot(seu, "label.infercnv", split.by = "malignant") +
+  ggplot2::coord_fixed()
 ```
 
 ## Malignancy and differentiation scores (from Zhang et al., 2021)
-
-```{r malig_and_diff_scores}
-# # switch default assay to RNA
-# Seurat::DefaultAssay(seu) <- "RNA"
-# malignancy_genes <-
-#   readr::read_tsv(params$malignancy_score_file) %>%
-#   dplyr::transmute(gene, 
-#                    population = dplyr::case_when(logFC > 0 ~ "malignant",
-#                                                  TRUE ~ "nonmalignant")) %>%
-#   {split(.$gene, .$population)} %>%
-#   {c(., list("differentiation" = c("KRT20", "PHGR1", "MDK", "CHDR2", "RARRES3", "GPA33", "SLC5A1", "MUC13")))}
-# seu <- 
-#   Seurat::AddModuleScore(
-#     seu, 
-#     assay = "RNA", 
-#     features = malignancy_genes, 
-#     name = names(malignancy_genes)
-#   )
-# 
-# # malignancy score = malignant score - nonmalignant score
-# seu$malignancy <- seu$malignant1 - seu$nonmalignant2
-# 
-# # differentiation score
-# seu$differentiation <- seu$differentiation3
-# seu$differentiation3 <- NULL
-```
 
 ```{r malig_and_diff_plot, echo = F, fig.dim = c(10, 5)}
 Seurat::FeaturePlot(seu, features = c("malignancy", "differentiation"), raster = F) & 
