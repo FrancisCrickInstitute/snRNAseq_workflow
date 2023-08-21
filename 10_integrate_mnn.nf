@@ -43,7 +43,6 @@ process integrating_mnn {
       params = list(
         cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating_mnn/integrating_mnn_cache/",
         infercnv_cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/infercnv_cache/",
-        singler_file = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/seurat_clustering/seu_annotated.rds",
         malignancy_score_file = "${params.annotate.malignancy_score_file}"),
       output_file = "integrating_mnn.html",
       output_dir = getwd()
@@ -63,6 +62,14 @@ workflow {
   Channel
     .fromPath("${params.output.dir}/by_patient_wo_organoids/malignant/clustering/seu_annotated.rds")
     .map { rds_file -> tuple('malignant', rds_file) }
+    .concat(ch_run)
+    .set { ch_run }
+    
+  // all cells
+  Channel
+    .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/seurat_clustering/seu_annotated.rds")
+    .map { rds_file -> tuple('all', rds_file) }
+    .groupTuple()
     .concat(ch_run)
     .set { ch_run }
   

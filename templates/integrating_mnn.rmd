@@ -9,7 +9,6 @@ params:
   cache_dir: false
   malignancy_score_file: false
   infercnv_cache_dir: false
-  singler_file: false
 output:
   html_document:
   keep_md: true
@@ -31,6 +30,38 @@ ggplot2::theme_set(ggplot2::theme_bw())
 ggplot2::theme_update(legend.text = ggplot2::element_text(size = 7))
 ditto_colours <- list(ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "white"),
                       ggplot2::scale_colour_manual(values = dittoSeq::dittoColors(), na.value = "white"))
+
+# celltype colours
+custom_colours_ls <- list(
+  label.infercnv = c(
+    "Malignant_cells" = "black",
+    "Endothelial_cells" = "#AD7700",
+    "Epithelial_cells" = "#ffdcc4",
+    "Fibroblasts" = "#CC79A7",
+    "Smooth_muscle_cells" = "#fae64d",
+    "Tissue_stem_cells" = "#D55E00",
+    "Stromal_cells" = "#ffc02e",
+    # immune
+    "NK_cells" = "#0072B2",
+    "T_cells" = "#4ea8ad",
+    "B_cells" = "#009E73",
+    "Macrophage" = "#00F6B3",
+    "Myeloid_cells" = "#ce95fc",
+    "Erythrocytes" = "#d45353",
+    # other
+    "Others" = "#bfbfbf"),
+  response = c(
+    "Responder" = "lightgreen",
+    "Partial Responder" = "#ffe97d",
+    "Non-responder" = "#ffb24d",
+    "Progressor" = "#ff9c9c"),
+  gender = c("F" = "#ffb3fc", "M" = "#7eaaed")
+)
+custom_colours_ls$label.reduced <- custom_colours_ls$label.infercnv
+
+# all custom colours
+custom_colours <- list(ggplot2::scale_fill_manual(values = unlist(purrr::flatten(custom_colours_ls)), na.value = "white"),
+                      ggplot2::scale_colour_manual(values = unlist(purrr::flatten(custom_colours_ls)), na.value = "white"))
 
 # functions
 get_fig_dims <- function(n_plots, n_cols = NULL, grid_width = 10, height_to_width_ratio = 1) {
@@ -60,6 +91,7 @@ Load Seurat object and clean out all non-RNA assays from previous analyses.
 ```{r load}
 seu <- readRDS("seu_annotated.rds")
 seu <- Seurat::DietSeurat(seu, assays = "RNA")
+seu$label.reduced <- factor(seu$label.reduced, levels = names(custom_colours_ls$label.reduced))
 ```
 
 ```{r get_groupings, include = F, echo = F}
@@ -77,25 +109,16 @@ groupings <-
 
 ## Integration
 
-```{r pipeline}
+```{r hvgs}
 seu <- xfun::cache_rds({
   seu <- Seurat::NormalizeData(seu)
   seu <- Seurat::FindVariableFeatures(seu, selection.method = "vst", nfeatures = 2000)
   seu
 }, file = "seu_hvgs.rds")
+```
 
-seu <- xfun::cache_rds({
-  seu <- Seurat::ScaleData(seu)
-  seu <- Seurat::RunPCA(seu, npcs = ifelse(ncol(seu) <= 50, ncol(seu) - 1, 50))
-  seu
-}, file = "seu_pca.rds")
-
-if (dplyr::n_distinct(seu$sample) > 1) {
-  reduction <- "pca" 
-} else {
-  reduction <- "mnn"
-}
-
+```{r integrate}
+reduction <- ifelse(dplyr::n_distinct(seu$sample) > 1, "mnn", "pca")
 seu <- xfun::cache_rds({
   if (reduction == "mnn") {
     seu <- SeuratWrappers::RunFastMNN(object.list = Seurat::SplitObject(seu, split.by = "sample"))
@@ -103,15 +126,25 @@ seu <- xfun::cache_rds({
   } 
   seu
 }, file = "seu_mnn.rds")
+```
 
+```{r pca}
+seu <- xfun::cache_rds({
+  seu <- Seurat::ScaleData(seu)
+  seu <- Seurat::FindVariableFeatures(seu, selection.method = "vst", nfeatures = 2000)
+  seu <- Seurat::RunPCA(seu, npcs = ifelse(ncol(seu) <= 50, ncol(seu) - 1, 50))
+  seu
+}, file = "seu_pca.rds")
+```
+
+```{r clustering}
 seu <- xfun::cache_rds({
   seu <- Seurat::RunUMAP(seu, reduction = reduction, dims = 1:30)
   seu <- Seurat::FindNeighbors(seu, reduction = reduction, dims = 1:30)
-  seu <- Seurat::FindClusters(seu, reduction = reduction, resolution = 0.3)
+  seu <- Seurat::FindClusters(seu, resolution = 0.3, graph.name = "RNA_snn")
   seu
 }, file = "seu_clustered.rds")
-
-cluster_col <- paste0(Seurat::DefaultAssay(seu), "_snn_res.0.3")
+cluster_col <- "RNA_snn_res.0.3"
 seu@meta.data[, cluster_col] <-
   factor(seu@meta.data[, cluster_col], 
          levels = as.character(sort(unique(as.numeric(seu@meta.data[, cluster_col]) - 1))))
@@ -147,15 +180,16 @@ Seurat::DimHeatmap(seu, dims = 1, cells = 500, balanced = TRUE)
 
 ```{r sample_umap}
 dittoSeq::dittoDimPlot(seu, "sample") +
-  ggplot2::coord_fixed()
+  ggplot2::theme(aspect.ratio = 1)
 ```
 
 ```{r cluster_umap}
-dittoSeq::dittoDimPlot(seu, cluster_col) +
-  ggplot2::coord_fixed()
+dittoSeq::dittoDimPlot(
+  seu, cluster_col, do.label = T, labels.repel = F, labels.size = 4) +
+  ggplot2::theme(aspect.ratio = 1)
 ```
 
-```{r marker_heatmap, fig.height = 10}
+```{r marker_heatmap, fig.height = dplyr::n_distinct(seu@meta.data[, cluster_col])}
 dittoSeq::dittoHeatmap(
   seu, top5$gene, assay = "RNA",
   order.by = cluster_col, 
@@ -168,51 +202,80 @@ dittoSeq::dittoHeatmap(
 
 ```{r groupings_vs_umap_plot, echo = F, fig.dim = get_fig_dims(n_plots = 1.5 * length(groupings), n_cols = 1.5), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings", eval = length(groupings) > 0}
 # plot all groupings 
-purrr::map(groupings, function(grouping) {
-  Seurat::DimPlot(
-    seu, 
-    group.by = grouping, 
-    reduction = "umap",
-    cols = dittoSeq::dittoColors(),
-    raster = F
-  )
-}) %>%
+p <-
+  purrr::map(groupings, function(grouping) {
+    p <-
+      Seurat::DimPlot(
+        seu, 
+        group.by = grouping, 
+        reduction = "umap",
+        cols = dittoSeq::dittoColors(),
+        raster = F) & 
+      ggplot2::theme(aspect.ratio = 1)
+    if (grouping %in% names(custom_colours_ls)) {
+      p <- p + custom_colours
+    }
+    p
+  }) %>%
+  setNames(groupings)
+p %>%
   patchwork::wrap_plots(ncol = 1)
 ```
 
 ## Groupings vs clusters
 
 ```{r clusters_vs_groupings, eval = length(groupings) > 0, fig.height = (3 * length(groupings) + 1) }
-p_dat <- seu@meta.data %>%
+p_dat <- 
+  seu@meta.data %>%
   dplyr::select(cluster = dplyr::matches(cluster_col), dplyr::any_of(groupings)) %>%
-  tidyr::pivot_longer(-cluster)
-p <-
-  by(data = p_dat, INDICES = p_dat$name, FUN = function(m) {
-    m <- droplevels(m)
-    m <- 
-      ggplot2::ggplot(m, ggplot2::aes(x = cluster, fill = value)) + 
+  tidyr::pivot_longer(-cluster) %>%
+  {split(., .$name)} 
+p_dat %>%
+  names() %>%
+  purrr::map(function(grouping) {
+    p <-
+      p_dat[[grouping]] %>%
+      ggplot2::ggplot(ggplot2::aes(x = cluster, fill = value)) +
       ggplot2::geom_bar(position = "fill") +
       ggplot2::theme_classic() +
-      ggplot2::scale_fill_manual(name = unique(m$name), values = dittoSeq::dittoColors())
-    m
-  })
-do.call(gridExtra::grid.arrange, c(p, ncol = 1))
+      ggplot2::scale_fill_manual(name = grouping, values = dittoSeq::dittoColors())
+    if (grouping %in% names(custom_colours_ls)) {
+      p <- p + custom_colours
+    }
+    p
+  }) %>%
+  patchwork::wrap_plots(ncol = 1)
 ```
 
-```{r samples_vs_clusters, eval = T}
+```{r samples_vs_clusters}
 seu@meta.data %>%
-  dplyr::select(cluster = dplyr::matches(cluster_col), sample) %>%
-  ggplot2::ggplot(ggplot2::aes(x = sample, fill = cluster)) +
+  dplyr::select(cluster = dplyr::matches(cluster_col), sample, patient_id) %>%
+  tidyr::pivot_longer(-cluster) %>%
+  ggplot2::ggplot(ggplot2::aes(x = value, fill = cluster)) +
   ggplot2::geom_bar(position = "fill") +
+  ggplot2::facet_grid(~ name, scales = "free_x", space = "free_x") +
   ggplot2::theme_classic() +
-  ggplot2::scale_fill_manual(values = dittoSeq::dittoColors()) 
+  ggplot2::scale_fill_manual(values = dittoSeq::dittoColors()) +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 270, vjust = 0.5),
+                 axis.title.x = ggplot2::element_blank()) 
 ```
 
 ## SingleR annotations
 
 ```{r celltype_annots_plot}
 dittoSeq::dittoDimPlot(seu, "label.reduced") +
-  ggplot2::coord_fixed()
+  ggplot2::theme(aspect.ratio = 1) +
+  custom_colours
+```
+
+```{r celltype_annots_void_plot, fig.dim = c(10, 10)}
+dittoSeq::dittoDimPlot(seu, "label.reduced") +
+  ggplot2::ggtitle(
+    label = paste("patient", paste(unique(seu$patient_id), collapse = ", "))) +
+  ggplot2::theme_void() +
+  ggplot2::theme(aspect.ratio = 1, legend.position = "none",
+                 title = ggplot2::element_text(size = 20)) +
+  custom_colours 
 ```
 
 ## inferCNV annotations
@@ -255,35 +318,72 @@ seu <- xfun::cache_rds({
   } else {
     seu$label.infercnv <- NA
   }
+  seu$label.infercnv <- factor(seu$label.infercnv, levels = names(custom_colours_ls$label.infercnv))
+  
   seu
 }, file = "seu_infercnv.rds")
 ```
 
-```{r infercnv_annots_plot}
-dittoSeq::dittoDimPlot(seu, "label.infercnv", size = 0.5) +
-  ggplot2::coord_fixed()
+```{r infercnv_annots_plot, eval = all(is.na(seu$label.infercnv)) == F}
+dittoSeq::dittoDimPlot(seu, "label.infercnv") +
+  ggplot2::theme(aspect.ratio = 1) +
+  custom_colours
 ```
 
-```{r malignant_vs_nonmalignant_plot}
-dittoSeq::dittoDimPlot(seu, "label.infercnv", split.by = "malignant") +
-  ggplot2::coord_fixed()
+```{r infercnv_annots_void_plot, fig.dim = c(10, 10), eval = all(is.na(seu$label.infercnv)) == F}
+dittoSeq::dittoDimPlot(seu, "label.infercnv", size = 0.8) +
+  ggplot2::ggtitle(
+    label = paste("patient", paste(unique(seu$patient_id), collapse = ", "))) +
+  ggplot2::theme_void() +
+  ggplot2::theme(aspect.ratio = 1, legend.position = "none",
+                 title = ggplot2::element_text(size = 20)) +
+  custom_colours 
+```
+
+```{r malignant_vs_nonmalignant_plot, eval = all(is.na(seu$label.infercnv)) == F}
+dittoSeq::dittoDimPlot(seu, "label.infercnv", split.by = "malignant", size = 0.6) +
+  ggplot2::theme(aspect.ratio = 1) +
+  custom_colours
 ```
 
 ## Malignancy and differentiation scores (from Zhang et al., 2021)
 
 ```{r malig_and_diff_plot, echo = F, fig.dim = c(10, 5)}
-Seurat::FeaturePlot(seu, features = c("malignancy", "differentiation"), raster = F) & 
+Seurat::FeaturePlot(seu, features = c("malignancy", "differentiation"), reduction = "umap", raster = F) & 
   ggplot2::scale_colour_gradientn(colours = rev(RColorBrewer::brewer.pal(n = 11, name = "RdBu")))
 ```
 
-```{r malig_vln_plot}
-Seurat::VlnPlot(seu, "malignancy") 
+```{r malig_vs_cluster_vln_plot, fig.height = 10}
+label_col <- ifelse(all(is.na(seu$label.infercnv)), "label.reduced", "label.infercnv")
+p_dat <-
+  seu@meta.data %>% 
+  tibble::as_tibble() %>%
+  dplyr::select(malignancy,
+                cluster = dplyr::matches(cluster_col),
+                label = dplyr::matches(label_col)) %>%
+  tidyr::pivot_longer(-malignancy) %>%
+  dplyr::group_by(name, value) %>%
+  dplyr::mutate(avg_malig = median(malignancy)) %>%
+  dplyr::ungroup()
+p_dat %>%
+  {split(., .$name)} %>%
+  purrr::map(function(p_dat_i) {
+    p_dat_i %>%
+      ggplot2::ggplot(ggplot2::aes(
+        x = reorder(value, -avg_malig), 
+        y = malignancy)) +
+      ggplot2::geom_boxplot() +
+      ggplot2::theme_classic() +
+      ggplot2::labs(x = "cluster") +
+      ggplot2::facet_wrap( ~ name, scales = "free_x", ncol = 1) +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = -45, hjust = 0))
+  }) %>%
+  patchwork::wrap_plots(ncol = 1)
 ```
 
 ## Save
 
 ```{r save}
-# save
 saveRDS(seu, "seu.rds")
 ```
 
