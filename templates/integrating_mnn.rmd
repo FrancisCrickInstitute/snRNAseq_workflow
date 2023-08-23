@@ -11,13 +11,14 @@ params:
   infercnv_cache_dir: false
 output:
   html_document:
-  keep_md: true
-code_folding: show
-toc: true
-toc_float: true
-toc_collapsed: true
-toc_depth: 4
-number_sections: true
+    keep_md: true
+    self_contained: false
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: true
 theme: lumen
 ---
 
@@ -35,8 +36,8 @@ ditto_colours <- list(ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(
 custom_colours_ls <- list(
   label.infercnv = c(
     "Malignant_cells" = "black",
-    "Endothelial_cells" = "#AD7700",
     "Epithelial_cells" = "#ffdcc4",
+    "Endothelial_cells" = "#AD7700",
     "Fibroblasts" = "#CC79A7",
     "Smooth_muscle_cells" = "#fae64d",
     "Tissue_stem_cells" = "#D55E00",
@@ -268,14 +269,34 @@ dittoSeq::dittoDimPlot(seu, "label.reduced") +
   custom_colours
 ```
 
-```{r celltype_annots_void_plot, fig.dim = c(10, 10)}
-dittoSeq::dittoDimPlot(seu, "label.reduced") +
-  ggplot2::ggtitle(
-    label = paste("patient", paste(unique(seu$patient_id), collapse = ", "))) +
+```{r celltype_annots_void_plot, fig.dim = c(7,7)}
+title <- 
+  paste0("patient ", paste(sort(unique(seu$patient_id)), collapse = ", "),
+        " (", prettyNum(ncol(seu), big.mark = ",", scientific = F), " nuclei)")
+seu$label.reduced <- factor(seu$label.reduced, levels = rev(names(custom_colours_ls$label.reduced)))
+barplot <-
+  seu@meta.data %>%
+  dplyr::mutate(x = "") %>%
+  ggplot2::ggplot(ggplot2::aes(x = x, fill = label.reduced)) +
+  ggplot2::geom_bar(position = "fill") +
+  ggplot2::theme_void() +
+  custom_colours +
+  ggplot2::theme(legend.position = "none",
+                 plot.title = ggplot2::element_text(size = 20, hjust = 0.5)) +
+  ggplot2::coord_flip() +
+  ggplot2::ggtitle(label = title)
+dimplot <-
+  dittoSeq::dittoDimPlot(seu, "label.reduced") +
   ggplot2::theme_void() +
   ggplot2::theme(aspect.ratio = 1, legend.position = "none",
-                 title = ggplot2::element_text(size = 20)) +
-  custom_colours 
+                 plot.title = ggplot2::element_blank()) +
+  custom_colours +
+  ggplot2::ylim(c(min(seu@reductions$umap@cell.embeddings[, 2]), 
+                  max(seu@reductions$umap@cell.embeddings[, 2]) * 1.2))
+dimplot + 
+  ggplot2::annotation_custom(
+    ggplot2::ggplotGrob(barplot),
+    ymin = max(seu@reductions$umap@cell.embeddings[, 2]) * 1.05)
 ```
 
 ## inferCNV annotations
@@ -330,14 +351,35 @@ dittoSeq::dittoDimPlot(seu, "label.infercnv") +
   custom_colours
 ```
 
-```{r infercnv_annots_void_plot, fig.dim = c(10, 10), eval = all(is.na(seu$label.infercnv)) == F}
-dittoSeq::dittoDimPlot(seu, "label.infercnv", size = 0.8) +
-  ggplot2::ggtitle(
-    label = paste("patient", paste(unique(seu$patient_id), collapse = ", "))) +
+```{r infercnv_annots_void_plot, fig.dim = c(7,7), eval = all(is.na(seu$label.infercnv)) == F}
+title <- 
+  paste0("patient ", paste(sort(unique(seu$patient_id)), collapse = ", "),
+        " (", prettyNum(sum(!is.na(seu$label.infercnv)),big.mark = ",", scientific = F), " nuclei)")
+seu$label.infercnv <- factor(seu$label.infercnv, levels = rev(names(custom_colours_ls$label.infercnv)))
+barplot <-
+  seu@meta.data %>%
+  dplyr::filter(!is.na(label.infercnv)) %>%
+  dplyr::mutate(x = "") %>%
+  ggplot2::ggplot(ggplot2::aes(x = x, fill = label.infercnv)) +
+  ggplot2::geom_bar(position = "fill") +
+  ggplot2::theme_void() +
+  custom_colours +
+  ggplot2::theme(legend.position = "none",
+                 plot.title = ggplot2::element_text(size = 20, hjust = 0.5)) +
+  ggplot2::coord_flip() +
+  ggplot2::ggtitle(label = title)
+dimplot <-
+  dittoSeq::dittoDimPlot(seu, "label.infercnv") +
   ggplot2::theme_void() +
   ggplot2::theme(aspect.ratio = 1, legend.position = "none",
-                 title = ggplot2::element_text(size = 20)) +
-  custom_colours 
+                 plot.title = ggplot2::element_blank()) +
+  custom_colours +
+  ggplot2::ylim(c(min(seu@reductions$umap@cell.embeddings[, 2]), 
+                  max(seu@reductions$umap@cell.embeddings[, 2]) * 1.2))
+dimplot + 
+  ggplot2::annotation_custom(
+    ggplot2::ggplotGrob(barplot),
+    ymin = max(seu@reductions$umap@cell.embeddings[, 2]) * 1.05)
 ```
 
 ```{r malignant_vs_nonmalignant_plot, eval = all(is.na(seu$label.infercnv)) == F}

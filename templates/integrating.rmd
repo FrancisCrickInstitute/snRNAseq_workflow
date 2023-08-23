@@ -9,14 +9,14 @@ params:
   cache_dir: false
 output:
   html_document:
-  keep_md: true
-code_folding: show
-toc: true
-toc_float: true
-toc_collapsed: true
-toc_depth: 4
-number_sections: true
-theme: lumen
+    keep_md: true
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: true
+    theme: lumen
 ---
 
 ```{r initialise, include = F}

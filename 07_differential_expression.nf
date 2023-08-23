@@ -6,10 +6,7 @@ nextflow.enable.dsl=2
 // differential expression analysis
 process diffexp {
   tag "${patient}"
-  queue { 50 * task.attempt < 921 ? 'v1_medium72' : 'v1_largemem72' }
-  memory { 50.GB * task.attempt }
-  cpus { 6 * task.attempt }
-  time { 24.hour * task.attempt }
+  label 'process_medium'
   publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/differential_expression/",
     mode: 'copy',
     pattern: "{*.rds,*.html}"

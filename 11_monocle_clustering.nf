@@ -17,12 +17,12 @@ sample metadata file: ${params.input.sample_metadata_file}
 output dir:           ${params.output.dir}
 """
 
-// integrate with mnn
-process integrating_mnn {
+// cluster using monocle3
+process monocle_clustering {
   tag "${patient}"
   label 'process_medium'
   
-  publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating_mnn/",
+  publishDir "${params.output.dir}/by_patient_wo_organoids/${patient}/monocle_clustering/",
     mode: 'copy',
     pattern: "{*.html,*.rds,*_files/figure-html/*.png}"
 
@@ -31,9 +31,9 @@ process integrating_mnn {
     tuple val(patient), path(rds_file)
 
   output:
-    path 'seu.rds'
-    path 'integrating_mnn.html'
-    path 'integrating_mnn_files/figure-html/*.png', optional: true
+    path 'cds.rds'
+    path 'monocle_clustering.html'
+    path 'monocle_clustering_files/figure-html/*.png', optional: true
 
   script:
     """
@@ -41,10 +41,8 @@ process integrating_mnn {
     rmarkdown::render(
       "${rmd_file}",
       params = list(
-        cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating_mnn/integrating_mnn_cache/",
-        infercnv_cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/integrating/infercnv/infercnv_cache/",
-        malignancy_score_file = "${params.annotate.malignancy_score_file}"),
-      output_file = "integrating_mnn.html",
+        cache_dir = "${params.output.dir}/by_patient_wo_organoids/${patient}/monocle_clustering/monocle_clustering_cache/"),
+      output_file = "monocle_clustering.html",
       output_dir = getwd()
     )
     """
@@ -66,8 +64,8 @@ workflow {
     .set { ch_run }
   
   // perform MNN integration
-  integrating_mnn(
-    "${baseDir}/templates/integrating_mnn.rmd",
+  monocle_clustering(
+    "${baseDir}/templates/monocle_clustering.rmd",
     ch_run
   )
 

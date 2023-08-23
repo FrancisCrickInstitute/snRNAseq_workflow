@@ -6,7 +6,6 @@ fontfamily: mathpazo
 fontsize: 11pt
 params:
   cache_dir: false
-  infercnv_cache_dir: false
 output:
   html_document:
     keep_md: true
@@ -48,7 +47,7 @@ knitr::opts_chunk$set(fig.align = "center",
 
 # functions
 fix_pathway_names <- function(pathway_names) {
-  pathway_names %>% tolower() %>% gsub("\\_", " ", .) %>% gsub("hallmark ", "", .)
+  pathway_names %>% tolower() %>% gsub("\\_", " ", .)
 }
 plot_my_heatmap <- function(p_dat_in, col, stat = "qval") {
   p_dat_in %>%
@@ -71,11 +70,14 @@ plot_my_enrichment <- function(p_dat_in, top_n = 5) {
                              FC < 5 & FC > -5 & adjPval < 0.01 ~ '#84b0f0',
                              FC < -5 & adjPval < 0.01 ~ 'mediumseagreen',
                              FC < 5 & FC > -5 & adjPval > 0.01 ~ 'black'))
-
   ggplot(p_dat, aes(-FC, qval)) +
     geom_vline(xintercept = c(-5, 5), linetype = "dashed", col = 'black', lwd = 0.3) +
     geom_point(cex = 2.6, shape = 21, fill = p_dat$color, stroke = 0.3) +
-    ggrepel::geom_text_repel(data = p_dat %>% filter(rank(FC, ties.method = "min") <= 5 | rank(-qval, ties.method = "min") <= 5), aes(label = Pathway),
+    ggrepel::geom_text_repel(
+      data = p_dat %>% filter(
+        (rank(FC, ties.method = "min") <= 5 | rank(-qval, ties.method = "min") <= 5) &
+        abs(FC) > 5 & adjPval < 0.01), 
+      aes(label = Pathway),
                              size = 4, min.segment.length = 0, nudge_x = 10) +
     xlab("Enrichment") +
     ylab("Qval") +
@@ -101,7 +103,7 @@ find_markers <- function(seu, col, group.1, group.2) {
                     group = ifelse(avg_log2FC > 0, 1, 2)) %>%
       dplyr::group_by(direction) %>%
       dplyr::mutate(rank = rank(-abs(avg_log2FC)),
-                    p_val_adj_no_0 = dplyr::case_when(p_val_adj == 0 ~ min(p_val_adj),
+                    p_val_adj_no_0 = dplyr::case_when(p_val_adj == 0 ~ 2.225074e-308,
                                                      TRUE ~ p_val_adj))
   } else {
     message("No differentially expressed genes!")
@@ -147,11 +149,12 @@ plot_markers <- function(markers, top_n = 10) {
 ```{r load_seu}
 # load seu 
 seu <- readRDS("seu.rds")
+Seurat::DefaultAssay(seu) <- "RNA"
 ```
 
 ```{r find_markers}
+degs <- list()
 degs <- xfun::cache_rds({
-  degs <- list()
 
   if (all(c("Malignant_cells", "Epithelial_cells") %in% seu$label.infercnv)) {
     # find markers of malignant vs epithelial
@@ -159,29 +162,26 @@ degs <- xfun::cache_rds({
        find_markers(seu, "label.infercnv", "Malignant_cells", "Epithelial_cells")
   }
   
-  # if (all(c("post", "pre") %in% seu$timepoint)) {
-  #   if (ncol(seu[, seu$label.infercnv == "Malignant_cells"]) > 0) {
-  #     # find markers of malignant post vs malignant pre
-  #     degs[["malignant_post_vs_malignant_pre"]] <-
-  #       find_markers(seu[, seu$label.infercnv == "Malignant_cells"], 
-  #                    "timepoint", "post", "pre")
-  #   }
-  #   
-  #   # find markers of post vs pre
-  #   degs[["post_vs_pre"]] <-
-  #     find_markers(seu, "timepoint", "post", "pre")
+  # if (all(c("pre", "post") %in% seu[, seu$label.infercnv == "Malignant_cells"]$timepoint)) {
+  #   # find markers of malignant pre vs malignant post
+  #   degs[["malignant_post_vs_malignant_pre"]] <-
+  #      find_markers(seu[, seu$label.infercnv == "Malignant_cells"], "timepoint", "post", "pre")
+  # }
+  # 
+  # if (all(c("lymph_node", "tumour") %in% seu[, seu$label.infercnv == "Malignant_cells"]$sample_site)) {
+  #   # find markers of malignant lymph node vs malignant primary
+  #   degs[["malignant_lymph_node_vs_malignant_tumour"]] <-
+  #      find_markers(seu[, seu$label.infercnv == "Malignant_cells"], "sample_site", "lymph_node", "tumour")
   # }
   
   # return
   degs
-  
 }, file = "degs.rds")
+```
 
-# save
-saveRDS(degs, "degs.rds")
-
-# # plot
-# plot_markers(degs$malignant_vs_epithelial, 20)
+```{r plot_degs, eval = F}
+# plot
+plot_markers(degs$malignant_vs_epithelial, 20)
 # plot_markers(degs$malignant_post_vs_malignant_pre, 20)
 # plot_markers(degs$post_vs_pre, 20)
 ```
@@ -201,38 +201,35 @@ cds <- reduce_dimension(cds)
 # get hallmark pathways
 pathways <- xfun::cache_rds({
   pathways <-
-    msigdbr(species = "Homo sapiens", category = "H") %>%
+    dplyr::bind_rows(
+      msigdbr(species = "Homo sapiens", category = "H"),
+      msigdbr(species = "Homo sapiens", category = "C2", subcategory = "CP:KEGG"),
+      msigdbr(species = "Homo sapiens", category = "C2", subcategory = "CP:REACTOME")
+    ) %>%
     format_pathways()
   pathways
 }, file = "pathways.rds")
 
 # compare pathways between tumour vs normal
+scpa_out <- list()
 scpa_out <- xfun::cache_rds({
-  scpa_out <- list()
   scpa_out[["malignant_vs_epithelial"]] <-
     compare_sce(cds,
                 group1 = "label.infercnv",
                 group1_population = c("Malignant_cells", "Epithelial_cells"),
                 pathways = pathways)
-  # scpa_out[["malignant_post_vs_malignant_pre"]] <-
-  #   compare_sce(cds[, cds@colData$label.infercnv == "Malignant_cells"],
-  #               group1 = "timepoint",
-  #               group1_population = c("pre", "post"),
-  #               pathways = pathways)
-  # scpa_out[["post_vs_pre"]] <-
-  #   compare_sce(cds,
-  #               group1 = "timepoint",
-  #               group1_population = c("pre", "post"),
-  #               pathways = pathways)
   scpa_out
 }, file = "scpa.rds")
+```
 
-# save 
-saveRDS(scpa_out, "scpa.rds")
-
-# # plot
-# plot_my_enrichment(scpa_out$malignant_vs_epithelial)
+```{r plot_pathways_dot, eval = F}
+# plot
+plot_my_enrichment(scpa_out$malignant_vs_epithelial)
 # plot_my_enrichment(scpa_out$malignant_post_vs_malignant_pre)
 # plot_my_enrichment(scpa_out$post_vs_pre)
 ```
 
+```{r plot_pathways_heatmap, eval = F}
+# plot
+plot_heatmap(scpa_out$malignant_vs_epithelial %>% filter(adjPval < 0.01))
+```

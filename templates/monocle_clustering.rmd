@@ -1,0 +1,261 @@
+---
+title: "snRNAseq workflow: Monocle3 clustering"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+params:
+  cache_dir: false
+output:
+  html_document:
+    keep_md: true
+    self_contained: false
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: true
+    theme: lumen
+---
+
+```{r initialise, include = F}
+# pipe
+library(magrittr)
+library(clustree)
+
+# ggplot presets
+ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_update(legend.text = ggplot2::element_text(size = 7))
+ditto_colours <- list(ggplot2::scale_fill_manual(values = dittoSeq::dittoColors(), na.value = "white"),
+                      ggplot2::scale_colour_manual(values = dittoSeq::dittoColors(), na.value = "white"))
+
+# calculate plot height for grids
+get_fig_dims <- function(n_plots, n_cols = NULL, grid_width = 10, height_to_width_ratio = 1) {
+  # get dims
+  dims <- ggplot2::wrap_dims(n_plots, n_cols)
+  # get scale
+  scale <- grid_width / dims[1]
+  # get height
+  grid_height <- (dims[2] * scale) * height_to_width_ratio
+  dims <- c(grid_width, grid_height)
+  # if any dim is 0, make 1 to avoid error
+  dims[dims == 0] <- 1
+  # return dims
+  dims
+}
+
+# get cluster centroids from a Seurat or cell_data_set object
+get_centroids <- function(object, reduction, lvl) {
+  if (class(object)[1] == "Seurat") {
+    embeddings <- object@reductions[[reduction]]@cell.embeddings
+    metadata <- object@meta.data
+  } else if (class(object)[1] == "cell_data_set") {
+    embeddings <- SingleCellExperiment::reducedDims(object)[[reduction]]
+    metadata <- SummarizedExperiment::colData(object) %>% dplyr::as_tibble()
+  }
+  dplyr::tibble(
+    x = embeddings[,1],
+    y = embeddings[,2],
+    metadata
+  ) %>%
+    dplyr::group_by(get(lvl)) %>%
+    dplyr::summarise(x = median(x), y = median(y)) %>%
+    dplyr::rename(!!lvl := `get(lvl)`)
+}
+
+# umap void theme
+umap_void_theme <-
+  ggplot2::theme(axis.text = ggplot2::element_blank(),
+                 axis.title = ggplot2::element_blank(),
+                 axis.ticks = ggplot2::element_blank(),
+                 legend.position = "none",
+                 plot.margin = ggplot2::unit(c(2,2,2,2), "pt"))
+
+random_seed <- 42
+
+# chunk setup
+knitr::opts_chunk$set(fig.align = "center",
+                      dpi = 300,
+                      cache.path = params$cache_dir)
+```
+
+## Load file
+
+```{r load}
+seu <- readRDS("seu_annotated.rds")
+```  
+
+## Get groupings
+```{r groupings}
+# sample_metadata columns with >1 value 
+groupings <- 
+  seu@meta.data %>%
+  dplyr::select(
+    dplyr::any_of(c(
+      "sample", "patient_id", "timepoint", "sample_site",
+      "response", "gender", "treatment", "Tx", "Nx",
+      "label.reduced"))) %>%
+  dplyr::select(sample, where(~ dplyr::n_distinct(.x) > 1)) %>%
+  colnames()
+```
+
+## intrinsicDimension
+
+```{r iD_n_dims}
+iD_n_dims <- xfun::cache_rds({
+  intrinsicDimension::maxLikGlobalDimEst(
+    seu@reductions$pca@cell.embeddings,
+    k = 10
+  )$dim.est %>% round(0)
+}, file = "iD_n_dims.rds")
+generous_n_dims <- round(1.5 * ifelse(iD_n_dims == 0, 1, iD_n_dims), 0)
+```
+
+# Monocle3
+
+```{r convert}
+cds <- xfun::cache_rds({
+  seu@active.assay <- 'RNA'
+  cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
+  SummarizedExperiment::rowData(cds)$gene_name <- 
+    rownames(cds)
+  SummarizedExperiment::rowData(cds)$gene_short_name <- 
+    SummarizedExperiment::rowData(cds)$gene_name
+  cds
+}, file = "cds.rds")
+```
+
+## Pre-processing and linear dimensionality reduction
+
+```{r preprocessing}
+cds <- xfun::cache_rds({
+  monocle3::preprocess_cds(cds, num_dim = generous_n_dims)
+}, file = "cds_lin_dim_red.cds")
+```
+
+## Non-linear dimensionality reduction 
+
+```{r nonlin_dim_redu, results = F, warning = F, message = F}
+cds <- xfun::cache_rds({
+  monocle3::reduce_dimension(cds, preprocess_method = "PCA")
+}, file = "cds_nonlin_dim_red.cds")
+```
+
+```{r pca_and_umap, class.source = 'fold-hide', fig.dim = c(12, 5), fig.cap = "Plot of monocle3 PCA and UMAP"}
+p <- 
+  c("PCA", "UMAP") %>%
+  purrr::map(function(redu) {
+    monocle3::plot_cells(
+        cds, 
+        color_cells_by = "sample",
+        reduction_method = redu, 
+        show_trajectory_graph = F, 
+        label_cell_groups = F) +
+      ditto_colours 
+  }) 
+p[[1]] + 
+  ggplot2::theme(legend.position = "none") + 
+  p[[2]]
+```
+
+```{r groupings_vs_reductions, class.source = 'fold-hide', fig.dim = get_fig_dims(n_plots = 3 * (length(groupings)), n_cols = 3), fig.cap = "Plot of all monocle3 dimensionality reductions, coloured by groupings", eval = (length(groupings) > 0) == T}
+# plot all groupings vs all reductions
+redus <- c("PCA", "UMAP")
+groupings_vs_reductions <- list()
+purrr::walk(groupings, function(grouping) {
+  purrr::walk(redus, function(redu) {
+    title <- paste0(redu, "_vs_", grouping)
+    p <- 
+      monocle3::plot_cells(
+        cds, 
+        reduction_method = redu, 
+        color_cells_by = grouping,
+        show_trajectory_graph = F, 
+        label_cell_groups = F) 
+    if (!is.numeric(cds@metadata$sample_metadata[, grouping, drop = T])) {
+      p <- p + ditto_colours
+    }
+    groupings_vs_reductions[[paste0(grouping, "_legend")]] <<-
+      lemon::g_legend(p)
+    groupings_vs_reductions[[title]] <<- 
+      p + 
+      ggplot2::theme(legend.position = "none")
+  })
+})
+# create grob layout
+p <-
+  gridExtra::marrangeGrob(
+    grobs = groupings_vs_reductions,
+    nrow = length(groupings),
+    ncol = length(redus) + 1,
+    layout_matrix = matrix(
+      1:length(groupings_vs_reductions),
+      length(groupings),
+      length(redus) + 1,
+      TRUE
+    ),
+    top = NULL
+  )
+p
+```
+
+## Integration
+
+```{r align_cds, fig.dim = c(5,5)}
+cds <- xfun::cache_rds({
+  cds <- monocle3::align_cds(
+    cds, num_dim = generous_n_dims, alignment_group = "batch_dir") 
+}, file = "cds_aligned.rds")
+```
+
+```{r align_cds_plot}
+monocle3::plot_cells(cds, color_cells_by = "batch_dir")
+```
+
+## Clustering
+
+```{r cluster_cells}
+lvls <- c("cluster", "partition")
+cds <- xfun::cache_rds({
+  cds <- monocle3::cluster_cells(cds, random_seed = random_seed, cluster_method = "louvain")
+  cds@colData$cluster <- monocle3::clusters(cds)
+  cds@colData$partition <- monocle3::partitions(cds)
+  cds
+}, file = "cds_clustered.rds")
+```
+
+```{r clustering_tree, class.source = 'fold-hide', fig.dim = c(10, 5), fig.cap = "Clustering tree from partitions (grouping 1) to clusters (grouping 2) of cells"}
+library(clustree)
+p <-
+  data.frame("grouping1" = monocle3::partitions(cds),
+             "grouping2" = monocle3::clusters(cds)) %>%
+    clustree::clustree(prefix = "grouping")
+p
+```
+
+```{r clusters_and_partitions, warning = F, class.source = 'fold-hide', fig.dim = c(10, 5), fig.cap = "Plot of monocle3 UMAP, coloured by cluster and by partition"}
+final_umap <- 
+  lvls %>%
+  purrr::map(function(lvl) {
+    dittoSeq::dittoDimPlot(cds, lvl, size = 0.5, xlab = NULL, ylab = NULL) +
+    ggplot2::geom_label(
+      data = SummarizedExperiment::colData(cds) %>%
+        dplyr::as_tibble() %>%
+        dplyr::right_join(get_centroids(cds, "UMAP", lvl), by = lvl) %>%
+        dplyr::distinct(get(lvl), x, y),
+      ggplot2::aes(x, y, label = `get(lvl)`, colour = `get(lvl)`, fontface = "bold"),
+      size = 3, fill = "white", alpha = 0.8, label.size = NA) +
+    umap_void_theme
+  })  
+names(final_umap) <- lvls
+p <- 
+  final_umap[["cluster"]] + final_umap[["partition"]]
+p
+```
+
+## Save
+
+```{r save}
+saveRDS(cds, "cds.rds")
+```

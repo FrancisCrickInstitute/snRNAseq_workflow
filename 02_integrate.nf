@@ -60,15 +60,27 @@ workflow {
     ch_files
       .map { rds_file -> tuple("all", rds_file) }
       .groupTuple()
-      .map { dir, rds_file -> tuple(dir, "", rds_file)}
+      .map { dir, rds_file -> tuple("all", dir, rds_file)}
+      .concat(ch_run)
       .set { ch_run }
   }
+  
+  if ( params.input.run_all_wo_organoids ) {
+    ch_files
+      .filter { !it[0].contains("organoid") }
+      .map { id, rds_file -> tuple("all", rds_file) }
+      .groupTuple()
+      .map { dir, rds_file -> tuple("all_wo_organoids", "all_wo_organoids", rds_file)}
+      .concat(ch_run)
+      .set { ch_run }
+  }
+  
+  ch_run.view()
 
   // perform integration
   integrating(
     "${baseDir}/templates/integrating.rmd",
-    ch_run,
-    save_params.out.ch_params
+    ch_run
   )
 
 }
