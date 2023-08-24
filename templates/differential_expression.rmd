@@ -153,8 +153,9 @@ Seurat::DefaultAssay(seu) <- "RNA"
 ```
 
 ```{r find_markers}
-degs <- list()
 degs <- xfun::cache_rds({
+  
+  degs <- list()
 
   if (all(c("Malignant_cells", "Epithelial_cells") %in% seu$label.infercnv)) {
     # find markers of malignant vs epithelial
@@ -162,33 +163,19 @@ degs <- xfun::cache_rds({
        find_markers(seu, "label.infercnv", "Malignant_cells", "Epithelial_cells")
   }
   
-  # if (all(c("pre", "post") %in% seu[, seu$label.infercnv == "Malignant_cells"]$timepoint)) {
-  #   # find markers of malignant pre vs malignant post
-  #   degs[["malignant_post_vs_malignant_pre"]] <-
-  #      find_markers(seu[, seu$label.infercnv == "Malignant_cells"], "timepoint", "post", "pre")
-  # }
-  # 
-  # if (all(c("lymph_node", "tumour") %in% seu[, seu$label.infercnv == "Malignant_cells"]$sample_site)) {
-  #   # find markers of malignant lymph node vs malignant primary
-  #   degs[["malignant_lymph_node_vs_malignant_tumour"]] <-
-  #      find_markers(seu[, seu$label.infercnv == "Malignant_cells"], "sample_site", "lymph_node", "tumour")
-  # }
-  
   # return
   degs
+  
 }, file = "degs.rds")
 ```
 
 ```{r plot_degs, eval = F}
-# plot
 plot_markers(degs$malignant_vs_epithelial, 20)
-# plot_markers(degs$malignant_post_vs_malignant_pre, 20)
-# plot_markers(degs$post_vs_pre, 20)
 ```
 
 # Pathway analysis
 
-```{r pathway_analysis, eval = F}
+```{r pathway_analysis}
 # convert to cds
 cds <- SeuratWrappers::as.cell_data_set(seu, assay = "RNA")
 SummarizedExperiment::rowData(cds)$gene_short_name <- 
@@ -211,25 +198,25 @@ pathways <- xfun::cache_rds({
 }, file = "pathways.rds")
 
 # compare pathways between tumour vs normal
-scpa_out <- list()
-scpa_out <- xfun::cache_rds({
-  scpa_out[["malignant_vs_epithelial"]] <-
+scpa <- xfun::cache_rds({
+  scpa <- list()
+  scpa[["malignant_vs_epithelial"]] <-
     compare_sce(cds,
                 group1 = "label.infercnv",
                 group1_population = c("Malignant_cells", "Epithelial_cells"),
                 pathways = pathways)
-  scpa_out
+  scpa
 }, file = "scpa.rds")
 ```
 
 ```{r plot_pathways_dot, eval = F}
 # plot
-plot_my_enrichment(scpa_out$malignant_vs_epithelial)
+plot_my_enrichment(scpa$malignant_vs_epithelial)
 # plot_my_enrichment(scpa_out$malignant_post_vs_malignant_pre)
 # plot_my_enrichment(scpa_out$post_vs_pre)
 ```
 
 ```{r plot_pathways_heatmap, eval = F}
 # plot
-plot_heatmap(scpa_out$malignant_vs_epithelial %>% filter(adjPval < 0.01))
+plot_heatmap(scpa$malignant_vs_epithelial %>% filter(adjPval < 0.01))
 ```
