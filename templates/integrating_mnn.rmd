@@ -13,12 +13,12 @@ output:
   html_document:
     keep_md: true
     self_contained: false
-    code_folding: show
-    toc: true
-    toc_float: true
-    toc_collapsed: true
-    toc_depth: 4
-    number_sections: true
+code_folding: show
+toc: true
+toc_float: true
+toc_collapsed: true
+toc_depth: 4
+number_sections: true
 theme: lumen
 ---
 
@@ -417,6 +417,54 @@ p_dat %>%
       ggplot2::geom_boxplot() +
       ggplot2::theme_classic() +
       ggplot2::labs(x = "cluster") +
+      ggplot2::facet_wrap( ~ name, scales = "free_x", ncol = 1) +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = -45, hjust = 0))
+  }) %>%
+  patchwork::wrap_plots(ncol = 1)
+```
+
+## Cancer-derived IgG expression
+
+Scoring expression of IgG genes that are significantly upregulated (logFC > 1.5, adjusted p-value < 10e-6) in treatment-sensitive malignant cells versus treatment-resistant malignant cells. 
+
+```{r igg_module_score}
+igg <-
+  c("IGHA1",
+    "IGKC",
+    "IGHGP",
+    "IGLC1",
+    "IGHG1",
+    "IGHM",
+    "IGLC2",
+    "IGHG2",
+    "IGHG3")
+seu <- Seurat::AddModuleScore(seu, list(IgG = igg), name = "IgG", assay = "RNA")
+seu$IgG <- seu$IgG1 
+seu$IgG1 <- NULL
+```
+
+```{r igg_score_plot, fig.height = 7 * (length(groupings))}
+p_dat <-
+  seu@meta.data %>% 
+  tibble::as_tibble() %>%
+  dplyr::select(IgG,
+                cluster = dplyr::matches(cluster_col),
+                any_of(c(groupings, "label.infercnv"))) %>%
+  tidyr::pivot_longer(-IgG) %>%
+  dplyr::group_by(name, value) %>%
+  dplyr::mutate(avg_IgG = median(IgG)) %>%
+  dplyr::ungroup() %>%
+  {split(., .$name)}
+p_dat %>%
+  names() %>%
+  purrr::map(function(p_dat_i) {
+   p_dat[[p_dat_i]] %>%
+      ggplot2::ggplot(ggplot2::aes(
+        x = reorder(value, -avg_IgG), 
+        y = IgG)) +
+      ggplot2::geom_boxplot() +
+      ggplot2::theme_classic() +
+      ggplot2::labs(x = p_dat_i) +
       ggplot2::facet_wrap( ~ name, scales = "free_x", ncol = 1) +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = -45, hjust = 0))
   }) %>%

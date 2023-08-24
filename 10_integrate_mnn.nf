@@ -51,12 +51,25 @@ process integrating_mnn {
 }
 
 workflow {
+  
+  // initialise ch_run
+  Channel
+    .empty()
+    .set { ch_run }
 
   // by patient, wo organoids
   Channel
     .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/seurat_clustering/seu_annotated.rds")
     .map { rds_file -> tuple(rds_file.toString().tokenize('/')[-4].split("_")[0], rds_file) }
+    .concat(ch_run)
     .set { ch_run }
+    
+  // by patient, malignant cells, wo organoids
+  //Channel
+  //  .fromPath("${params.output.dir}/by_patient_wo_organoids/*/integrating/infercnv/seu_infercnv_malignant.rds")
+  //  .map { rds_file -> tuple(rds_file.toString().tokenize('/')[-4].split("_")[0]+'/malignant', rds_file) }
+  //  .concat(ch_run)
+  //  .set { ch_run }
     
   // all malignant cells, wo organoids
   Channel
