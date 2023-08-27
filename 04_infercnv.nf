@@ -141,7 +141,12 @@ workflow {
     //.set { ch_run }
 
   Channel
-    .fromList(['F_post_N2_biopsy', 'H_post_T1_biopsy', 'I_pre_T0_biopsy', 'N_post_T1_biopsy'])
+    .fromList([ 'B_post_T1_biopsy',
+                'F_post_N2_biopsy',
+                'H_post_T1_biopsy',
+                'I_pre_T0_biopsy',
+                'N_post_T1_biopsy',
+                'P_post_T1_biopsy'])
     .map { id -> tuple(
 	    id, id.split("_")[0],
 	     "${params.output.dir}/by_patient_wo_organoids/"+id.split("_")[0]+"/integrating/seurat_clustering/seu_annotated.rds") }     

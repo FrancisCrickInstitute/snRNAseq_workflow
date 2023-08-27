@@ -63,9 +63,8 @@ ref_celltypes <- c("T_cells", "Macrophage", "B_cells", "NK_cells", "Myeloid_cell
 cells <-
   seu@meta.data %>%
   tibble::as_tibble(rownames = "cell") %>%
-  dplyr::filter(label.reduced %in% c("Epithelial_cells", ref_celltypes), 
-                (sample == params$sample | sample_site == "tumour")) %>%
-  dplyr::select(sample, cell, celltype = label.reduced) 
+  dplyr::filter(label.reduced %in% c("Epithelial_cells", ref_celltypes)) %>%
+  dplyr::select(sample, cell, sample_site, celltype = label.reduced) 
 
 query_cells <-
   cells %>%
@@ -77,9 +76,10 @@ reference_cells <-
   dplyr::filter(celltype %in% ref_celltypes) %>%
   dplyr::mutate(sample_celltype = dplyr::case_when(sample == params$sample ~ celltype, .default = NA),
                 sample_pool = dplyr::case_when(sample == params$sample ~ "Sample_reference_cells", .default = NA),
+                patient_intratumoral_celltype = dplyr::case_when(sample_site == "tumour" ~ paste0("Patient_intratumoral_", celltype), .default = NA),
                 patient_celltype = paste0("Patient_", celltype),
                 patient_pool = "Patient_reference_cells") %>%
-  tidyr::pivot_longer(cols = c("sample_celltype", "sample_pool", "patient_celltype", "patient_pool"),
+  tidyr::pivot_longer(cols = c("sample_celltype", "sample_pool", "patient_intratumoral_celltype", "patient_celltype", "patient_pool"),
                       values_drop_na = T) %>%
   dplyr::group_by(name, value) %>%
   dplyr::filter(dplyr::n() > 100) %>%
@@ -92,30 +92,38 @@ if (nrow(query_cells) < 100) {
 } else {
   message("sufficient query cells")
   if ("sample_celltype" %in% reference_cells$name) {
-    message("sufficient reference cells from individual celltypes")
-    message()
+    message("sufficient reference cells from individual celltypes in the sample")
     final_name <- "sample_celltype" 
-  } else if ("sample_pool" %in% reference_cells$name) {
-    message("insufficient cells from individual reference celltypes")
-    message("sufficient cells across all reference celltypes in the sample")
-    message("must pool reference celltypes from the sample together")
-    final_name <- "sample_pool"
-  } else if ("patient_celltype" %in% reference_cells$name) {
-    message("insufficient cells from individual reference celltypes")
-    message("insufficient cells across all reference celltypes in the sample")
-    message("must pool each reference celltype from the patient tumour sites together")
-    final_name <- "patient_celltype"
-  } else if ("patient_pool" %in% reference_cells$name) {
-    message("insufficient cells from individual reference celltypes")
-    message("insufficient cells across all reference celltypes in the sample")
-    message("insufficient cells from individual reference celltypes pooled across the patient")
-    message("must pool all reference celltypes from the patient tumour sites together")
-    final_name <- "patient_pool"
   } else {
-    message("insufficient reference cells across the patient tumour sites")
-    final_name <- NULL
+    message("insufficient cells from individual reference celltypes")
+    if ("sample_pool" %in% reference_cells$name) {
+      message("sufficient pooled cells across all reference celltypes in the sample")
+      final_name <- "sample_pool"
+    } else {
+      message("insufficient pooled cells across all reference celltypes in the sample")
+      if ("patient_intratumoral_celltype" %in% reference_cells$name) {
+        message("sufficient reference cells from individual celltypes across the patient's tumour samples") 
+        final_name <- "patient_intratumoral_celltype"
+      } else {
+        message("insufficient reference cells from individual celltypes across the patient's tumour samples")
+        if ("patient_celltype" %in% reference_cells$name) {
+          message("sufficient reference cells from individual celltypes across the patient's tumour + lymph node samples")
+          final_name <- "patient_celltype"
+        } else {
+          message("insufficient reference cells from individual celltypes across the patient's tumour + lymph node samples")
+          if ("patient_pool" %in% reference_cells$name) {
+            message("sufficient reference cells from all celltypes across the patient's tumour + lymph node samples")
+            final_name <- "patient_pool"
+          } else {
+            message("insufficient reference cells")
+            final_name <- NULL
+          }
+        }
+      }
+    }
   }
 }
+message(paste("reference group:", final_name))
 ```
 
 ```{r final_ref_cells, eval = !is.null(final_name) == T}
@@ -127,6 +135,14 @@ reference_cells <-
 infercnv_annots <-
   reference_cells %>%
   dplyr::bind_rows(query_cells)
+
+# save final query / reference groups
+infercnv_annots %>%
+  dplyr::count(infercnv_population) %>%
+  dplyr::mutate(group = dplyr::case_when(infercnv_population == "Epithelial_cells" ~ "query",
+                                         .default = "reference"),
+                reference_group = final_name) %>%
+  readr::write_tsv(paste0(params$cache_dir, "/infercnv_populations.tsv"))
 
 # view refs
 infercnv_annots %>% 
@@ -170,7 +186,7 @@ infercnv_obj <-
    no_prelim_plot = T,
    #analysis_mode = "subclusters",
    analysis_mode = "samples",
-   resume_mode = F 
+   resume_mode = T
   )
 ```
 

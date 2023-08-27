@@ -11,8 +11,7 @@ params:
   infercnv_cache_dir: false
 output:
   html_document:
-    keep_md: true
-    self_contained: false
+  keep_md: true
 code_folding: show
 toc: true
 toc_float: true
@@ -441,6 +440,17 @@ igg <-
 seu <- Seurat::AddModuleScore(seu, list(IgG = igg), name = "IgG", assay = "RNA")
 seu$IgG <- seu$IgG1 
 seu$IgG1 <- NULL
+igg_avail <- igg[igg %in% rownames(seu)]
+```
+
+```{r igg_umap_plot, echo = F, fig.dim = c(5, 5)}
+Seurat::FeaturePlot(seu, features = c("IgG"), reduction = "umap", raster = F) & 
+  ggplot2::scale_colour_gradientn(colours = rev(RColorBrewer::brewer.pal(n = 11, name = "RdBu")))
+```
+
+```{r igg_density_umap_plot, echo = F, fig.dim = c(5, 5 * length(igg_avail))}
+Nebulosa::plot_density(seu, igg_avail, joint = T, pal = "inferno") +
+  patchwork::plot_layout(ncol = 1)
 ```
 
 ```{r igg_score_plot, fig.height = 7 * (length(groupings))}
