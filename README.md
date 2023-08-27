@@ -1,18 +1,9 @@
 # snRNAseq nextflow workflow
 
 The essential components of the workflow repository are:
-- `main.nf`: Contains the primary workflow code which pulls in all additional code from the repository
+- `[##]_*.nf`: Scripts containing the primary workflow code for each step
 - `modules/`: Contains all of the sub-workflows which are used to organize large chunks of analysis
-- `templates/`: Contains all of the code which is executed in each individual step of the workflow
+- `templates/`: Contains all of the code which is executed in each individual step of the workflow, as R and bash scripts
+- `config/`: Contains configuration files for different datasets and institutional cluster configurations
 
-```
-ml purge
-ml Nextflow/22.10.3
-ml Singularity/3.6.4
-ml CAMP_proxy
-
-cd /nemo/project/proj-tracerX/working/VHL_GERMLINE/tidda/snRNAseq_workflow/
-
-nextflow run . -c config/VHL_ParseBio.config -resume
-```
-
+PBSPro scripts for running each of the steps from this workflow can be found in the (snRNAseq_analysis)[github.com/alextidd/snRNAseq_analysis] repository.
